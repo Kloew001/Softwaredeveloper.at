@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
 
         public static TEntity ConvertToEntity<TEntity>(this DtoBase dto, TEntity entity)
-            where TEntity : BaseEntity, new()
+            where TEntity : BaseEntity
         {
             return _factory.ConvertToEntity<TEntity>(dto, entity);
         }

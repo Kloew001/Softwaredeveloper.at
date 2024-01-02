@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class EntityService<TEntity> : IScopedService
-        where TEntity : BaseEntity, new()
+        where TEntity : BaseEntity
     {
         protected readonly IDbContext _context;
         protected readonly AccessService _accessService;
@@ -82,7 +82,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public async Task<Guid> CreateAsync<TDto>(TDto dto)
             where TDto : DtoBase, new()
         {
-            var entity = new TEntity();
+            var entity = _context.Set<TEntity>().CreateProxy();
             await _context.AddAsync(entity);
 
             dto.ConvertToEntity(entity);
