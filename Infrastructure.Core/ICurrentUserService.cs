@@ -11,21 +11,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         bool IsAuthenticated { get; }
     }
 
-    public interface IApplicationIdentitDbContext
-    {
-        DbSet<ApplicationUser> ApplicationUsers { get; set; }
-    }
-
     public class CurrentUserService : ICurrentUserService
     {
-        private Guid _currentUserId = ApplicationUserIds.ServiceAdminId;
+        private Guid? _currentUserId = ApplicationUserIds.ServiceAdminId;
         private Guid? _previousUserId = null;
 
-        private IApplicationIdentitDbContext _context;
+        private IDbContext _context;
 
         public bool IsAuthenticated => _currentUserId != null;
 
-        public CurrentUserService(IApplicationIdentitDbContext context)
+        public CurrentUserService(IDbContext context)
         {
             _context = context;
         }
@@ -40,12 +35,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public Guid GetCurrentUserId()
         {
-            return _currentUserId;
+            return _currentUserId.HasValue ? _currentUserId.Value : Guid.Empty;
         }
 
         public ApplicationUser GetCurrentUser()
         {
-            return _context.ApplicationUsers.SingleOrDefault(u => u.Id == _currentUserId);
+            return _context.Set<ApplicationUser>().SingleOrDefault(u => u.Id == _currentUserId);
         }
 
         public void SetCurrentUser(Guid id)

@@ -1,8 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -15,7 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         EntityEntry<TEntity> Add<TEntity>(TEntity entity)
             where TEntity : class;
-        
+
         ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default)
                 where TEntity : class;
         void AddRange(IEnumerable<object> entities);
@@ -28,13 +32,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 
+
+
     public abstract class BaseDbContext : DbContext,
-        IDbContext, 
-        IApplicationIdentitDbContext, 
-        IEmailMessageDbContext,
-        ITypedScopedService<IDbContext>,
-        ITypedScopedService<IApplicationIdentitDbContext>,
-        ITypedScopedService<IEmailMessageDbContext>
+        IDbContext,
+        ITypedScopedService<IDbContext>
 
     {
         private readonly IServiceProvider _serviceProvider;
@@ -43,6 +45,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             _serviceProvider = provider;
         }
+
+        //public BaseDbContext(DbContextOptions options)
+        //    : base(options)
+        //{
+        //}
 
         public BaseDbContext(DbContextOptions options, IServiceProvider provider)
             : base(options)
@@ -65,11 +72,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<ApplicationRoleClaim> ApplicationRoleClaims { get; set; }
 
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseLazyLoadingProxies();
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -177,10 +179,69 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
+        public async Task UpdateDatabaseAsync()
+        {
+
+            var databaseCreator = this.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+            if (!databaseCreator.Exists())
+                databaseCreator.Create();
+
+            await this.Database.MigrateAsync();
+        }
     }
 
     public static class DbContextExension
     {
+        public static void AddDbContext<TDbContext>(this IServiceCollection services,
+            IConfiguration configuration,
+            IHostEnvironment hostEnvironment)
+            where TDbContext : BaseDbContext
+        {
+            //_services.AddScoped<ContextScopedFactory>();
+            //_services.AddPooledDbContextFactory<Context>((serviceProvider, optionsBuilder) =>
+            //    {
+            //        DbContextOptions(optionsBuilder);
+            //    });
+            //_services.AddScoped<Context>(sp => sp.GetRequiredService<ContextScopedFactory>().CreateDbContext());
+            //_services.AddScoped<IDbContext>(sp => sp.GetRequiredService<Context>());
+
+            services.AddDbContext<TDbContext>((o) => o.DbContextOptions(configuration, hostEnvironment));
+        }
+
+        public static async Task UpdateDatabaseAsync<TDbContext>(this IHost host)
+            where TDbContext : BaseDbContext
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
+                await context.UpdateDatabaseAsync();
+            }
+        }
+
+        public static void DbContextOptions(this DbContextOptionsBuilder options,
+            IConfiguration configuration,
+            IHostEnvironment hostEnvironment)
+        {
+            var connectionString = configuration.GetConnectionString("DbContextConnection");
+
+            options.UseNpgsql(connectionString);
+            options.UseLazyLoadingProxies();
+
+            if (hostEnvironment.IsDevelopment())
+            {
+                options.EnableDetailedErrors();
+                options.EnableSensitiveDataLogging();
+            }
+
+            options.ConfigureWarnings(warnings =>
+            {
+                warnings.Default(WarningBehavior.Ignore);
+                warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
+            });
+
+            //options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+        }
+
         public static void ApplyEnumToStringValueConverter(this ModelBuilder modelBuilder)
         {
             foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
@@ -211,7 +272,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        private static Type? GetEnumType(Type type)
+        private static Type GetEnumType(Type type)
         {
             if (type.IsEnum)
                 return type;

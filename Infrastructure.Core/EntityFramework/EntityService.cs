@@ -48,7 +48,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 .Where(whereClause)
                 .SingleOrDefaultAsync();
 
-            if (_accessService.CanRead(entity) == false)
+            if (entity == null)
+                return null;
+
+            if (await _accessService.CanReadAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             return entity;
@@ -86,7 +89,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await CreateInternalAsync(dto, entity);
 
-            if (_accessService.CanCreate(entity) == false)
+            if (await _accessService.CanCreateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             await _context.SaveChangesAsync();
@@ -109,7 +112,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await UpdateInternalAsync(dto, entity);
 
-            if (_accessService.CanUpdate(entity) == false)
+            if (await _accessService.CanUpdateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             await _context.SaveChangesAsync();
@@ -127,7 +130,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             _context.Remove(entity);
 
-            if (_accessService.CanDelete(entity) == false)
+            if (await _accessService.CanDeleteAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             await _context.SaveChangesAsync();

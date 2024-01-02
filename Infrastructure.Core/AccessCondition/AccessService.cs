@@ -2,6 +2,7 @@
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.Extensions.Caching.Memory;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
@@ -16,105 +17,149 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             _memoryCache = memoryCache;
         }
 
-        public bool CanRead(BaseEntity entity)
+        public Task<bool> CanReadAsync(BaseEntity entity)
         {
-            var accesscondition = ResolveAccessCondition(entity);
-            var securityEntity = ResolveSecurityEntity(entity);
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
-            return accesscondition.CanRead(securityEntity);
+            return accessConditionInfo.AccessCondition
+                .CanReadAsync(accessConditionInfo.SecurityEntity);
         }
 
         public IQueryable<BaseEntity> CanReadQuery(IQueryable<BaseEntity> query)
         {
-            //var accesscondition = ResolveAccessCondition(entity);
-            //var securityEntity = ResolveSecurityEntity(entity);
+            //var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             //return accesscondition.CanRead(securityEntity);
 
             return query;//TODO
         }
 
-        public bool CanCreate(BaseEntity entity)
+        public Task<bool> CanCreateAsync(BaseEntity entity)
         {
-            var accesscondition = ResolveAccessCondition(entity);
-            var securityEntity = ResolveSecurityEntity(entity);
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
-            return accesscondition.CanCreate(securityEntity);
+            return accessConditionInfo.AccessCondition
+                .CanCreateAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public bool CanUpdate(BaseEntity entity)
+        public Task<bool> CanUpdateAsync(BaseEntity entity)
         {
-            var accesscondition = ResolveAccessCondition(entity);
-            var securityEntity = ResolveSecurityEntity(entity);
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
-            return accesscondition.CanUpdate(securityEntity);
+            return accessConditionInfo.AccessCondition
+                .CanUpdateAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public bool CanDelete(BaseEntity entity)
+        public Task<bool> CanDeleteAsync(BaseEntity entity)
         {
-            var accesscondition = ResolveAccessCondition(entity);
-            var securityEntity = ResolveSecurityEntity(entity);
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
-            return accesscondition.CanDelete(securityEntity);
+            return accessConditionInfo.AccessCondition
+                .CanDeleteAsync(accessConditionInfo.SecurityEntity);
         }
 
-        private IAccessCondition ResolveAccessCondition(BaseEntity entity)
+        public class SecurityParentInfo
         {
-            var entityType = entity.GetType().UnProxy();
+            public Type EntityType { get; set; }
+            public PropertyInfo SecurityProperty { get; set; }
+            public Type AccessConditionType { get; set; }
 
-            var cacheKey = $"{nameof(AccessService)}_{nameof(ResolveAccessCondition)}_{entityType.FullName}";
-
-            if (!_memoryCache.TryGetValue(cacheKey, out IAccessCondition accessCondition))
+            public SecurityParentInfo(Type entityType)
             {
-                var securityEntityType = ResolveSecurityEntityType(entityType);
+                EntityType = entityType;
+            }
+        }
 
-                var accessConditionType = typeof(IAccessCondition<>).MakeGenericType(securityEntityType);
+        public class AccessConditionInfo
+        {
+            public BaseEntity BaseEntity { get; set; }
 
-                accessCondition = _serviceProvider.GetService(accessConditionType) as IAccessCondition;
+            public BaseEntity SecurityEntity { get; set; }
+            public IAccessCondition AccessCondition { get; set; }
+        }
 
-                if (accessCondition == null)
-                    throw new NotImplementedException($"IAccessCondition<{securityEntityType.Name}> missing.");
+        private AccessConditionInfo ResolveAccessConditionInfo(BaseEntity entity)
+        {
+            var accessConditionInfo = new AccessConditionInfo
+            {
+                BaseEntity = entity
+            };
 
-                _memoryCache.Set(cacheKey, accessCondition);
+            var securityInfo = ResolveSecurityParentInfo(entity.GetType());
+
+            if (securityInfo.AccessConditionType != null)
+            {
+                var accessCondition = _serviceProvider.GetService(securityInfo.AccessConditionType) as IAccessCondition;
+
+                accessConditionInfo.AccessCondition = accessCondition;
+                accessConditionInfo.SecurityEntity = entity;
+
+                return accessConditionInfo;
             }
 
-            return accessCondition;
-        }
-
-        private BaseEntity ResolveSecurityEntity(BaseEntity entity)
-        {
-            var entityType = entity.GetType().UnProxy();
-            var securityParentAttribute = entityType.GetAttribute<SecurityParentAttribute>();
-            if (securityParentAttribute != null)
+            if (securityInfo.SecurityProperty != null)
             {
-                var securityParentProperty = entityType.GetProperty(securityParentAttribute.PropertyName);
-
-                var securityParent = securityParentProperty.GetValue(entity, null) as BaseEntity;
+                var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as BaseEntity;
 
                 if (securityParent == null)
-                    throw new InvalidOperationException($"securityparent is null '{entityType.Name}' '{entity.Id}'");
+                    throw new InvalidOperationException($"securityparent is null '{securityInfo.EntityType.Name}' '{entity.Id}'");
 
-                return ResolveSecurityEntity(securityParent);
+                return ResolveAccessConditionInfo(securityParent);
             }
 
-            return entity;
+            throw new InvalidOperationException($"no accessDefinition found for '{securityInfo.EntityType.Name}'");
         }
 
-        private Type ResolveSecurityEntityType(Type entityType)
+        private SecurityParentInfo ResolveSecurityParentInfo(Type entityType)
         {
             entityType = entityType.UnProxy();
-            
-            var securityParentAttribute = entityType.GetAttribute<SecurityParentAttribute>();
-            if (securityParentAttribute != null)
-            {
-                var securityParentProperty = entityType.GetProperty(securityParentAttribute.PropertyName);
 
-                return ResolveSecurityEntityType(securityParentProperty.PropertyType);
+            var cacheKey = $"{nameof(AccessService)}_{nameof(ResolveSecurityParentInfo)}_{entityType.FullName}";
+
+            if (!_memoryCache.TryGetValue(cacheKey, out SecurityParentInfo securityInfo))
+            {
+                securityInfo = new SecurityParentInfo(entityType);
+
+                var accessConditionType = typeof(IAccessCondition<>).MakeGenericType(securityInfo.EntityType);
+                var accessCondition = _serviceProvider.GetService(accessConditionType) as IAccessCondition;
+
+                if (accessCondition != null)
+                {
+                    securityInfo.AccessConditionType = accessConditionType;
+                }
+                else
+                {
+                    var accessConditionFromInterface = securityInfo.EntityType.GetInterfaces()
+                        .Select(ResolveAccessCondition)
+                        .FirstOrDefault(i => i != null);
+
+                    if (accessConditionFromInterface != null)
+                    {
+                        securityInfo.AccessConditionType = accessConditionFromInterface.GetType();
+                    }
+                }
+
+                var securityParentAttribute = securityInfo.EntityType.GetAttribute<SecurityParentAttribute>();
+                if (securityParentAttribute != null)
+                {
+                    securityInfo.SecurityProperty = securityInfo.EntityType.GetProperty(securityParentAttribute.PropertyName);
+                }
+
+                _memoryCache.Set(cacheKey, securityInfo);
             }
 
-            return entityType;
+            return securityInfo;
         }
 
+        private IAccessCondition ResolveAccessCondition(Type entityType)
+        {
+            var accessConditionType = typeof(IAccessCondition<>).MakeGenericType(entityType);
+            var accessCondition = _serviceProvider.GetService(accessConditionType) as IAccessCondition;
 
+            if (accessCondition != null)
+                return accessCondition;
+
+            return null;
+        }
     }
 }

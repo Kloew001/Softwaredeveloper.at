@@ -3,6 +3,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using Microsoft.Extensions.Hosting;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -10,9 +11,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
     {
         private static DtoFactory _factory;
 
-        public static void Configure(DtoFactory factory)
+        public static void UseDtoFactory(this IHost host)
         {
-            _factory = factory;
+            _factory = host.Services.GetRequiredService<DtoFactory>();
         }
 
         public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<BaseEntity> entities)

@@ -4,12 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public interface IEmailMessageDbContext
-    {
-        DbSet<EmailMessage> EmailMessages { get; set; }
-        int SaveChanges();
-    }
-
     [Table(nameof(EmailMessage))]
     public class EmailMessage
     {

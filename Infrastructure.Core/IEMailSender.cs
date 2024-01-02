@@ -6,28 +6,23 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public class EMailHostedService : TimerHostedService
     {
-        public IServiceScopeFactory _serviceScopeFactory;
-        private readonly ILogger<EMailHostedService> _logger;
-
-        private readonly object balanceLock = new object();
 
         public EMailHostedService(
             IServiceScopeFactory serviceScopeFactory,
             ILogger<EMailHostedService> logger,
             IApplicationSettings optionsAccessor,
             IHostApplicationLifetime appLifetime)
-            : base(appLifetime, logger, optionsAccessor)
+            : base(serviceScopeFactory, appLifetime, logger, optionsAccessor)
         {
-            _serviceScopeFactory = serviceScopeFactory;
-            _logger = logger;
         }
 
-        protected override void DoWorkInternal(object state)
+        protected override async Task DoTimeWorkInternalAsync(CancellationToken cancellationToken)
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
@@ -35,19 +30,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 if (distributedLock.TryAcquireLock(nameof(EMailHostedService), 3) == false)
                     throw new InvalidOperationException();
 
-                var ids = GetIds();
+                var ids = await GetIdsAsync();
 
                 if (ids.Any() == false)
                     return;
 
                 foreach (var id in ids)
                 {
-                    HandleMessage(id);
+                    await HandleMessageAsync(id);
                 }
             }
         }
 
-        private void HandleMessage(Guid id)
+        private async Task HandleMessageAsync(Guid id)
         {
             try
             {
@@ -57,9 +52,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         .SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
                     var emailSender = scope.ServiceProvider.GetService<IEMailSender>();
-                    var context = scope.ServiceProvider.GetService<IEmailMessageDbContext>();
+                    var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                    var mailMessage = context.EmailMessages.Single(_ => _.Id == id);
+                    var mailMessage = await context.Set<EmailMessage>().SingleAsync(_ => _.Id == id);
 
                     try
                     {
@@ -74,7 +69,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         _logger.LogError(ex, ex.Message);
                     }
 
-                    context.SaveChanges();
+                    await context.SaveChangesAsync();
                 }
             }
             catch (Exception ex)
@@ -83,22 +78,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             }
         }
 
-        private List<Guid> GetIds()
+        private async Task<List<Guid>> GetIdsAsync()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             {
-                var context = scope.ServiceProvider.GetService<IEmailMessageDbContext>();
+                var context = scope.ServiceProvider.GetService<IDbContext>();
 
                 var date = DateTime.Now.AddSeconds(-1 * _hostedServicesConfiguration.InitialDelayInSeconds);
 
                 var mailMessagesIds =
-                    context.EmailMessages
+                    await context.Set<EmailMessage>()
                         .Where(_ => _.Status == EmailMessageStatusType.Created &&
                                     _.DateCreated < date)
                         .OrderByDescending(_ => _.DateCreated)
                         .Select(_ => _.Id)
                         .Take(_hostedServicesConfiguration.BatchSize)
-                        .ToList();
+                        .ToListAsync();
+
                 return mailMessagesIds;
             }
         }
@@ -126,7 +122,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         }
     }
 
-    public class SmtpEMailSender : IEMailSender
+    public class SmtpEMailSender : IEMailSender, ITypedScopedService<IEMailSender>
     {
         private EMailConfiguration _config { get; set; }
 
@@ -193,9 +189,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
                     client.Send(mailMessage);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    throw e;
+                    throw;
                 }
                 finally
                 {
