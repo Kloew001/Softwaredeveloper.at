@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -16,6 +17,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         DbSet<TEntity> Set<TEntity>()
             where TEntity : class;
+
+        TEntity CreateProxy<TEntity>(params object[] constructorArguments)
+                where TEntity : class;
 
         EntityEntry<TEntity> Add<TEntity>(TEntity entity)
             where TEntity : class;
@@ -32,29 +36,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 
-
-
     public abstract class BaseDbContext : DbContext,
         IDbContext,
         ITypedScopedService<IDbContext>
 
     {
-        private readonly IServiceProvider _serviceProvider;
+        protected IServiceProvider ServiceProvider { get; }
 
-        public BaseDbContext(IServiceProvider provider)
+        public BaseDbContext(IServiceProvider serviceProvider)
         {
-            _serviceProvider = provider;
+            ServiceProvider = serviceProvider;
         }
 
-        //public BaseDbContext(DbContextOptions options)
-        //    : base(options)
-        //{
-        //}
-
-        public BaseDbContext(DbContextOptions options, IServiceProvider provider)
+        public BaseDbContext(DbContextOptions options, IServiceProvider serviceProvider)
             : base(options)
         {
-            _serviceProvider = provider;
+            ServiceProvider = serviceProvider;
         }
 
         public virtual DbSet<ApplicationUser> ApplicationUsers { get; set; }
@@ -102,6 +99,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        
         {
             BeforeSaveChanges();
 
@@ -110,47 +108,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         private void BeforeSaveChanges()
         {
-            var currentUserService = _serviceProvider.GetRequiredService<ICurrentUserService>();
+            var c = this.GetService<ICurrentUserService>();
 
-            var changedEntries = ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is ChangeTrackedEntity && (
-                    e.State == EntityState.Added ||
-                    e.State == EntityState.Modified))
-                .ToList();
+            c = ServiceProvider.GetService<ICurrentUserService>();
 
-            var deletedEntries = ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
-                .ToList();
+            this.UpdateChangeTrackedEntity(c);
+        }
 
-            var now = DateTime.Now;
-
-            foreach (var entityEntry in changedEntries)
-            {
-                var currentUserId = currentUserService?.GetCurrentUserId();
-                if (currentUserId == null)
-                    throw new InvalidOperationException("CurrentUser not set.");
-
-                var baseEntity = (ChangeTrackedEntity)entityEntry.Entity;
-
-                baseEntity.DateModified = now;
-                baseEntity.ModifiedById = currentUserId.Value;
-
-                if (entityEntry.State == EntityState.Added)
-                {
-                    baseEntity.DateCreated = now;
-                    baseEntity.CreatedById = currentUserId.Value;
-                }
-                else if (entityEntry.State == EntityState.Modified)
-                {
-                    var originalDateCreated = entityEntry.OriginalValues.GetValue<DateTime>(nameof(ChangeTrackedEntity.DateCreated));
-                    var originalCreatedById = entityEntry.OriginalValues.GetValue<Guid>(nameof(ChangeTrackedEntity.CreatedById));
-
-                    baseEntity.DateCreated = originalDateCreated;
-                    baseEntity.CreatedById = originalCreatedById;
-                }
-            }
+        TEntity IDbContext.CreateProxy<TEntity>(params object[] constructorArguments) where TEntity : class
+        {
+            return ProxiesExtensions.CreateProxy<TEntity>(this, constructorArguments);
         }
 
         private void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
@@ -205,7 +172,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             //_services.AddScoped<Context>(sp => sp.GetRequiredService<ContextScopedFactory>().CreateDbContext());
             //_services.AddScoped<IDbContext>(sp => sp.GetRequiredService<Context>());
 
-            services.AddDbContext<TDbContext>((o) => o.DbContextOptions(configuration, hostEnvironment));
+            services.AddDbContext<TDbContext>((sp, o) => o.DbContextOptions(sp, configuration, hostEnvironment));
         }
 
         public static async Task UpdateDatabaseAsync<TDbContext>(this IHost host)
@@ -219,6 +186,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public static void DbContextOptions(this DbContextOptionsBuilder options,
+            IServiceProvider serviceProvider,
             IConfiguration configuration,
             IHostEnvironment hostEnvironment)
         {
@@ -226,6 +194,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             options.UseNpgsql(connectionString);
             options.UseLazyLoadingProxies();
+
+            /* 
+             * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
+            */
 
             if (hostEnvironment.IsDevelopment())
             {
@@ -283,5 +255,73 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             return null;
         }
+
+        public static void UpdateChangeTrackedEntity(this DbContext context, ICurrentUserService currentUserService)
+        {
+            DateTime utcNow = DateTime.UtcNow;
+
+            var changedEntries = context.ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is ChangeTrackedEntity && (
+                    e.State == EntityState.Added ||
+                    e.State == EntityState.Modified))
+                .ToList();
+
+            //var deletedEntries = context.ChangeTracker
+            //    .Entries()
+            //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
+            //    .ToList();
+
+            var now = DateTime.Now;
+
+            foreach (var entityEntry in changedEntries)
+            {
+                var currentUserId = currentUserService?.GetCurrentUserId();
+                if (currentUserId == null)
+                    throw new InvalidOperationException("CurrentUser not set.");
+
+                var baseEntity = (ChangeTrackedEntity)entityEntry.Entity;
+
+                baseEntity.DateModified = now;
+                baseEntity.ModifiedById = currentUserId.Value;
+
+                if (entityEntry.State == EntityState.Added)
+                {
+                    baseEntity.DateCreated = now;
+                    baseEntity.CreatedById = currentUserId.Value;
+                }
+                else if (entityEntry.State == EntityState.Modified)
+                {
+                    var originalDateCreated = entityEntry.OriginalValues.GetValue<DateTime>(nameof(ChangeTrackedEntity.DateCreated));
+                    var originalCreatedById = entityEntry.OriginalValues.GetValue<Guid>(nameof(ChangeTrackedEntity.CreatedById));
+
+                    baseEntity.DateCreated = originalDateCreated;
+                    baseEntity.CreatedById = originalCreatedById;
+                }
+            }
+        }
     }
+
+    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedService
+    //{
+    //    private readonly ICurrentUserService _currentUserService;
+    //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)
+    //    {
+    //        _currentUserService = currentUserService;
+    //    }
+
+    //    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+    //        DbContextEventData eventData,
+    //        InterceptionResult<int> result,
+    //        CancellationToken cancellationToken = default)
+    //    {
+    //        if (eventData.Context is not null)
+    //        {
+    //            UpdateChangeTrackedEntity(eventData.Context);
+    //        }
+
+    //        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    //    }
+
+    //}
 }

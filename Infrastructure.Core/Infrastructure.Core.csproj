@@ -17,7 +17,7 @@
     <PropertyGroup>
     <PackageId>SoftwaredeveloperDotAt.Infrastructure.Core</PackageId>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://https://github.com/Kloew001/Softwaredeveloper.at</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Kloew001/Softwaredeveloper.at</RepositoryUrl>
   </PropertyGroup>
   
   <PropertyGroup>
