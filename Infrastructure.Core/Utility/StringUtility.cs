@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
@@ -65,6 +66,29 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             }
 
             return stringBuilder.ToString();
+        }
+
+        public static string HashString(this string text, string salt = "")
+        {
+            if (String.IsNullOrEmpty(text))
+            {
+                return String.Empty;
+            }
+
+            // Uses SHA256 to create the hash
+            using (var sha = SHA256.Create())
+            {
+                // Convert the string to a byte array first, to be processed
+                byte[] textBytes = System.Text.Encoding.UTF8.GetBytes(text + salt);
+                byte[] hashBytes = sha.ComputeHash(textBytes);
+
+                // Convert back to a string, removing the '-' that BitConverter adds
+                string hash = BitConverter
+                    .ToString(hashBytes)
+                    .Replace("-", String.Empty);
+
+                return hash;
+            }
         }
     }
 }

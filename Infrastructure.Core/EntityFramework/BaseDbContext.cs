@@ -127,12 +127,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             {
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(ChangeTrackedEntity.DateCreated))
-                    .HasDefaultValueSql("CURRENT_DATE ")
-                    .ValueGeneratedOnAdd();
+                    .HasDefaultValueSql("NOW()");
+                //.ValueGeneratedOnAdd();
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(ChangeTrackedEntity.DateModified))
-                    .HasDefaultValueSql("CURRENT_DATE")
-                    .ValueGeneratedOnAddOrUpdate();
+                    .HasDefaultValueSql("NOW()");
+                    //.ValueGeneratedOnAddOrUpdate();
 
                 modelBuilder.Entity(entityType.ClrType)
                     .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
