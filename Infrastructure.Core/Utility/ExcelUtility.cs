@@ -23,7 +23,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             .ToList()
             .ForEach(cell =>
             {
-                headerValues.Add(cell.GetValue<string>());
+                headerValues.Add(cell.GetString());
             });
 
             return headerValues;
@@ -46,17 +46,35 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                 .ToList()
                 .ForEach(cell =>
                 {
-                    dt.Columns.Add(cell.GetValue<string>());
+                    var cellHeader = cell.GetString();
+                    //cell.DataType
+                    dt.Columns.Add(new DataColumn(cellHeader));
                 });
 
                 foreach (IXLRow row in workSheet.RowsUsed().Skip(1))
                 {
-                    DataRow dr = dt.NewRow();
+                    DataRow dataRow = dt.NewRow();
+
+                    //foreach (IXLCell cell in row.Cells(row.FirstCellUsed().Address.ColumnNumber, row.LastCellUsed().Address.ColumnNumber))
+
                     for (int i = 0; i < dt.Columns.Count; i++)
                     {
-                        dr[i] = row.Cell(i + 1).Value.ToString();
+                        var cell = row.Cell(i + 1);
+
+                        if (cell.DataType == XLDataType.Text)
+                            dataRow[i] = cell.GetString();
+                        else if (cell.DataType == XLDataType.Number)
+                            dataRow[i] = cell.GetDouble();
+                        else if (cell.DataType == XLDataType.Boolean)
+                            dataRow[i] = cell.GetBoolean();
+                        else if (cell.DataType == XLDataType.DateTime)
+                            dataRow[i] = cell.GetDateTime();
+                        else if (cell.DataType == XLDataType.TimeSpan)
+                            dataRow[i] = cell.GetTimeSpan();
+                        else
+                            dataRow[i] = cell.Value.ToString();
                     }
-                    dt.Rows.Add(dr);
+                    dt.Rows.Add(dataRow);
                 }
 
                 dataSet.Tables.Add(dt);

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using System.ComponentModel;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -41,18 +42,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         ITypedScopedService<IDbContext>
 
     {
-        protected IServiceProvider ServiceProvider { get; }
-
-        public BaseDbContext(IServiceProvider serviceProvider)
+        protected BaseDbContext()
         {
-            ServiceProvider = serviceProvider;
         }
 
-        public BaseDbContext(DbContextOptions options, IServiceProvider serviceProvider)
-            : base(options)
+        protected BaseDbContext(DbContextOptions options) : base(options)
         {
-            ServiceProvider = serviceProvider;
         }
+
+        //protected IServiceProvider ServiceProvider { get; }
+
+        //public BaseDbContext(IServiceProvider serviceProvider)
+        //{
+        //    ServiceProvider = serviceProvider;
+        //}
+
+        //public BaseDbContext(DbContextOptions options, IServiceProvider serviceProvider)
+        //    : base(options)
+        //{
+        //    ServiceProvider = serviceProvider;
+        //}
 
         public virtual DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
@@ -69,6 +78,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<ApplicationRoleClaim> ApplicationRoleClaims { get; set; }
 
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
+
+        public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -99,7 +110,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
-        
+
         {
             BeforeSaveChanges();
 
@@ -108,11 +119,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         private void BeforeSaveChanges()
         {
-            var c = this.GetService<ICurrentUserService>();
-
-            c = ServiceProvider.GetService<ICurrentUserService>();
-
-            this.UpdateChangeTrackedEntity(c);
+            this.UpdateChangeTrackedEntity();
         }
 
         TEntity IDbContext.CreateProxy<TEntity>(params object[] constructorArguments) where TEntity : class
@@ -132,7 +139,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(ChangeTrackedEntity.DateModified))
                     .HasDefaultValueSql("NOW()");
-                    //.ValueGeneratedOnAddOrUpdate();
+                //.ValueGeneratedOnAddOrUpdate();
 
                 modelBuilder.Entity(entityType.ClrType)
                     .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
@@ -148,7 +155,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public async Task UpdateDatabaseAsync()
         {
-
             var databaseCreator = this.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
             if (!databaseCreator.Exists())
                 databaseCreator.Create();
@@ -231,10 +237,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public static void ApplyDateTime(this ModelBuilder modelBuilder)
         {
+            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+                v => v.ToLocalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified));
+
+            var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue ? v.Value.ToLocalTime() : null,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Unspecified) : null);
+
             foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
             {
-                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                if (property.ClrType == typeof(DateTime))
                 {
+                    property.SetValueConverter(dateTimeConverter);
+                    property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
+                }
+                else if (property.ClrType == typeof(DateTime?))
+                {
+                    property.SetValueConverter(nullableDateTimeConverter);
                     property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
                 }
                 else if (property.ClrType == typeof(TimeSpan) || property.ClrType == typeof(TimeSpan?))
@@ -256,8 +276,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return null;
         }
 
-        public static void UpdateChangeTrackedEntity(this DbContext context, ICurrentUserService currentUserService)
+        public static void UpdateChangeTrackedEntity(this DbContext context)
         {
+            var currentUserService = context.GetService<ICurrentUserService>();
+
+            //var currentUserService = ServiceProvider.GetService<ICurrentUserService>();
+
             DateTime utcNow = DateTime.UtcNow;
 
             var changedEntries = context.ChangeTracker
@@ -267,10 +291,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     e.State == EntityState.Modified))
                 .ToList();
 
-            //var deletedEntries = context.ChangeTracker
-            //    .Entries()
-            //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
-            //    .ToList();
+            var deletedEntries = context.ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
+                .ToList();
 
             var now = DateTime.Now;
 

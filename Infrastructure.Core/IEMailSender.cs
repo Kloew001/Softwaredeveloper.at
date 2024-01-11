@@ -21,24 +21,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             : base(serviceScopeFactory, appLifetime, logger, optionsAccessor)
         {
         }
-
-        protected override async Task DoTimeWorkInternalAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteInternalAsync(CancellationToken cancellationToken)
         {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+            var ids = await GetIdsAsync();
+
+            if (ids.Any() == false)
+                return;
+
+            foreach (var id in ids)
             {
-                if (distributedLock.TryAcquireLock(nameof(EMailHostedService), 3) == false)
-                    throw new InvalidOperationException();
-
-                var ids = await GetIdsAsync();
-
-                if (ids.Any() == false)
-                    return;
-
-                foreach (var id in ids)
-                {
-                    await HandleMessageAsync(id);
-                }
+                await HandleMessageAsync(id);
             }
         }
 
@@ -126,9 +118,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
     {
         private EMailConfiguration _config { get; set; }
 
-        public SmtpEMailSender(IOptionsMonitor<ApplicationSettings> optionsAccessor)
+        public SmtpEMailSender(IApplicationSettings applicationSettings)
         {
-            _config = optionsAccessor.CurrentValue.EMailConfiguration;
+            _config = applicationSettings.EMailConfiguration;
         }
 
 

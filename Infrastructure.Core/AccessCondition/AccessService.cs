@@ -6,19 +6,28 @@ using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
+    public class SecurityFreeSection : Section
+    {
+    }
+
     public class AccessService : IScopedService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;
+        private readonly SecurityFreeSection _securityFreeSection;
 
-        public AccessService(IServiceProvider serviceProvider, IMemoryCache memoryCache)
+        public AccessService(IServiceProvider serviceProvider, IMemoryCache memoryCache, SecurityFreeSection securityFreeSection)
         {
             _serviceProvider = serviceProvider;
             _memoryCache = memoryCache;
+            _securityFreeSection = securityFreeSection;
         }
 
         public Task<bool> CanReadAsync(BaseEntity entity)
         {
+            if (_securityFreeSection.IsActive)
+                return Task.FromResult(true);
+
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             return accessConditionInfo.AccessCondition
@@ -27,6 +36,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public IQueryable<BaseEntity> CanReadQuery(IQueryable<BaseEntity> query)
         {
+            if (_securityFreeSection.IsActive)
+                return query;
+
             //var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             //return accesscondition.CanRead(securityEntity);
@@ -36,6 +48,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanCreateAsync(BaseEntity entity)
         {
+            if (_securityFreeSection.IsActive)
+                return Task.FromResult(true);
+
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             return accessConditionInfo.AccessCondition
@@ -44,6 +59,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanUpdateAsync(BaseEntity entity)
         {
+            if (_securityFreeSection.IsActive)
+                return Task.FromResult(true);
+
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             return accessConditionInfo.AccessCondition
@@ -52,6 +70,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanDeleteAsync(BaseEntity entity)
         {
+            if (_securityFreeSection.IsActive)
+                return Task.FromResult(true);
+
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
             return accessConditionInfo.AccessCondition

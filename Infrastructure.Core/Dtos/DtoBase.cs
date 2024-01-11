@@ -1,9 +1,12 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
-    public class DtoBase
+    public interface IDto
+    {
+        Guid? Id { get; set; }
+    }
+
+    public class DtoBase : IDto
     {
         public Guid? Id { get; set; }
-
-        public byte[] Timestamp { get; set; }
     }
 }
