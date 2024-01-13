@@ -1,5 +1,32 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
+    public class SectionManager : IScopedService
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public SectionManager(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public SectionScope CreateSectionScope<T>(bool isActive = true) where T : Section
+        {
+            var section = _serviceProvider.GetService<T>();
+
+            return section.CreateScope(isActive);
+        }
+
+        public bool IsActive<T>() 
+            where T : Section
+        {
+            var section = _serviceProvider.GetService<T>();
+
+            return section.IsActive;
+        }
+    }
+
     public abstract class Section : IScopedService
     {
         public List<SectionScope> Scopes { get; set; }

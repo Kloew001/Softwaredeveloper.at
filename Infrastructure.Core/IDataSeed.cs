@@ -45,7 +45,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                     {
                         var dataSeedType = dataSeed.GetType();
 
-                        tasks.Add(Task.Factory.StartNewWithCurrentUser(scope.ServiceProvider, async (serviceScopeInner) =>
+                        tasks.Add(TaskExtension.StartNewWithCurrentUser(scope.ServiceProvider, async (serviceScopeInner) =>
                         {
                             var dataSeedInner = serviceScopeInner.ServiceProvider.GetService(dataSeedType) as IDataSeed;
                             await dataSeedInner.SeedAsync();

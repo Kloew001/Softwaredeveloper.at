@@ -56,7 +56,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             _logger.LogInformation($"IHostedService.StartAsync for {Name}");
 
-            _appLifetime.ApplicationStarted.Register(async () => 
+            _appLifetime.ApplicationStarted.Register(async () =>
                 await ExecuteAsync(cancellationToken));
 
             return Task.CompletedTask;
@@ -64,35 +64,42 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         protected virtual async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            if (_hostedServicesConfiguration == null ||
-                _hostedServicesConfiguration?.Enabled != true)
-            {
-                _logger.LogWarning($"IHostedService {Name} do not have configuration");
-                return;
-            }
-
-            _logger.LogInformation($"IHostedService execute for {Name}");
-
             try
             {
-                await CreateOrUpdateBackgroundServiceInfo();
-
-                using (var scope = _serviceScopeFactory.CreateScope())
-                using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+                if (_hostedServicesConfiguration == null ||
+                _hostedServicesConfiguration?.Enabled != true)
                 {
-                    if (distributedLock.TryAcquireLock(Name, 3) == false)
-                        throw new InvalidOperationException();
-
-                    await ExecuteInternalAsync(cancellationToken);
+                    _logger.LogWarning($"IHostedService {Name} do not have configuration");
+                    return;
                 }
 
-                await FinsihedBackgroundServiceInfo();
+                _logger.LogInformation($"IHostedService execute for {Name}");
+
+                try
+                {
+                    await CreateOrUpdateBackgroundServiceInfo();
+
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+                    {
+                        if (distributedLock.TryAcquireLock(Name, 3) == false)
+                            throw new InvalidOperationException();
+
+                        await ExecuteInternalAsync(cancellationToken);
+                    }
+
+                    await FinsihedBackgroundServiceInfo();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
+
+                    await ErrorBackgroundServiceInfo(ex);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
-
-                await ErrorBackgroundServiceInfo(ex);
+                _logger.LogError(ex, $"Fatal Error: '{Name}'");
             }
         }
 

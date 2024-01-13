@@ -2,12 +2,11 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public static class TaskFactoryExtensions
+    public static class TaskExtension
     {
-
-        public static Task StartNewWithScope(this TaskFactory taskFactory, IServiceProvider serviceProvider, Func<IServiceScope, Task> action)
+        public static Task StartNewWithScope(IServiceProvider serviceProvider, Func<IServiceScope, Task> action)
         {
-            return taskFactory.StartNew(async () =>
+            return Task.Run(async () => 
             {
                 using (var serviceScope = serviceProvider.CreateScope())
                 {
@@ -16,12 +15,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             });
         }
 
-        public static Task StartNewWithCurrentUser(this TaskFactory taskFactory, IServiceProvider serviceProvider, Func<IServiceScope, Task> action)
+        public static Task StartNewWithCurrentUser(IServiceProvider serviceProvider, Func<IServiceScope, Task> action)
         {
             var currentUserService = serviceProvider.GetService<ICurrentUserService>();
             var currentUserId = currentUserService.GetCurrentUserId();
 
-            return StartNewWithScope(taskFactory, serviceProvider, async (serviceScope) => {
+            return StartNewWithScope(serviceProvider, async (serviceScope) => {
                 var currentUserService = serviceScope.ServiceProvider.GetService<ICurrentUserService>();
                 currentUserService.SetCurrentUserId(currentUserId);
                 await action(serviceScope);

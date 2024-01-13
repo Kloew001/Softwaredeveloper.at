@@ -14,18 +14,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;
-        private readonly SecurityFreeSection _securityFreeSection;
+        private readonly SectionManager _sectionManager;
 
-        public AccessService(IServiceProvider serviceProvider, IMemoryCache memoryCache, SecurityFreeSection securityFreeSection)
+        public AccessService(IServiceProvider serviceProvider, IMemoryCache memoryCache, SectionManager sectionManager)
         {
             _serviceProvider = serviceProvider;
             _memoryCache = memoryCache;
-            _securityFreeSection = securityFreeSection;
+            _sectionManager = sectionManager;
         }
 
         public Task<bool> CanReadAsync(BaseEntity entity)
         {
-            if (_securityFreeSection.IsActive)
+            if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
@@ -36,7 +36,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public IQueryable<BaseEntity> CanReadQuery(IQueryable<BaseEntity> query)
         {
-            if (_securityFreeSection.IsActive)
+            if (_sectionManager.IsActive<SecurityFreeSection>())
                 return query;
 
             //var accessConditionInfo = ResolveAccessConditionInfo(entity);
@@ -48,7 +48,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanCreateAsync(BaseEntity entity)
         {
-            if (_securityFreeSection.IsActive)
+            if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
@@ -59,7 +59,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanUpdateAsync(BaseEntity entity)
         {
-            if (_securityFreeSection.IsActive)
+            if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
@@ -70,7 +70,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanDeleteAsync(BaseEntity entity)
         {
-            if (_securityFreeSection.IsActive)
+            if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);

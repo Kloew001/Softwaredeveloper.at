@@ -17,32 +17,39 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            if (_hostedServicesConfiguration == null ||
+            try
+            {
+                if (_hostedServicesConfiguration == null ||
                 _hostedServicesConfiguration?.Enabled != true)
-            {
-                _logger.LogWarning($"IHostedService {Name} do not have configuration");
-                return;
+                {
+                    _logger.LogWarning($"IHostedService {Name} do not have configuration");
+                    return;
+                }
+
+                _logger.LogInformation($"IHostedService execute for {Name}");
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await CreateOrUpdateBackgroundServiceInfo();
+
+                        await ExecuteInternalAsync(cancellationToken);
+
+                        await FinsihedBackgroundServiceInfo();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
+
+                        await ErrorBackgroundServiceInfo(ex);
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(_hostedServicesConfiguration.IntervalInSeconds), cancellationToken);
+                }
             }
-
-            _logger.LogInformation($"IHostedService execute for {Name}");
-            while (!cancellationToken.IsCancellationRequested)
+            catch (Exception ex)
             {
-                try
-                {
-                    await CreateOrUpdateBackgroundServiceInfo();
-
-                    await ExecuteInternalAsync(cancellationToken);
-
-                    await FinsihedBackgroundServiceInfo();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
-
-                    await ErrorBackgroundServiceInfo(ex);
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(_hostedServicesConfiguration.IntervalInSeconds), cancellationToken);
+                _logger.LogError(ex, $"Fatal Error: '{Name}'");
             }
         }
     }
