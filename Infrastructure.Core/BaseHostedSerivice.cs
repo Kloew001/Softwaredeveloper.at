@@ -80,7 +80,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                     await CreateOrUpdateBackgroundServiceInfo();
 
                     using (var scope = _serviceScopeFactory.CreateScope())
-                    using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+                    using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
                     {
                         if (distributedLock.TryAcquireLock(Name, 3) == false)
                             throw new InvalidOperationException();
@@ -123,7 +123,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         protected virtual async Task CreateOrUpdateBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
                 if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
                     throw new InvalidOperationException();
@@ -148,7 +148,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         protected virtual async Task FinsihedBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
                 if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
                     throw new InvalidOperationException();
@@ -167,7 +167,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<DistributedLock>())
+            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
                 if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
                     throw new InvalidOperationException();

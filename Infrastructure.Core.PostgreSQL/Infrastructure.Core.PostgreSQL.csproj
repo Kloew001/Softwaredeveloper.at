@@ -15,7 +15,7 @@
   </ItemGroup>
   -->
     <PropertyGroup>
-    <PackageId>SoftwaredeveloperDotAt.Infrastructure.Core</PackageId>
+    <PackageId>SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL</PackageId>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Kloew001/Softwaredeveloper.at</RepositoryUrl>
   </PropertyGroup>
@@ -31,8 +31,8 @@
 	
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-    <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>SoftwaredeveloperDotAt.PostgreSQL.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AssemblyName>SoftwaredeveloperDotAt.PostgreSQL.$(MSBuildProjectName)</AssemblyName>
   </PropertyGroup>
   
   <ItemGroup>
@@ -41,8 +41,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.102.1" />
-    <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -55,6 +53,12 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />	
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure.Core\Infrastructure.Core.csproj" />
+  </ItemGroup>
+
 
 </Project>

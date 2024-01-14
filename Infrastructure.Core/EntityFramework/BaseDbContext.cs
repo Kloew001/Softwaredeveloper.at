@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.DependencyInjection;
-using System.ComponentModel;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -54,13 +51,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.ApplyEnumToStringValueConverter();
-            modelBuilder.ApplyDateTime();
-            modelBuilder.ApplyChangeTrackedEntity();
+            var dbContextHandler = this.GetService<IDbContextHandler>();
 
-            modelBuilder.AppApplicationUser();
+            if (dbContextHandler == null)
+                throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
+
+            dbContextHandler.ApplyEnumToStringValueConverter(modelBuilder);
+            dbContextHandler.ApplyDateTime(modelBuilder);
+            dbContextHandler.ApplyChangeTrackedEntity(modelBuilder);
+            dbContextHandler.ApplyApplicationUser(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(dbContextHandler.GetType().Assembly);
         }
 
         public override int SaveChanges()
@@ -79,44 +81,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         private void BeforeSaveChanges()
         {
-            this.UpdateChangeTrackedEntity();
+            var dbContextHandler = this.GetService<IDbContextHandler>();
+
+            if (dbContextHandler == null)
+                throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
+
+            dbContextHandler.UpdateChangeTrackedEntity(this);
         }
 
         TEntity IDbContext.CreateProxy<TEntity>(params object[] constructorArguments) where TEntity : class
         {
             return ProxiesExtensions.CreateProxy<TEntity>(this, constructorArguments);
         }
-
-        public async Task UpdateDatabaseAsync()
-        {
-            var databaseCreator = this.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
-            if (!databaseCreator.Exists())
-                databaseCreator.Create();
-
-            await this.Database.MigrateAsync();
-        }
     }
-
-    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedService
-    //{
-    //    private readonly ICurrentUserService _currentUserService;
-    //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)
-    //    {
-    //        _currentUserService = currentUserService;
-    //    }
-
-    //    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
-    //        DbContextEventData eventData,
-    //        InterceptionResult<int> result,
-    //        CancellationToken cancellationToken = default)
-    //    {
-    //        if (eventData.Context is not null)
-    //        {
-    //            UpdateChangeTrackedEntity(eventData.Context);
-    //        }
-
-    //        return base.SavingChangesAsync(eventData, result, cancellationToken);
-    //    }
-
-    //}
 }

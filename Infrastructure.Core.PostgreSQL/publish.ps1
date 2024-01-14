@@ -1,9 +1,9 @@
 
-Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core
+Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core.PostgreSQL
 
-Set-Variable -Name "VERSION" -Value "0.0.0.63"
+Set-Variable -Name "VERSION" -Value "0.0.0.4"
 
-Set-Variable -Name "package" -Value "SoftwaredeveloperDotAt.Infrastructure.Core"
+Set-Variable -Name "package" -Value "SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL"
 
 dotnet build --configuration Debug
 dotnet pack --configuration Debug /p:Version=$VERSION --no-build --output .\nuget

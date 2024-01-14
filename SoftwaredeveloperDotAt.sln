@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Core", "Infrastructure.Core\Infrastructure.Core.csproj", "{A2BE2B92-4AB6-49C5-90B4-48731C9D731D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Core.PostgreSQL", "Infrastructure.Core.PostgreSQL\Infrastructure.Core.PostgreSQL.csproj", "{29BD32E8-0687-4445-9943-6FBCBDB2B7AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{A2BE2B92-4AB6-49C5-90B4-48731C9D731D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2BE2B92-4AB6-49C5-90B4-48731C9D731D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2BE2B92-4AB6-49C5-90B4-48731C9D731D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29BD32E8-0687-4445-9943-6FBCBDB2B7AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29BD32E8-0687-4445-9943-6FBCBDB2B7AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29BD32E8-0687-4445-9943-6FBCBDB2B7AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29BD32E8-0687-4445-9943-6FBCBDB2B7AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
