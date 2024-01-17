@@ -3,6 +3,9 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
+using DocumentFormat.OpenXml.Vml.Office;
+using Microsoft.EntityFrameworkCore;
+using DocumentFormat.OpenXml.InkML;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
@@ -16,7 +19,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         private readonly IMemoryCache _memoryCache;
         private readonly SectionManager _sectionManager;
 
-        public AccessService(IServiceProvider serviceProvider, IMemoryCache memoryCache, SectionManager sectionManager)
+        public AccessService(
+            IServiceProvider serviceProvider, 
+            IMemoryCache memoryCache, 
+            SectionManager sectionManager)
         {
             _serviceProvider = serviceProvider;
             _memoryCache = memoryCache;
@@ -25,6 +31,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanReadAsync(BaseEntity entity)
         {
+            if (entity == null)
+                return Task.FromResult(true);
+
             if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
@@ -41,13 +50,27 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             //var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
-            //return accesscondition.CanRead(securityEntity);
+
+            //var query = _context.Set<Meldungseintrag>()
+            //    .Where(_ => EF.Property<string>(
+            //                EF.Property<Organisation>(
+            //                EF.Property<Meldung>(_, "Meldung"),
+            //                "Organisation"), "Name") != null);
+
+
+            //IQueryable<IEntity> securityParentQuery = null;
+
+            //securityParentQuery = accessConditionInfo.AccessCondition
+            //    .CanReadQuery(securityParentQuery);
 
             return query;//TODO
         }
 
         public Task<bool> CanCreateAsync(BaseEntity entity)
         {
+            if (entity == null)
+                return Task.FromResult(true);
+
             if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
@@ -59,6 +82,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanUpdateAsync(BaseEntity entity)
         {
+            if (entity == null)
+                return Task.FromResult(true);
+
             if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 
@@ -70,6 +96,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public Task<bool> CanDeleteAsync(BaseEntity entity)
         {
+            if (entity == null)
+                return Task.FromResult(true);
+
             if (_sectionManager.IsActive<SecurityFreeSection>())
                 return Task.FromResult(true);
 

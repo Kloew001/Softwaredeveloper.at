@@ -31,9 +31,15 @@
 	
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <RootNamespace>SoftwaredeveloperDotAt.PostgreSQL.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-    <AssemblyName>SoftwaredeveloperDotAt.PostgreSQL.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="nuget\**" />
+    <EmbeddedResource Remove="nuget\**" />
+    <None Remove="nuget\**" />
+  </ItemGroup>
   
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" Visible="false" />
