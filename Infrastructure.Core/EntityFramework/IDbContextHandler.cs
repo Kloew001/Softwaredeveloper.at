@@ -9,7 +9,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public interface IDbContextHandler
     {
-        Task UpdateDatabaseAsync(IHost host);
+        Task UpdateDatabaseAsync<TDbContext>(IHost host)
+            where TDbContext : DbContext;
 
         void ApplyDateTime(ModelBuilder modelBuilder);
         void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder);
@@ -21,7 +22,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
     public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonService<IDbContextHandler>
     {
-        public abstract Task UpdateDatabaseAsync(IHost host);
+        public abstract Task UpdateDatabaseAsync<TDbContext>(IHost host)
+            where TDbContext : DbContext;
 
         public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
         public abstract void ApplyDateTime(ModelBuilder modelBuilder);

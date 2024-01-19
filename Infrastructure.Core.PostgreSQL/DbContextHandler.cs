@@ -9,16 +9,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class PostgreSQLDbContextHandler : BaseDbContextHandler
     {
-        public override async Task UpdateDatabaseAsync(IHost host)
+        public override async Task UpdateDatabaseAsync<TDbContext>(IHost host)
         {
             using (var scope = host.Services.CreateScope())
             {
-                var context = scope.ServiceProvider.GetRequiredService<IDbContext>() as DbContext;
+                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
 
                 var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
 
                 if (!databaseCreator.Exists())
+                {
+                    scope.ServiceProvider
+                    .GetService<IApplicationSettings>()
+                    .HostedServicesConfiguration[
+                    nameof(DataSeedHostedService)].Enabled = true;
+
                     databaseCreator.Create();
+                }
 
                 await context.Database.MigrateAsync();
             }

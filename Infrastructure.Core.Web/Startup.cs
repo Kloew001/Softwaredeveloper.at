@@ -26,9 +26,6 @@ namespace Infrastructure.Core.Web
             builder.AddCors();
             builder.AddRateLimiter();
 
-            //var domainStartup = new DomainStartup();
-            //domainStartup.ConfigureServices(builder.Services, builder.Environment, builder.Configuration);
-
             builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
         }
 
