@@ -1,27 +1,43 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public class StartupCore
+    public class StartupCore<TApplicationSettings>
+        where TApplicationSettings : class, IApplicationSettings, new()
     {
-        protected IConfiguration _configuration;
-        protected IHostEnvironment _hostEnvironment;
-        protected IServiceCollection _services;
+        protected IConfiguration Configuration { get; set; }
+        protected IHostEnvironment HostEnvironment { get; set; }
+        protected IServiceCollection Services { get; set; }
 
-        public virtual void ConfigureServices(
-            IServiceCollection services,
-            IHostEnvironment hostEnvironment,
-            IConfiguration configuration)
+        public virtual void ConfigureServices(IHostApplicationBuilder builder)
         {
-            _services = services;
-            _hostEnvironment = hostEnvironment;
-            _configuration = configuration;
+            Services = builder.Services;
+            Configuration = builder.Configuration;
+            HostEnvironment = builder.Environment;
 
-            services.RegisterSelfRegisterServices();
-            services.RegisterAllHostedService();
+            Services.Configure<TApplicationSettings>(Configuration);
+
+            Services.AddSingleton<IApplicationSettings>((sp) =>
+            {
+                var value = sp
+                .GetRequiredService<IOptionsMonitor<TApplicationSettings>>()
+                .CurrentValue;
+
+                return value;
+            });
+
+            Services.AddHttpClient();
+
+            Services.RegisterSelfRegisterServices();
+            Services.RegisterAllHostedService();
+
+            if (HostEnvironment == null || HostEnvironment.IsDevelopment())
+                Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         }
 
         public virtual void ConfigureApp(IHost host)

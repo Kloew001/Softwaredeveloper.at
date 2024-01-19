@@ -25,7 +25,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             {
                 var connectionString = configuration.GetConnectionString("DbContextConnection");
 
-                options.UseNpgsql(connectionString);
+                options.UseNpgsql(connectionString, options =>
+                {
+                });
+                //.UseCamelCaseNamingConvention();
+                
                 options.UseLazyLoadingProxies();
 
                 /* 
