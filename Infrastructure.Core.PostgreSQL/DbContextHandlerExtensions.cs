@@ -1,57 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Audit.EntityFramework;
+using Audit.EntityFramework.Interceptors;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class DbContextHandlerExtensions
     {
-        public static void AddDbContext<TDbContext>(this IServiceCollection services,
-                IConfiguration configuration,
-                IHostEnvironment hostEnvironment)
-            where TDbContext : BaseDbContext
-        {
-            //_services.AddScoped<ContextScopedFactory>();
-            //_services.AddPooledDbContextFactory<Context>((serviceProvider, optionsBuilder) =>
-            //    {
-            //        DbContextOptions(optionsBuilder);
-            //    });
-            //_services.AddScoped<Context>(sp => sp.GetRequiredService<ContextScopedFactory>().CreateDbContext());
-            //_services.AddScoped<IDbContext>(sp => sp.GetRequiredService<Context>());
-
-            services.AddDbContext<TDbContext>((sp, options) =>
-            {
-                var connectionString = configuration.GetConnectionString("DbContextConnection");
-
-                options.UseNpgsql(connectionString, options =>
-                {
-                });
-                //.UseCamelCaseNamingConvention();
-                
-                options.UseLazyLoadingProxies();
-
-                /* 
-                 * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
-                */
-
-                if (hostEnvironment.IsDevelopment())
-                {
-                    options.EnableDetailedErrors();
-                    options.EnableSensitiveDataLogging();
-                }
-
-                options.ConfigureWarnings(warnings =>
-                            {
-                                warnings.Default(WarningBehavior.Ignore);
-                                warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
-                            });
-
-                //options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
-            });
-        }
-
         //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedService
         //{
         //    private readonly ICurrentUserService _currentUserService;

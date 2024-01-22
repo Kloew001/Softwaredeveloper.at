@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Audit.WebApi;
+using log4net;
 
 namespace Infrastructure.Core.Web
 {
@@ -19,6 +21,8 @@ namespace Infrastructure.Core.Web
             {
             });
             builder.Logging.AddLog4Net("log4net.config");
+
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddMemoryCache();
 
@@ -226,5 +230,15 @@ namespace Infrastructure.Core.Web
             return builder;
         }
 
+        public static void UseAuditMiddleware(this IApplicationBuilder app)
+        {
+            app.UseAuditMiddleware(_ => _
+                .FilterByRequest(rq => !rq.Path.Value.EndsWith("favicon.ico"))
+                .WithEventType("{verb}:{url}")
+                .IncludeHeaders()
+                .IncludeResponseHeaders()
+                .IncludeRequestBody()
+                .IncludeResponseBody());
+        }
     }
 }

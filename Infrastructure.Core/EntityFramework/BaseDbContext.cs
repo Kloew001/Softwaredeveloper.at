@@ -52,17 +52,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             base.OnModelCreating(modelBuilder);
 
             var dbContextHandler = this.GetService<IDbContextHandler>();
-
-            if (dbContextHandler == null)
-                throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
-
-            dbContextHandler.ApplyEnumToStringValueConverter(modelBuilder);
-            dbContextHandler.ApplyDateTime(modelBuilder);
-            dbContextHandler.ApplyChangeTrackedEntity(modelBuilder);
-            dbContextHandler.ApplyApplicationUser(modelBuilder);
-
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDbContext).Assembly);
-            modelBuilder.ApplyConfigurationsFromAssembly(dbContextHandler.GetType().Assembly);
+            dbContextHandler.OnModelCreating(modelBuilder);
         }
 
         public override int SaveChanges()

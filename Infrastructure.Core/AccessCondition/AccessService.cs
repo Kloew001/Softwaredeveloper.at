@@ -1,11 +1,7 @@
-﻿using Castle.Core.Internal;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
-using DocumentFormat.OpenXml.Vml.Office;
-using Microsoft.EntityFrameworkCore;
-using DocumentFormat.OpenXml.InkML;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {

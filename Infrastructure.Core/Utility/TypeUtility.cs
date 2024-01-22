@@ -1,10 +1,42 @@
-﻿using DocumentFormat.OpenXml.InkML;
+﻿using System.Reflection;
+
+using DocumentFormat.OpenXml.InkML;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class TypeUtility
     {
+        public static IEnumerable<Type> GetAllTypesWithAttribute(Type attributeType)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(p => p.IsAbstract == false &&
+                            p.IsInterface == false &&
+                            p.GetCustomAttributes(attributeType, true).Length > 0)
+                .ToList();
+        }
+
+        public static Attribute GetAttribute(this Type objType, Type attributeType)
+        {
+            return objType.GetCustomAttributes(attributeType, true)
+                .OfType<Attribute>()
+                .SingleOrDefault();
+        }
+        public static TAttrbitute GetAttribute<TAttrbitute>(this Type objType)
+            where TAttrbitute : Attribute
+        {
+            return GetAttributes<TAttrbitute>(objType)
+                .SingleOrDefault();
+        }
+
+        public static IEnumerable<TAttribute> GetAttributes<TAttribute>(this Type objType)
+            where TAttribute : Attribute
+        {
+            return objType.GetCustomAttributes(typeof(TAttribute), true)
+                .OfType<TAttribute>()
+                .ToList();
+        }
         public static Type UnProxy(this Type entityType)
         {
             if(entityType == null) 

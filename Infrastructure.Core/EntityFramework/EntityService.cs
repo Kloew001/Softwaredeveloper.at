@@ -89,6 +89,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 //.Where(_=> _accessService.CanReadQuery(_))
                 .AsQueryable();
 
+            typeof(TEntity).GetProperties()
+                .Where(_ => _.GetCustomAttributes(typeof(AutoQueryIncludeAttribute), true)?.Any() == true)
+                .ToList()
+                .ForEach(_ => query = query.Include(_.Name));
+
             if (queryExtension != null)
                 query = queryExtension(query);
 
@@ -99,17 +104,53 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         protected virtual IQueryable<TEntity> AppendOrderBy(IQueryable<TEntity> query)
         {
-            if (typeof(ISupportIndex).IsAssignableFrom(typeof(TEntity)))
+            if(query is IOrderedQueryable<TEntity>)
+                return query;
+
+            var sortOrders =
+            typeof(TEntity).GetProperties()
+                .Select(_ => new { Property = _, Attribute = _.GetCustomAttributes(typeof(OrderByDefaultAttribute), false).SingleOrDefault() as OrderByDefaultAttribute })
+                .Where(_ => _.Attribute != null)
+                .ToList();
+
+            if (sortOrders.Any())
             {
-                query = query.Cast<ISupportIndex>().OrderByIndex().Cast<TEntity>();
+                var isFirst = true;
+                foreach (var sortOrder in sortOrders.OrderBy(_=>_.Attribute.Order))
+                {
+                    var direction = sortOrder.Attribute.Direction;
+                    var order = sortOrder.Attribute.Order;
+                    if (isFirst)
+                    {
+                        if (direction == OrderByDefaultAttribute.SortDirection.Ascending)
+                            query = query.OrderByPropertyName(sortOrder.Property.Name);
+                        else
+                            query = query.OrderByPropertyNameDescending(sortOrder.Property.Name);
+                    }
+                    else
+                    {
+                        if (direction == OrderByDefaultAttribute.SortDirection.Ascending)
+                            query = query.ThenByPropertyName(sortOrder.Property.Name);
+                        else
+                            query = query.ThenByPropertyNameDescending(sortOrder.Property.Name);
+
+                    }
+
+                    isFirst = false;
+                }
+
+            }
+            else if (typeof(ISupportIndex).IsAssignableFrom(typeof(TEntity)))
+            {
+                query = query.OrderByPropertyName(nameof(ISupportIndex.Index));
             }
             else if (typeof(ISupportDisplayName).IsAssignableFrom(typeof(TEntity)))
             {
-                query = query.Cast<ISupportDisplayName>().OrderByDisplayName().Cast<TEntity>();
+                query = query.OrderByPropertyName(nameof(ISupportDisplayName.DisplayName));
             }
             else if (typeof(ChangeTrackedEntity).IsAssignableFrom(typeof(TEntity)))
             {
-                query = query.Cast<ChangeTrackedEntity>().OrderBy(_ => _.DateModified).Cast<TEntity>();
+                query = query.OrderByPropertyName(nameof(ChangeTrackedEntity.DateModified));
             }
             else
             {
@@ -136,7 +177,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await CreateInternalAsync<TDto>(dto);
 
-            if(!_sectionManager.IsActive<SuppressSaveChangesSection>())
+            if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
                 await _context.SaveChangesAsync();
 
             return entity.Id;

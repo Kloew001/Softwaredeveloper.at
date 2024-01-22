@@ -9,7 +9,7 @@
         EMailConfiguration EMailConfiguration { get; set; }
     }
 
-    public abstract class ApplicationSettings : IApplicationSettings
+    public abstract class CoreApplicationSettings : IApplicationSettings
     {
         public Dictionary<string, string> ConnectionStrings { get; set; }
 

@@ -31,6 +31,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
+        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+        {
+            var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings["DbContextConnection"];
+
+            options.UseNpgsql(connectionString, options =>
+            {
+            });
+            //.UseCamelCaseNamingConvention();
+
+            base.DBContextOptions(serviceProvider, options);
+        }
+
         public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
         {
             foreach (var entityType in modelBuilder.Model.GetEntityTypes()
@@ -96,13 +108,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 entity.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRole_RoleId");
 
-                entity.HasOne<ApplicationRole>()
-                        .WithMany()
-                        .HasForeignKey("RoleId");
+                entity.HasOne(ur => ur.Role)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .IsRequired();
 
-                entity.HasOne<ApplicationUser>()
-                        .WithMany()
-                        .HasForeignKey("UserId");
+                entity.HasOne(ur => ur.User)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(ur => ur.UserId)
+                    .IsRequired();
             });
 
             modelBuilder.Entity<ApplicationUser>(entity =>

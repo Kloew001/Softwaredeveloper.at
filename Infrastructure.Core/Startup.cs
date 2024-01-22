@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
@@ -12,6 +14,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         protected IConfiguration Configuration { get; set; }
         protected IHostEnvironment HostEnvironment { get; set; }
         protected IServiceCollection Services { get; set; }
+
+        public bool ShouldUseDbAudit { get; set; } = false;
 
         public virtual void ConfigureServices(IHostApplicationBuilder builder)
         {
@@ -42,7 +46,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public virtual void ConfigureApp(IHost host)
         {
-            host.UseDtoFactory();   
+            host.UseDtoFactory();
+
+            host.UseAudit();
         }
     }
 }

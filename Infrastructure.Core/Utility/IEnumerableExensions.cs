@@ -1,4 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿using System.Linq.Expressions;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public interface ISupportIndex
     {
@@ -64,18 +66,6 @@
 
     public static class IQueryableUtility
     {
-        public static IQueryable<T> OrderByIndex<T>(this IQueryable<T> query)
-            where T : ISupportIndex
-        {
-            return query.OrderBy(_ => _.Index);
-        }
-
-        public static IQueryable<T> OrderByDisplayName<T>(this IQueryable<T> query)
-            where T : ISupportDisplayName
-        {
-            return query.OrderBy(_ => _.DisplayName);
-        }
-
         public static IQueryable<T> IsValidDateIncluded<T>(this IQueryable<T> query, DateTime? validDate = null)
             where T : ISupportValidDate
         {
@@ -105,6 +95,48 @@
                 .Where(_ => _.ValidFrom.HasValue == false || _.ValidFrom <= dateTo);
 
             return query;
+        }
+
+
+
+
+        public static IQueryable<T> OrderByIndex<T>(this IQueryable<T> query)
+            where T : ISupportIndex
+        {
+            return query.OrderBy(_ => _.Index);
+        }
+
+        public static IQueryable<T> OrderByDisplayName<T>(this IQueryable<T> query)
+            where T : ISupportDisplayName
+        {
+            return query.OrderBy(_ => _.DisplayName);
+        }
+
+        public static IOrderedQueryable<T> OrderByPropertyName<T>(this IQueryable<T> source, string propertyNamePath)
+       => source.OrderByPropertyNameUsing(propertyNamePath, "OrderBy");
+
+        public static IOrderedQueryable<T> OrderByPropertyNameDescending<T>(this IQueryable<T> source, string propertyNamePath)
+            => source.OrderByPropertyNameUsing(propertyNamePath, "OrderByDescending");
+
+        public static IOrderedQueryable<T> ThenByPropertyName<T>(this IQueryable<T> source, string propertyNamePath)
+            => source.OrderByPropertyNameUsing(propertyNamePath, "ThenBy");
+
+        public static IOrderedQueryable<T> ThenByPropertyNameDescending<T>(this IQueryable<T> source, string propertyNamePath)
+            => source.OrderByPropertyNameUsing(propertyNamePath, "ThenByDescending");
+
+        private static IOrderedQueryable<T> OrderByPropertyNameUsing<T>(this IQueryable<T> source, string propertyNamePath, string method)
+        {
+            var parameter = Expression.Parameter(typeof(T), "item");
+
+            var member = propertyNamePath.Split('.')
+                .Aggregate((Expression)parameter, Expression.PropertyOrField);
+            
+            var keySelector = Expression.Lambda(member, parameter);
+            var methodCall = Expression.Call(typeof(Queryable), method, new[]
+                    { parameter.Type, member.Type },
+                source.Expression, Expression.Quote(keySelector));
+
+            return (IOrderedQueryable<T>)source.Provider.CreateQuery(methodCall);
         }
     }
 }

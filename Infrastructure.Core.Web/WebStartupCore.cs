@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Audit.WebApi;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,16 +10,23 @@ using System.Configuration;
 
 namespace Infrastructure.Core.Web
 {
-    public class StartupCoreWeb
+    public class WebStartupCore
     {
         public IConfigurationRoot Configuration { get; }
-        public StartupCoreWeb(IConfigurationRoot configuration)
+        public bool ShouldUseWebApiAudit { get; set; } = true;
+
+        public WebStartupCore(IConfigurationRoot configuration)
         {
             Configuration = configuration;
         }
 
         public virtual void ConfigureServices(WebApplicationBuilder builder)
         {
+            builder.Services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = 5 * 1024 * 1024;
+            });
+
             builder.AddDefaultServices();
 
             builder.AddSwaggerGenWithBearer();
@@ -31,6 +41,12 @@ namespace Infrastructure.Core.Web
 
         public virtual void ConfigureApp(WebApplication app)
         {
+            // Enable buffering for auditing HTTP request body
+            app.Use(async (context, next) => {
+                context.Request.EnableBuffering(); // or .EnableRewind();
+                await next();
+            });
+
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
@@ -54,9 +70,8 @@ namespace Infrastructure.Core.Web
 
             app.UseRateLimiter();
 
-            app.MapFallbackToFile("/index.html");
-
-            app.Run();
+            if(ShouldUseWebApiAudit)
+                app.UseAuditMiddleware();
         }
     }
 }

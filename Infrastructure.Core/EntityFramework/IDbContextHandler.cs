@@ -1,9 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Audit.EntityFramework;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -11,7 +16,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
         Task UpdateDatabaseAsync<TDbContext>(IHost host)
             where TDbContext : DbContext;
+        void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options);
 
+        void OnModelCreating(ModelBuilder modelBuilder);
         void ApplyDateTime(ModelBuilder modelBuilder);
         void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder);
         void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
@@ -25,7 +32,63 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public abstract Task UpdateDatabaseAsync<TDbContext>(IHost host)
             where TDbContext : DbContext;
 
+        public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+        {
+            options.AddInterceptors(new AuditSaveChangesInterceptor());
+
+            /* 
+             * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
+            */
+
+            options.UseLazyLoadingProxies();
+
+            //.UseCamelCaseNamingConvention();
+
+            var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
+            if (hostEnvironment.IsDevelopment())
+            {
+                options.EnableDetailedErrors();
+                options.EnableSensitiveDataLogging();
+            }
+
+            options.ConfigureWarnings(warnings =>
+            {
+                warnings.Default(WarningBehavior.Ignore);
+                warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
+            });
+
+            //options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+        }
+
+
+        public virtual void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            ApplyEnumToStringValueConverter(modelBuilder);
+            ApplyDateTime(modelBuilder);
+            ApplyChangeTrackedEntity(modelBuilder);
+            ApplyApplicationUser(modelBuilder);
+            ApplyAuditEntity(modelBuilder);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        }
+
         public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
+        public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
+        {
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(IAudit).IsAssignableFrom(e.ClrType)))
+            {
+                var tableName = entityType.GetTableName() ?? entityType.Name;
+                if (!entityType.Name.EndsWith(AuditExtensions.auditPostfix))
+                    tableName = tableName + AuditExtensions.auditPostfix;
+
+                entityType.SetTableName(tableName);
+                entityType.SetSchema("audit");
+            }
+        }
+
         public abstract void ApplyDateTime(ModelBuilder modelBuilder);
 
         public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
