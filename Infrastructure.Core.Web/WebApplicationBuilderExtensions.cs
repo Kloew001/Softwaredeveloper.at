@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Audit.WebApi;
 using log4net;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 namespace Infrastructure.Core.Web
 {
@@ -232,13 +233,16 @@ namespace Infrastructure.Core.Web
 
         public static void UseAuditMiddleware(this IApplicationBuilder app)
         {
-            app.UseAuditMiddleware(_ => _
-                .FilterByRequest(rq => !rq.Path.Value.EndsWith("favicon.ico"))
-                .WithEventType("{verb}:{url}")
-                .IncludeHeaders()
-                .IncludeResponseHeaders()
-                .IncludeRequestBody()
-                .IncludeResponseBody());
+            //app.UseAuditMiddleware(_ => _
+            //    .FilterByRequest(rq => !rq.Path.Value.EndsWith("favicon.ico"))
+            //    .WithEventType("{verb}:{url}")
+            //    .IncludeHeaders()
+            //    .IncludeResponseHeaders()
+            //    .IncludeRequestBody()
+            //    .IncludeResponseBody());
+
+            //app.ApplicationServices.GetService<IAuditHandler>()
+            //    .RegisterProvider();
         }
     }
 }

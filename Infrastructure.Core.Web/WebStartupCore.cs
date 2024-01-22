@@ -13,7 +13,7 @@ namespace Infrastructure.Core.Web
     public class WebStartupCore
     {
         public IConfigurationRoot Configuration { get; }
-        public bool ShouldUseWebApiAudit { get; set; } = true;
+        //public bool ShouldUseWebApiAudit { get; set; } = true;
 
         public WebStartupCore(IConfigurationRoot configuration)
         {
@@ -41,9 +41,8 @@ namespace Infrastructure.Core.Web
 
         public virtual void ConfigureApp(WebApplication app)
         {
-            // Enable buffering for auditing HTTP request body
             app.Use(async (context, next) => {
-                context.Request.EnableBuffering(); // or .EnableRewind();
+                context.Request.EnableBuffering();
                 await next();
             });
 
@@ -70,8 +69,8 @@ namespace Infrastructure.Core.Web
 
             app.UseRateLimiter();
 
-            if(ShouldUseWebApiAudit)
-                app.UseAuditMiddleware();
+            //if(ShouldUseWebApiAudit)
+            //    app.UseAuditMiddleware();
         }
     }
 }

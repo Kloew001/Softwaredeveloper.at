@@ -47,6 +47,8 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="Audit.NET" Version="23.0.0" />
+    <PackageReference Include="Audit.NET.PostgreSql" Version="23.0.0" />
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
