@@ -85,16 +85,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
         }
 
-        protected override async Task ExecuteInternalAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
         {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var currentUserService = scope.ServiceProvider.GetService<ICurrentUserService>();
-                currentUserService.SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
+            var currentUserService = scope.ServiceProvider.GetService<ICurrentUserService>();
+            currentUserService.SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
-                var dataSeedService = scope.ServiceProvider.GetService<DataSeedService>();
-                await dataSeedService.ExecuteAsync(cancellationToken);
-            }
+            var dataSeedService = scope.ServiceProvider.GetService<DataSeedService>();
+            await dataSeedService.ExecuteAsync(cancellationToken);
         }
     }
 }

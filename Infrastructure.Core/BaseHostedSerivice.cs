@@ -56,6 +56,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             _logger.LogInformation($"IHostedService.StartAsync for {Name}");
 
+            if (_hostedServicesConfiguration == null ||
+            _hostedServicesConfiguration?.Enabled != true)
+            {
+                _logger.LogWarning($"IHostedService {Name} do not have configuration");
+                return Task.CompletedTask;
+            }
+
             _appLifetime.ApplicationStarted.Register(async () =>
                 await ExecuteAsync(cancellationToken));
 
@@ -66,13 +73,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             try
             {
-                if (_hostedServicesConfiguration == null ||
-                _hostedServicesConfiguration?.Enabled != true)
-                {
-                    _logger.LogWarning($"IHostedService {Name} do not have configuration");
-                    return;
-                }
-
                 _logger.LogInformation($"IHostedService execute for {Name}");
 
                 try
@@ -85,7 +85,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         if (distributedLock.TryAcquireLock(Name, 3) == false)
                             throw new InvalidOperationException();
 
-                        await ExecuteInternalAsync(cancellationToken);
+                        await ExecuteInternalAsync(scope, cancellationToken);
                     }
 
                     await FinsihedBackgroundServiceInfo();
@@ -103,7 +103,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             }
         }
 
-        protected abstract Task ExecuteInternalAsync(CancellationToken cancellationToken);
+        protected abstract Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken);
 
         public Task StopAsync(CancellationToken cancellationToken)
         {

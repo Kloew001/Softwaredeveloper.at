@@ -1,5 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -44,7 +48,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<ApplicationRoleClaim> ApplicationRoleClaims { get; set; }
 
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
-
+        public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
         public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

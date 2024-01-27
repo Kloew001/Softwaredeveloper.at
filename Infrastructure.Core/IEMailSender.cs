@@ -21,7 +21,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             : base(serviceScopeFactory, appLifetime, logger, optionsAccessor)
         {
         }
-        protected override async Task ExecuteInternalAsync(CancellationToken cancellationToken)
+       
+        protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
         {
             var ids = await GetIdsAsync();
 
