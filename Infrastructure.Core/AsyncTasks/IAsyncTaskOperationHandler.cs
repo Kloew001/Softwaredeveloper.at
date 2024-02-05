@@ -10,6 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         Executing = 1,
         Success = 2,
         Failed = 3,
+        Timeout = 4,
     }
 
     [AttributeUsage(AttributeTargets.Class)]

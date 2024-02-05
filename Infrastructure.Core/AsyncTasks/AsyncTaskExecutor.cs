@@ -34,6 +34,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             await asyncTaskExecutor.ExecuteBatchAsync(_hostedServicesConfiguration.BatchSize, cancellationToken);
 
             asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100)));
+
+            asyncTaskExecutor.HandleTimeout();
         }
     }
 
@@ -100,7 +102,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             }
 
             Task.WaitAll(tasks.ToArray(), cancellationToken);
-            scopes.ForEach(_ => _.Dispose());  
+            scopes.ForEach(_ => _.Dispose());
         }
 
         private async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
@@ -227,7 +229,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                     }
                     else
                     {
-
+                        asyncTaskOperation.ExecuteAt = null;
                         asyncTaskOperation.Status = AsyncTaskOperationStatus.Failed;
                         asyncTaskOperation.ErrorMessage = ex.Message;
                     }
@@ -247,13 +249,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             var dateNow = DateTime.Now;
 
             var operationIds = await _context.Set<AsyncTaskOperation>()
-            .Where(_ => _.ExecuteAt <= dateNow &&
+            .Where(_ => _.ExecuteAt != null &&
+                        _.ExecuteAt <= dateNow &&
                         _.Status == AsyncTaskOperationStatus.Pending)
 
-                        //(o.Status == AsyncTaskOperationStatus.Pending ||
-                        //(o.Status == AsyncTaskOperationStatus.Executing &&
-                        // o.StartedAt.HasValue &&
-                        // o.StartedAt < dateNow.Subtract(TimeSpan.FromSeconds(_waitingExecuteToRetryInSec)))) &&
+            //(o.Status == AsyncTaskOperationStatus.Pending ||
+            //(o.Status == AsyncTaskOperationStatus.Executing &&
+            // o.StartedAt.HasValue &&
+            // o.StartedAt < dateNow.Subtract(TimeSpan.FromSeconds(_waitingExecuteToRetryInSec)))) &&
             .OrderBy(_ => _.ExecuteAt)
             .ThenBy(_ => _.SortIndex)
             .Select(_ => _.Id)
@@ -284,8 +287,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
                 return await GetAsyncTaskIdsInQueueAsync(asyncTaskOperationHandler);
 
-
-            var currentUserId =_serviceProvider.GetService<ICurrentUserService>().GetCurrentUserId();
+            var currentUserId = _serviceProvider.GetService<ICurrentUserService>().GetCurrentUserId();
 
             var parameter = JsonConvert.SerializeObject(asyncTaskOperationHandler, new JsonSerializerSettings());
 
@@ -308,11 +310,30 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return new[] { asyncTask };
         }
 
+        public void HandleTimeout()
+        {
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var olderThen = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+
+                context.Set<AsyncTaskOperation>()
+                      .Where(_ => _.Status == AsyncTaskOperationStatus.Executing &&
+                                  _.StartedAt < olderThen)
+                  .ExecuteUpdate(setters => setters.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
+            }
+        }
+
         public void Delete(DateTime olderThen)
         {
-            _context.Set<AsyncTaskOperation>()
-                .Where(_=> _.CreatedAt < olderThen)
-                .ExecuteDelete();
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+
+                context.Set<AsyncTaskOperation>()
+                    .Where(_ => _.CreatedAt < olderThen)
+                    .ExecuteDelete();
+            }
         }
 
         private async Task<bool> HasAsyncTaskInQueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler)
@@ -336,6 +357,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
         private async Task<IEnumerable<AsyncTaskOperation>> GetNotFinishedAsyncTasksAsync(params Guid[] referenceIds)
         {
+            var timeout = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
+
             var pendingTasks = await _context.Set<AsyncTaskOperation>()
                 .Where(o => o.ReferenceId != null && referenceIds.Contains(o.ReferenceId.Value) &&
                           (o.Status == AsyncTaskOperationStatus.Pending ||

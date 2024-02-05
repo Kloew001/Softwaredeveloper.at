@@ -24,7 +24,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _sectionManager = sectionManager;
         }
 
-        public async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
+        public virtual async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
             where TDto : DtoBase, new()
         {
             var entity = await GetSingleByIdInternalAsync(id);
@@ -34,12 +34,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return dto;
         }
 
-        public Task<TEntity> GetSingleByIdInternalAsync(Guid id)
+        public virtual Task<TEntity> GetSingleByIdInternalAsync(Guid id)
         {
             return GetSingleInternalAsync((query) => query.Where(_ => _.Id == id));
         }
 
-        public async Task<TDto> GetSingleAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<TDto> GetSingleAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : DtoBase, new()
         {
             var entity = await GetSingleInternalAsync(queryExtension);
@@ -49,7 +49,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return dto;
         }
 
-        public async Task<TEntity> GetSingleInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<TEntity> GetSingleInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = GetCollectionQueryInternal(queryExtension);
 
@@ -64,7 +64,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return entity;
         }
 
-        public async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
+        public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
             where TDto : DtoBase, new()
         {
             var entities = await query.ToListAsync();
@@ -74,7 +74,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return dtos;
         }
 
-        public Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : DtoBase, new()
         {
             var query = GetCollectionQueryInternal(queryExtension);
@@ -82,7 +82,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return GetCollectionAsync<TDto>(query);
         }
 
-        public IQueryable<TEntity> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual IQueryable<TEntity> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = _context
                 .Set<TEntity>()
@@ -160,7 +160,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return query;
         }
 
-        public async Task<TDtoOut> CreateVirtualAsync<TDto, TDtoOut>(TDto dto)
+        public virtual async Task<TDtoOut> CreateVirtualAsync<TDto, TDtoOut>(TDto dto)
             where TDto : DtoBase, new()
             where TDtoOut : DtoBase, new()
         {
@@ -172,14 +172,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public async Task<Guid> CreateAsync<TDto>(TDto dto)
+        public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
             where TDto : DtoBase, new()
         {
             var entity = await CreateInternalAsync<TDto>(dto);
 
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
-                await _context.SaveChangesAsync();
+            {
+                if (await _accessService.CanSaveAsync(entity) == false)
+                    throw new UnauthorizedAccessException();
 
+                await _context.SaveChangesAsync();
+            }
             return entity.Id;
         }
 
@@ -223,7 +227,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return Task.CompletedTask;
         }
 
-        public async Task UpdateVirtualAsync<TDto>(TDto dto)
+        public virtual async Task UpdateVirtualAsync<TDto>(TDto dto)
             where TDto : DtoBase, new()
         {
             using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
@@ -232,7 +236,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public async Task<TDtoOut> UpdateVirtualAsync<TDto, TDtoOut>(TDto dto)
+        public virtual async Task<TDtoOut> UpdateVirtualAsync<TDto, TDtoOut>(TDto dto)
             where TDto : DtoBase, new()
             where TDtoOut : DtoBase, new()
         {
@@ -245,7 +249,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public async Task UpdateAsync<TDto>(TDto dto)
+        public virtual async Task UpdateAsync<TDto>(TDto dto)
             where TDto : DtoBase, new()
         {
             var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
@@ -253,7 +257,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             entity = await UpdateInternalAsync(dto, entity);
 
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
+            {
+                if (await _accessService.CanSaveAsync(entity) == false)
+                    throw new UnauthorizedAccessException();
+
                 await _context.SaveChangesAsync();
+            }
         }
 
         public virtual async Task<TEntity> UpdateInternalAsync<TDto>(TDto dto, TEntity entity)
@@ -275,15 +284,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return Task.CompletedTask;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public virtual async Task DeleteAsync(Guid id)
         {
             await DeleteInternalAsync(id);
 
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
+            {
                 await _context.SaveChangesAsync();
+            }
         }
 
-        public async Task DeleteInternalAsync(Guid id)
+        public virtual async Task DeleteInternalAsync(Guid id)
         {
             var entity = await GetSingleByIdInternalAsync(id);
 

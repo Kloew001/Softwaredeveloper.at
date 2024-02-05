@@ -39,6 +39,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO ShouldUpdateRecerences
+        public static ICollection<TEntity> ConvertIdsToEntities<TEntity>(this IEnumerable<Guid> dtoIds, IEntity rootEntity, ICollection<TEntity> entities = null)
+            where TEntity : class, IEntity
+        {
+            return _factory.ConvertIdsToEntities<TEntity>(rootEntity, dtoIds, entities);
+        }
+
+        //TODO ShouldUpdateRecerences
         public static ICollection<TEntity> ConvertToEntities<TEntity>(this IEnumerable<IDto> dto, IEntity rootEntity, ICollection<TEntity> entities = null)
             where TEntity : class, IEntity
         {
@@ -237,11 +244,58 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO ShouldUpdateRecerences
+        public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEntity rootEntity, IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null)
+            where TEntity : class, IEntity
+        {
+            if (dtoIds == null)
+                dtoIds = Enumerable.Empty<Guid>();
+
+            var dbContext = rootEntity.ResolveDbContext();
+
+            var itemsCollection = entities ?? new List<TEntity>();
+
+            var entitiesToRemove = itemsCollection.Where(_ => dtoIds.Contains(_.Id) == false).ToList();
+            entitiesToRemove
+                .ForEach(_ => itemsCollection.Remove(_));
+
+            var dtoEntityJoin =
+                dtoIds
+                .GroupJoin(itemsCollection, dtoId => dtoId, entity => entity.Id,
+                (dtoId, entities) => new { dtoId, entity = entities.SingleOrDefault() })
+                .ToList();
+
+            dtoEntityJoin
+                .ForEach(_ =>
+                {
+                    var entity = _.entity;
+
+                    if (entity == null)
+                    {
+                        entity = dbContext.Set<TEntity>()
+                            .Where(db => db.Id == _.dtoId)
+                            .FirstOrDefault();
+
+                        if (entity != null)
+                            itemsCollection.Add(entity);
+                    }
+
+                    //if (entity == null)
+                    //{
+                    //    entity = dbContext.Set<TEntity>().CreateProxy();
+                    //    dbContext.Add(entity);
+                    //    itemsCollection.Add(entity);
+                    //}
+                });
+
+            return itemsCollection;
+        }
+
+        //TODO ShouldUpdateRecerences
         public ICollection<TEntity> ConvertToEntities<TEntity>(IEntity rootEntity, IEnumerable<IDto> dtos, ICollection<TEntity> entities = null)
             where TEntity : class, IEntity
         {
             if (dtos == null)
-                return null;
+                dtos = Enumerable.Empty<IDto>();
 
             var dbContext = rootEntity.ResolveDbContext();
 

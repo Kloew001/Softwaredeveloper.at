@@ -90,5 +90,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                 return hash;
             }
         }
+
+        public static string CombineUrl(this string baseUrl, string relativeUrl)
+        {
+            var baseUri = new UriBuilder(baseUrl);
+
+            if (Uri.TryCreate(baseUri.Uri, relativeUrl, out Uri newUri))
+                return newUri.ToString();
+            else
+                throw new ArgumentException($"Unable to combine specified url values: '{baseUrl}', '{relativeUrl}'");
+        }
     }
 }

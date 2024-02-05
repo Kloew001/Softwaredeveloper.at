@@ -104,6 +104,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 .CanDeleteAsync(accessConditionInfo.SecurityEntity);
         }
 
+        public Task<bool> CanSaveAsync(BaseEntity entity)
+        {
+            if (entity == null)
+                return Task.FromResult(true);
+
+            if (_sectionManager.IsActive<SecurityFreeSection>())
+                return Task.FromResult(true);
+
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+
+            return accessConditionInfo.AccessCondition
+                .CanSaveAsync(accessConditionInfo.SecurityEntity);
+        }
+
         public class SecurityParentInfo
         {
             public Type EntityType { get; set; }

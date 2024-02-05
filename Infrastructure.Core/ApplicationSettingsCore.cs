@@ -4,18 +4,18 @@
     { 
         Dictionary<string, string> ConnectionStrings { get; set; }
 
-        Dictionary<string, HostedServicesConfiguration> HostedServicesConfiguration { get; set; }
+        Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
 
-        EMailConfiguration EMailConfiguration { get; set; }
+        EMailServerConfiguration EMailServer { get; set; }
     }
 
     public abstract class CoreApplicationSettings : IApplicationSettings
     {
         public Dictionary<string, string> ConnectionStrings { get; set; }
 
-        public Dictionary<string, HostedServicesConfiguration> HostedServicesConfiguration { get; set; }
+        public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
 
-        public EMailConfiguration EMailConfiguration { get; set; }
+        public EMailServerConfiguration EMailServer { get; set; }
     }
 
     public class HostedServicesConfiguration

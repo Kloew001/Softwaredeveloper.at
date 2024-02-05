@@ -1,0 +1,1 @@
+﻿//https://www.thinktecture.com/entity-framework-core/ef-core-user-defined-fields-and-tables/

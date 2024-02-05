@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Audit.WebApi;
 using log4net;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Infrastructure.Core.Web
 {
@@ -120,7 +121,7 @@ namespace Infrastructure.Core.Web
             return builder;
         }
 
-        public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder)
+        public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions> configureOptions = null)
         {
             //https://devblogs.microsoft.com/dotnet/announcing-rate-limiting-for-dotnet/
 
@@ -226,6 +227,7 @@ namespace Infrastructure.Core.Web
                     }
                 };
 
+                configureOptions?.Invoke(options);
             });
 
             return builder;

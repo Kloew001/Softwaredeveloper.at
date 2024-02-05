@@ -13,6 +13,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public override Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(false);
 
+        public override Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(false);
+
         public override IQueryable<TEntity> CanReadQuery(IQueryable<TEntity> query)
         {
             return query.Where(_ => false);

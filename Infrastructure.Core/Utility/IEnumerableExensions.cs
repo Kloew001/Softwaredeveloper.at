@@ -62,6 +62,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             return query;
         }
+
+        public static IEnumerable<string> IsNotNullOrEmpty(this IEnumerable<string> source)
+        {
+            return source.Where(_ => _.IsNullOrEmpty() == false);
+        }
+
+        public static IEnumerable<T> IsNotNull<T>(this IEnumerable<T> source)
+        {
+            return source.Where(_ => _ != null);
+        }
     }
 
     public static class IQueryableUtility
@@ -137,6 +147,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                 source.Expression, Expression.Quote(keySelector));
 
             return (IOrderedQueryable<T>)source.Provider.CreateQuery(methodCall);
+        }
+
+        public static IQueryable<string> IsNotNullOrEmpty(this IQueryable<string> source)
+        {
+            return source.Where(_ => _.IsNullOrEmpty() == false);
+        }
+
+        public static IQueryable<T> IsNotNull<T>(this IQueryable<T> source)
+        {
+            return source.Where(_ => _ != null);
         }
     }
 }

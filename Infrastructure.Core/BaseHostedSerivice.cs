@@ -49,7 +49,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             _appLifetime = appLifetime;
             _logger = logger;
             _applicationSettings = applicationSettings;
-            _applicationSettings.HostedServicesConfiguration.TryGetValue(GetType().Name, out _hostedServicesConfiguration);
+            _applicationSettings.HostedServices.TryGetValue(GetType().Name, out _hostedServicesConfiguration);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

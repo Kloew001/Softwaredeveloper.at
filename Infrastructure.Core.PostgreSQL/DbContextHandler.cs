@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 {
                     scope.ServiceProvider
                     .GetService<IApplicationSettings>()
-                    .HostedServicesConfiguration[
+                    .HostedServices[
                     nameof(DataSeedHostedService)].Enabled = true;
 
                     databaseCreator.Create();

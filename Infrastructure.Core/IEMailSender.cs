@@ -12,7 +12,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public class EMailHostedService : TimerHostedService
     {
-
         public EMailHostedService(
             IServiceScopeFactory serviceScopeFactory,
             ILogger<EMailHostedService> logger,
@@ -93,7 +92,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         }
     }
 
-    public class EMailConfiguration
+    public class EMailServerConfiguration
     {
         public string FromName { get; set; }
         public string FromEmail { get; set; }
@@ -117,11 +116,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
     public class SmtpEMailSender : IEMailSender, ITypedScopedService<IEMailSender>
     {
-        private EMailConfiguration _config { get; set; }
+        private EMailServerConfiguration _config { get; set; }
 
         public SmtpEMailSender(IApplicationSettings applicationSettings)
         {
-            _config = applicationSettings.EMailConfiguration;
+            _config = applicationSettings.EMailServer;
         }
 
 
