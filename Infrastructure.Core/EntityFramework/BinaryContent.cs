@@ -22,6 +22,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
         public void Configure(EntityTypeBuilder<BinaryContent> builder)
         {
+            builder.HasIndex(_ => new
+            {
+                _.ReferenceId,
+                _.ReferenceType
+            });
         }
     }
 

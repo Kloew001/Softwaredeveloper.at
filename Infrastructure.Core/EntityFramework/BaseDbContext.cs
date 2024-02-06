@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
+using SoftwaredeveloperDotAt.Infrastructure.Core.ChronologyEntries;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -46,6 +47,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<ApplicationUserRole> ApplicationUserRoles { get; set; }
 
         public virtual DbSet<ApplicationRoleClaim> ApplicationRoleClaims { get; set; }
+
+        public virtual DbSet<ChronologyEntry> ChronologyEntries { get; set; }
+
+        public virtual DbSet<BinaryContent> Contents { get; set; }
 
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
         public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
