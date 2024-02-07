@@ -47,6 +47,11 @@ jobs:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
         
     - name: Push
+      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        
+    - name: Push
       run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.Web.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
