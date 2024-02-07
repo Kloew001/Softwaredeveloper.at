@@ -1,6 +1,6 @@
 
 Set-Variable -Name "TargetPath" -Value "C:\Development\MTGM"
-Set-Variable -Name "VERSION" -Value "0.0.0.127"
+Set-Variable -Name "VERSION" -Value "0.0.0.139"
 Remove-Item $TargetPath\LocalShared\*.*
 
 Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core

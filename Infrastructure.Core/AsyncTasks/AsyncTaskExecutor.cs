@@ -33,9 +33,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             await asyncTaskExecutor.ExecuteBatchAsync(_hostedServicesConfiguration.BatchSize, cancellationToken);
 
-            asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100)));
+            await asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100)));
 
-            asyncTaskExecutor.HandleTimeout();
+            await asyncTaskExecutor.HandleTimeout();
         }
     }
 
@@ -310,29 +310,29 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return new[] { asyncTask };
         }
 
-        public void HandleTimeout()
+        public async Task HandleTimeout()
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var olderThen = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                context.Set<AsyncTaskOperation>()
+                await context.Set<AsyncTaskOperation>()
                       .Where(_ => _.Status == AsyncTaskOperationStatus.Executing &&
                                   _.StartedAt < olderThen)
-                  .ExecuteUpdate(setters => setters.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
+                  .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
             }
         }
 
-        public void Delete(DateTime olderThen)
+        public async Task Delete(DateTime olderThen)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                context.Set<AsyncTaskOperation>()
+                await context.Set<AsyncTaskOperation>()
                     .Where(_ => _.CreatedAt < olderThen)
-                    .ExecuteDelete();
+                    .ExecuteDeleteAsync();
             }
         }
 
