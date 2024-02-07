@@ -28,7 +28,7 @@
     <PackageProjectUrl>softwaredeveloper.at</PackageProjectUrl>
     <PackageTags>library</PackageTags>
 	
-    <PackageIcon>../icon.png</PackageIcon>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
     <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
@@ -53,7 +53,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -28,7 +28,7 @@
     <PackageProjectUrl>softwaredeveloper.at</PackageProjectUrl>
     <PackageTags>library</PackageTags>
 	
-    <PackageIcon>../icon.png</PackageIcon>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
     <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
