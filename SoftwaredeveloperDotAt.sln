@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Core.Postgre
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Core.Web", "Infrastructure.Core.Web\Infrastructure.Core.Web.csproj", "{590DE776-2872-44FD-9BAF-DFC58AAE11D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Core.SqlServer", "Infrastructure.Core.SqlServer\Infrastructure.Core.SqlServer.csproj", "{164F6C4E-31F4-4D05-996E-9E8510D49A59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,10 +29,10 @@ Global
 		{590DE776-2872-44FD-9BAF-DFC58AAE11D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{590DE776-2872-44FD-9BAF-DFC58AAE11D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{590DE776-2872-44FD-9BAF-DFC58AAE11D7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E579738-E18E-4D90-94E2-B497F4ADB69E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E579738-E18E-4D90-94E2-B497F4ADB69E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E579738-E18E-4D90-94E2-B497F4ADB69E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E579738-E18E-4D90-94E2-B497F4ADB69E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{164F6C4E-31F4-4D05-996E-9E8510D49A59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{164F6C4E-31F4-4D05-996E-9E8510D49A59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{164F6C4E-31F4-4D05-996E-9E8510D49A59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{164F6C4E-31F4-4D05-996E-9E8510D49A59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

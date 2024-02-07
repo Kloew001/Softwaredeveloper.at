@@ -12,8 +12,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             if (month == 12)
                 date = new DateTime(year + 1, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
-
-            date = new DateTime(year, month + 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
+            else 
+                date = new DateTime(year, month + 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
 
             if (date.Kind == DateTimeKind.Utc)
                 date = date.ToUniversalTime();
