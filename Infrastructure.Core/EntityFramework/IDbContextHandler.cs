@@ -63,6 +63,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ApplyBaseEntity(modelBuilder);
+
             ApplyEnumToStringValueConverter(modelBuilder);
             ApplyDateTime(modelBuilder);
             ApplyChangeTrackedEntity(modelBuilder);
@@ -73,7 +75,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
         }
 
+        public abstract void ApplyBaseEntity(ModelBuilder modelBuilder);
+
         public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
+        
         public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
         {
 

@@ -33,7 +33,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
         {
-            var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings["DbContextConnection"];
+            var connectionString = serviceProvider.GetService<IApplicationSettings>()
+                .ConnectionStrings["DbContextConnection"];
 
             options.UseNpgsql(connectionString, options =>
             {
@@ -41,6 +42,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             //.UseCamelCaseNamingConvention();
 
             base.DBContextOptions(serviceProvider, options);
+        }
+
+        public override void ApplyBaseEntity(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                       .Property(nameof(BaseEntity.RowVersion))
+                       .IsConcurrencyToken()
+                       .HasColumnName("xmin")
+                       .HasColumnType("xid");
+
+                modelBuilder.Entity(entityType.ClrType)
+                       .Ignore(nameof(BaseEntity.Timestamp));
+            }
         }
 
         public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)

@@ -17,14 +17,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
 
-                if (!databaseCreator.Exists())
+                if (!await databaseCreator.CanConnectAsync())
                 {
                     scope.ServiceProvider
                     .GetService<IApplicationSettings>()
                     .HostedServices[
                     nameof(DataSeedHostedService)].Enabled = true;
-
-                    databaseCreator.Create();
                 }
 
                 await context.Database.MigrateAsync();
@@ -41,6 +39,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             });
 
             base.DBContextOptions(serviceProvider, options);
+        }
+
+        public override void ApplyBaseEntity(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                       .Property(nameof(BaseEntity.Timestamp))
+                       .IsConcurrencyToken()
+                       .IsRowVersion();
+
+                modelBuilder.Entity(entityType.ClrType)
+                       .Ignore(nameof(BaseEntity.RowVersion));
+            }
         }
 
         public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
