@@ -28,10 +28,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public string LastErrorStack { get; set; }
     }
 
-    public abstract class BaseHostedSerivice : IHostedService, IDisposable
+    public abstract class BaseHostedService : IHostedService, IDisposable
     {
         protected readonly IServiceScopeFactory _serviceScopeFactory;
-        protected readonly ILogger<BaseHostedSerivice> _logger;
+        protected readonly ILogger<BaseHostedService> _logger;
         protected readonly IApplicationSettings _applicationSettings;
         protected readonly HostedServicesConfiguration _hostedServicesConfiguration;
         protected readonly IHostApplicationLifetime _appLifetime;
@@ -39,10 +39,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public virtual string Name { get => GetType().Name; }
 
-        protected BaseHostedSerivice(
+        protected BaseHostedService(
             IServiceScopeFactory serviceScopeFactory,
             IHostApplicationLifetime appLifetime,
-            ILogger<BaseHostedSerivice> logger,
+            ILogger<BaseHostedService> logger,
             IApplicationSettings applicationSettings)
         {
             _serviceScopeFactory = serviceScopeFactory;

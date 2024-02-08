@@ -74,12 +74,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         }
     }
 
-    public class DataSeedHostedService : BaseHostedSerivice
+    public class DataSeedHostedService : BaseHostedService
     {
         public DataSeedHostedService(
             IServiceScopeFactory serviceScopeFactory,
             IHostApplicationLifetime appLifetime,
-            ILogger<BaseHostedSerivice> logger,
+            ILogger<BaseHostedService> logger,
             IApplicationSettings applicationSettings)
             : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
         {

@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public abstract class TimerHostedService : BaseHostedSerivice
+    public abstract class TimerHostedService : BaseHostedService
     {
         protected TimerHostedService(
             IServiceScopeFactory serviceScopeFactory,
             IHostApplicationLifetime appLifetime,
-            ILogger<BaseHostedSerivice> logger,
+            ILogger<BaseHostedService> logger,
             IApplicationSettings applicationSettings)
             : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
         {

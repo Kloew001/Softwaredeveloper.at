@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
@@ -35,7 +36,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public static void RegisterSelfRegisterServices(this IServiceCollection services)
         {
             var serviceTypes = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(x => x.GetTypes())
+               .SelectMany(a => a.GetExportedTypes())
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
                .Where(p => typeof(ISelfRegisterService).IsAssignableFrom(p))
                .ToList();
@@ -75,9 +76,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public static void RegisterAllHostedService(this IServiceCollection services)
         {
             var serviceTypes = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(x => x.GetTypes())
+               .SelectMany(a => a.GetExportedTypes())
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-               .Where(p => typeof(BaseHostedSerivice).IsAssignableFrom(p))
+               .Where(p => typeof(BaseHostedService).IsAssignableFrom(p))
                .ToList();
 
             foreach (var serviceType in serviceTypes)

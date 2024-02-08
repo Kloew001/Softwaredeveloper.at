@@ -60,7 +60,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         {
             var handlerTypes =
                 AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(x => x.GetTypes())
+                    .SelectMany(a => a.GetExportedTypes())
                     .Where(t => t.IsClass && !t.IsInterface && !t.IsAbstract &&
                                 typeof(IAsyncTaskOperationHandler).IsAssignableFrom(t))
                     .ToDictionary(t =>
