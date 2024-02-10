@@ -1,7 +1,7 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.ChronologyEntries
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
     public class ChronologyEntryDto : DtoBase
     {

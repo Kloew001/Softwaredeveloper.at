@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
+using System.Threading;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     /// <summary>
@@ -22,7 +24,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _logger = logger;
             var builder = new NpgsqlConnectionStringBuilder(context.Database.GetConnectionString());
             _connection = new NpgsqlConnection(builder.ToString());
-            _connection.Open();
         }
 
         public bool TryExecuteInDistributedLock(string lockId, Func<Task> exclusiveLockTask)
@@ -46,14 +47,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return true;
         }
 
-        public bool TryAcquireLock(string lockId, int retry = 0)
+        public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0)
         {
             _lockId = lockId;
 
+            await _connection.OpenAsync();
+
             var sessionLockCommand = $"SELECT pg_try_advisory_lock(hashtext('{lockId}'))";
+            
             _logger.LogInformation("Trying to acquire session lock for Lock Id {@LockId}", lockId);
+            
             var commandQuery = new NpgsqlCommand(sessionLockCommand, _connection);
-            var result = commandQuery.ExecuteScalar();
+            
+            var result = await commandQuery.ExecuteScalarAsync();
+            
             if (result != null && bool.TryParse(result.ToString(), out var lockAcquired) && lockAcquired)
             {
                 _logger.LogInformation("Lock {@LockId} acquired", lockId);
@@ -64,13 +71,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             for (var r = 0; r < retry; r++)
             {
-                Thread.Sleep(50);
+                await Task.Delay(50);
 
-                if (TryAcquireLock(lockId, 0))
+                if (await TryAcquireLockAsync(lockId, 0))
                     return true;
             }
 
             return false;
+        }
+
+        public bool TryAcquireLock(string lockId, int retry = 0)
+        {
+            return TryAcquireLockAsync(lockId, retry).GetAwaiter().GetResult();
         }
 
         private void ReleaseLock()

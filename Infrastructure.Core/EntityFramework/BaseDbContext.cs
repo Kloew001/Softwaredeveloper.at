@@ -4,7 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
-using SoftwaredeveloperDotAt.Infrastructure.Core.ChronologyEntries;
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Multilingual;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -55,6 +59,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
         public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
         public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
+
+        //public virtual DbSet<LanguageCulture> LanguageCultures { get; set; }
+        //public virtual DbSet<MultilingualText> Multilinguals { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

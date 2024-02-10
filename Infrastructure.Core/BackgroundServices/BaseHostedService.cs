@@ -7,7 +7,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
     [Table(nameof(BackgroundserviceInfo))]
     public class BackgroundserviceInfo
@@ -136,7 +136,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 {
                     backgroundServiceInfo = context.CreateProxy<BackgroundserviceInfo>();
                     await context.AddAsync(backgroundServiceInfo);
-                    backgroundServiceInfo.Name = this.Name;
+                    backgroundServiceInfo.Name = Name;
                 }
 
                 backgroundServiceInfo.ExecutedAt = DateTime.Now;
@@ -189,7 +189,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             return await
                 context.Set<BackgroundserviceInfo>()
-                .SingleOrDefaultAsync(_ => _.Name == this.Name);
+                .SingleOrDefaultAsync(_ => _.Name == Name);
         }
     }
 }

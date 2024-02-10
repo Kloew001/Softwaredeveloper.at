@@ -29,8 +29,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             var connectionString = context.Database.GetConnectionString();
             _connection = new SqlConnection(connectionString);
-            _connection.Open();
-            _transaction = _connection.BeginTransaction();
         }
 
         public bool TryExecuteInDistributedLock(string lockId, Func<Task> exclusiveLockTask)
@@ -54,10 +52,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return true;
         }
 
-        public bool TryAcquireLock(string lockId, int retry = 0)
+        public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0)
         {
             _lockId = lockId;
 
+
+            await _connection.OpenAsync();
+            _transaction = (SqlTransaction)await _connection.BeginTransactionAsync();
+            
             using (SqlCommand createCmd = _connection.CreateCommand())
             {
                 createCmd.Transaction = _transaction;
@@ -80,7 +82,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 try
                 {
-                    createCmd.ExecuteNonQuery();
+                    await createCmd.ExecuteNonQueryAsync();
 
                     _lockCreated = true;
                 }
@@ -96,6 +98,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
 
             return _lockCreated;
+        }
+        
+        public bool TryAcquireLock(string lockId, int retry = 0)
+        {
+            return TryAcquireLockAsync(lockId, retry).GetAwaiter().GetResult();
         }
 
         private void ReleaseLock()

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 

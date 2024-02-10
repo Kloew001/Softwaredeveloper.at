@@ -9,28 +9,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class PostgreSQLDbContextHandler : BaseDbContextHandler
     {
-        public override async Task UpdateDatabaseAsync<TDbContext>(IHost host)
-        {
-            using (var scope = host.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
-
-                var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
-
-                if (!databaseCreator.Exists())
-                {
-                    scope.ServiceProvider
-                    .GetService<IApplicationSettings>()
-                    .HostedServices[
-                    nameof(DataSeedHostedService)].Enabled = true;
-
-                    databaseCreator.Create();
-                }
-
-                await context.Database.MigrateAsync();
-            }
-        }
-
         public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
         {
             var connectionString = serviceProvider.GetService<IApplicationSettings>()
@@ -46,18 +24,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public override void ApplyBaseEntity(ModelBuilder modelBuilder)
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                       .Property(nameof(BaseEntity.RowVersion))
-                       .IsConcurrencyToken()
-                       .HasColumnName("xmin")
-                       .HasColumnType("xid");
+            //modelBuilder.Entity<BaseEntity>()
+            //       .Ignore(nameof(BaseEntity.Timestamp));
 
-                modelBuilder.Entity(entityType.ClrType)
-                       .Ignore(nameof(BaseEntity.Timestamp));
-            }
+            //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+            //{
+            //    modelBuilder.Entity(entityType.ClrType)
+            //           .Property(nameof(BaseEntity.RowVersion))
+            //           .IsConcurrencyToken()
+            //           .HasColumnName("xmin")
+            //           .HasColumnType("xid");
+            //}
         }
 
         public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)

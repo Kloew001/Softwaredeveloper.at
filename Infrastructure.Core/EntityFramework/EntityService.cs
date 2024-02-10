@@ -108,10 +108,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 return query;
 
             var sortOrders =
-            typeof(TEntity).GetProperties()
-                .Select(_ => new { Property = _, Attribute = _.GetCustomAttributes(typeof(OrderByDefaultAttribute), false).SingleOrDefault() as OrderByDefaultAttribute })
-                .Where(_ => _.Attribute != null)
-                .ToList();
+                typeof(TEntity).GetProperties()
+                    .Select(_ => new { Property = _, Attribute = _.GetCustomAttributes(typeof(OrderByAttribute), false).SingleOrDefault() as OrderByAttribute })
+                    .Where(_ => _.Attribute != null)
+                    .ToList();
 
             if (sortOrders.Any())
             {
@@ -122,14 +122,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     var order = sortOrder.Attribute.Order;
                     if (isFirst)
                     {
-                        if (direction == OrderByDefaultAttribute.SortDirection.Ascending)
+                        if (direction == OrderByAttribute.SortDirection.Ascending)
                             query = query.OrderByPropertyName(sortOrder.Property.Name);
                         else
                             query = query.OrderByPropertyNameDescending(sortOrder.Property.Name);
                     }
                     else
                     {
-                        if (direction == OrderByDefaultAttribute.SortDirection.Ascending)
+                        if (direction == OrderByAttribute.SortDirection.Ascending)
                             query = query.ThenByPropertyName(sortOrder.Property.Name);
                         else
                             query = query.ThenByPropertyNameDescending(sortOrder.Property.Name);
@@ -150,7 +150,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
             else if (typeof(ChangeTrackedEntity).IsAssignableFrom(typeof(TEntity)))
             {
-                query = query.OrderByPropertyName(nameof(ChangeTrackedEntity.DateModified));
+                query = query.OrderByPropertyNameDescending(nameof(ChangeTrackedEntity.DateModified));
             }
             else
             {

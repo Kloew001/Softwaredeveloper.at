@@ -5,7 +5,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.ChronologyEntries
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
     [Table(nameof(ChronologyEntry))]
     public class ChronologyEntry : ChangeTrackedEntity

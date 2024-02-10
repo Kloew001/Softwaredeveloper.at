@@ -8,9 +8,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
-using Audit.WebApi;
-using log4net;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Infrastructure.Core.Web

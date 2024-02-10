@@ -26,7 +26,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
     public interface IAudit
     {
         public Guid Id { get; set; }
-        
+
         public Guid AuditId { get; set; }
 
         string TransactionId { get; set; }

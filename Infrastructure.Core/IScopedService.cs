@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core;
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {

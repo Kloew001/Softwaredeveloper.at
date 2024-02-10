@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore;
+
+using System.Linq.Expressions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
@@ -72,6 +74,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         {
             return source.Where(_ => _ != null);
         }
+
+        public static IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> source)
+        {
+            var randomizer = new Random();
+            return source.OrderBy(_ => randomizer.Next());
+        }
     }
 
     public static class IQueryableUtility
@@ -107,8 +115,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return query;
         }
 
-
-
+        public static IQueryable<T> OrderByRandom<T>(this IQueryable<T> query)
+        {
+            return query.OrderBy(en => EF.Functions.Random());
+        }
 
         public static IQueryable<T> OrderByIndex<T>(this IQueryable<T> query)
             where T : ISupportIndex

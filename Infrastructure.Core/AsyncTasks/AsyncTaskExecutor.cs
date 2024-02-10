@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
-
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks

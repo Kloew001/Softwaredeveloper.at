@@ -1,8 +1,4 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class DateTimeUtility
     {

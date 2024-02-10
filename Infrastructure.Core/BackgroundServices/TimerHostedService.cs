@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
     public abstract class TimerHostedService : BaseHostedService
     {
@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                   await base.ExecuteAsync(cancellationToken);
+                    await base.ExecuteAsync(cancellationToken);
 
                     await Task.Delay(TimeSpan.FromSeconds(_hostedServicesConfiguration.IntervalInSeconds), cancellationToken);
                 }

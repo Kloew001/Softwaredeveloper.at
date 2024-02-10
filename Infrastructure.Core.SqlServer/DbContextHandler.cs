@@ -9,26 +9,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class SqlServerDbContextHandler : BaseDbContextHandler
     {
-        public override async Task UpdateDatabaseAsync<TDbContext>(IHost host)
-        {
-            using (var scope = host.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
-
-                var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
-
-                if (!await databaseCreator.CanConnectAsync())
-                {
-                    scope.ServiceProvider
-                    .GetService<IApplicationSettings>()
-                    .HostedServices[
-                    nameof(DataSeedHostedService)].Enabled = true;
-                }
-
-                await context.Database.MigrateAsync();
-            }
-        }
-
         public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
         {
             var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings["DbContextConnection"];
@@ -43,17 +23,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public override void ApplyBaseEntity(ModelBuilder modelBuilder)
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                       .Property(nameof(BaseEntity.Timestamp))
-                       .IsConcurrencyToken()
-                       .IsRowVersion();
+            //modelBuilder.Entity<BaseEntity>()
+            //       .Ignore(nameof(BaseEntity.RowVersion));
 
-                modelBuilder.Entity(entityType.ClrType)
-                       .Ignore(nameof(BaseEntity.RowVersion));
-            }
+            //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+            //{
+            //    modelBuilder.Entity(entityType.ClrType)
+            //           .Property(nameof(BaseEntity.Timestamp))
+            //           .IsConcurrencyToken()
+            //           .IsRowVersion();
+
+            //    modelBuilder.Entity(entityType.ClrType)
+            //           .Ignore(nameof(BaseEntity.RowVersion));
+            //}
         }
 
         public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
@@ -80,10 +63,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     .WithMany()
                     .OnDelete(DeleteBehavior.NoAction);
             }
-        }
-
-        public override void ApplyDateTime(ModelBuilder modelBuilder)
-        {
         }
 
         public override void ApplyApplicationUser(ModelBuilder modelBuilder)

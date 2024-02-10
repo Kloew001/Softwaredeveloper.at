@@ -18,10 +18,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         //[ConcurrencyCheck]
         //[Column("xmin", TypeName = "xid")]
         //[DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public long RowVersion { get; set; }
+        //public long RowVersion { get; set; }
 
         //[ConcurrencyCheck]
         //[Timestamp]
-        public byte[] Timestamp { get; set; }
+        //public byte[] Timestamp { get; set; }
     }
 }

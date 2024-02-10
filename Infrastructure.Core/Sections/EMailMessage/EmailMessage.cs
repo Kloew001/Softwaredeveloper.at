@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
     [Table(nameof(EmailMessage))]
     public class EmailMessage

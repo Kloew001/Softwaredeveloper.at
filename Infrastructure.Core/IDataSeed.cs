@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SoftwaredeveloperDotAt.Infrastructure.Core;
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
@@ -27,16 +27,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            var dataSeeds = _serviceProvider.GetServices<IDataSeed>()
+            var dataSeedGrouped = _serviceProvider.GetServices<IDataSeed>()
                 .Where(_ => _.AutoExecute)
-                .OrderBy(x => x.Priority)
+                .GroupBy(_ => _.Priority)
+                .OrderBy(_ => _.Key)
                 .ToList();
 
-            var tasks = new List<Task>();
-
-            foreach (var dataSeed in dataSeeds)
+            foreach (var dataSeedGroup in dataSeedGrouped)
             {
-                if (dataSeed.ExecuteInThread)
+                var tasks = new List<Task>();
+
+                foreach (var dataSeed in dataSeedGroup.Where(_ => _.ExecuteInThread == true))
                 {
                     var dataSeedType = dataSeed.GetType();
 
@@ -50,13 +51,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         await dataSeedService.ExecuteSeedAsync(dataSeedInner);
                     }));
                 }
-                else
+
+                foreach (var dataSeed in dataSeedGroup.Where(_ => _.ExecuteInThread == false))
                 {
                     await ExecuteSeedAsync(dataSeed);
                 }
-            }
 
-            Task.WaitAll(tasks.ToArray(), cancellationToken);
+                Task.WaitAll(tasks.ToArray(), cancellationToken);
+            }
         }
 
         private async Task ExecuteSeedAsync(IDataSeed dataSeed)

@@ -1,4 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public interface IApplicationSettings
     { 

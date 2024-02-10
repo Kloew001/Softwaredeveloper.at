@@ -3,11 +3,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
@@ -19,18 +19,34 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options);
 
         void OnModelCreating(ModelBuilder modelBuilder);
-        void ApplyDateTime(ModelBuilder modelBuilder);
-        void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder);
-        void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
-        void ApplyApplicationUser(ModelBuilder modelBuilder);
 
         void UpdateChangeTrackedEntity(DbContext context);
     }
 
     public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonService<IDbContextHandler>
     {
-        public abstract Task UpdateDatabaseAsync<TDbContext>(IHost host)
-            where TDbContext : DbContext;
+        public virtual async Task UpdateDatabaseAsync<TDbContext>(IHost host)
+            where TDbContext : DbContext
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
+
+                var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+
+                if (!await databaseCreator.ExistsAsync())
+                {
+                    scope.ServiceProvider
+                    .GetService<IApplicationSettings>()
+                    .HostedServices[
+                    nameof(DataSeedHostedService)].Enabled = true;
+
+                    await databaseCreator.CreateAsync();
+                }
+
+                await context.Database.MigrateAsync();
+            }
+        }
 
         public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
         {
@@ -67,6 +83,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             ApplyEnumToStringValueConverter(modelBuilder);
             ApplyDateTime(modelBuilder);
+            ApplyDecimal(modelBuilder);
             ApplyChangeTrackedEntity(modelBuilder);
             ApplyApplicationUser(modelBuilder);
             ApplyAuditEntity(modelBuilder);
@@ -94,7 +111,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public abstract void ApplyDateTime(ModelBuilder modelBuilder);
+        public virtual void ApplyDateTime(ModelBuilder modelBuilder)
+        {
+
+        }
+
+        public virtual void ApplyDecimal(ModelBuilder modelBuilder)
+        {
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties()))
+            {
+                if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
+                {
+                    property.SetPrecision(18);
+                    property.SetScale(2);
+                }
+            }
+        }
 
         public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
         {

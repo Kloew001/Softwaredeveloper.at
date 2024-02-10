@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using DocumentFormat.OpenXml.Vml.Office;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -20,36 +21,36 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO Should Update DeepLevel References
-        public static TDto ConvertToDto<TDto>(this IEntity entitiy)
+        public static TDto ConvertToDto<TDto>(this IEntity entitiy, IDtoFactory dtoFactory = null)
             where TDto : IDto, new()
         {
-            return _factory.ConvertToDto<TDto>(entitiy);
+            return _factory.ConvertToDto<TDto>(entitiy, default, dtoFactory);
         }
 
-        public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities)
+        public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null)
             where TDto : IDto, new()
         {
-            return _factory.ConvertToDtos<TDto>(entities);
+            return _factory.ConvertToDtos<TDto>(entities, dtoFactory);
         }
 
-        public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity)
+        public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity, IDtoFactory dtoFactory = null)
             where TEntity : IEntity
         {
-            return _factory.ConvertToEntity<TEntity>(dto, entity);
+            return _factory.ConvertToEntity<TEntity>(dto, entity, dtoFactory);
         }
 
         //TODO ShouldUpdateRecerences
-        public static ICollection<TEntity> ConvertIdsToEntities<TEntity>(this IEnumerable<Guid> dtoIds, IEntity rootEntity, ICollection<TEntity> entities = null)
+        public static ICollection<TEntity> ConvertIdsToEntities<TEntity>(this IEnumerable<Guid> dtoIds, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
             where TEntity : class, IEntity
         {
-            return _factory.ConvertIdsToEntities<TEntity>(rootEntity, dtoIds, entities);
+            return _factory.ConvertIdsToEntities<TEntity>(rootEntity, dtoIds, entities, dtoFactory);
         }
 
         //TODO ShouldUpdateRecerences
-        public static ICollection<TEntity> ConvertToEntities<TEntity>(this IEnumerable<IDto> dto, IEntity rootEntity, ICollection<TEntity> entities = null)
+        public static ICollection<TEntity> ConvertToEntities<TEntity>(this IEnumerable<IDto> dto, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
             where TEntity : class, IEntity
         {
-            return _factory.ConvertToEntities<TEntity>(rootEntity, dto, entities);
+            return _factory.ConvertToEntities<TEntity>(rootEntity, dto, entities, dtoFactory);
         }
     }
 
@@ -138,6 +139,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (resultTuple != null)
                 return resultTuple;
 
+            if (tuple.Item2.BaseType == null || tuple.Item2.BaseType == typeof(object))
+                return null;
+
             var secondBaseTuple = new Tuple<Type, Type>(tuple.Item1, tuple.Item2.BaseType);
 
             resultTuple = FindTuple(secondBaseTuple);
@@ -178,7 +182,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                 var tuple = FindTuple(new Tuple<Type, Type>(typeof(TDto), typeof(TEntity)));
 
                 if (tuple == null)
-                    throw new MissingMethodException();
+                    return _serviceProvider.GetService<DefaultDtoFactory<TDto, TEntity>>();
 
                 var factoryType = _dtoFactoryResolver.Resolve(tuple);
 
@@ -201,18 +205,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             return cachedfactory;
         }
 
-        public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities)
+        public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null)
             where TDto : IDto, new()
         {
             if (entities == null)
                 return null;
 
             return entities
-                .Select(_ => ConvertToDto(_, new TDto()))
+                .Select(_ => ConvertToDto(_, new TDto(), dtoFactory))
                 .ToList();
         }
 
-        public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default)
+        public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default, IDtoFactory dtoFactory = null)
             where TDto : IDto, new()
         {
             if (entity == null)
@@ -221,7 +225,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (dto == null)
                 dto = new TDto();
 
-            var dtoFactory = ResolveTyped(typeof(TDto), entity.GetType());
+            if (dtoFactory == null)
+                dtoFactory = ResolveTyped(typeof(TDto), entity.GetType());
+
             var convertToDtoMethod = dtoFactory.GetType().GetMethod("ConvertToDto"); //IDtoFactory<TDto, TEntity>.ConvertToDto
 
             dto = (TDto)convertToDtoMethod.Invoke(dtoFactory, new object[] { entity, dto });
@@ -243,7 +249,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO ShouldUpdateRecerences
-        public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEntity rootEntity, IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null)
+        public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEntity rootEntity, IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
             where TEntity : class, IEntity
         {
             if (dtoIds == null)
@@ -290,7 +296,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO ShouldUpdateRecerences
-        public ICollection<TEntity> ConvertToEntities<TEntity>(IEntity rootEntity, IEnumerable<IDto> dtos, ICollection<TEntity> entities = null)
+        public ICollection<TEntity> ConvertToEntities<TEntity>(IEntity rootEntity, IEnumerable<IDto> dtos, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
             where TEntity : class, IEntity
         {
             if (dtos == null)
@@ -335,19 +341,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         itemsCollection.Add(entity);
                     }
 
-                    _.dto.ConvertToEntity(entity); //TODO ShouldUpdateRecerences paramter
+                    _.dto.ConvertToEntity(entity, dtoFactory); //TODO ShouldUpdateRecerences paramter
                 });
 
             return itemsCollection;
         }
 
-        public TEntity ConvertToEntity<TEntity>(IDto dto, TEntity entity)
+        public TEntity ConvertToEntity<TEntity>(IDto dto, TEntity entity, IDtoFactory dtoFactory = null)
             where TEntity : IEntity
         {
             if (dto == null)
                 return default(TEntity);
 
-            var dtoFactory = ResolveTyped(dto.GetType(), typeof(TEntity));
+            if (dtoFactory == null)
+            {
+                dtoFactory = ResolveTyped(dto.GetType(), typeof(TEntity));
+            }
+
             var convertToEntityMethod = dtoFactory.GetType().GetMethod("ConvertToEntity"); //IDtoFactory<TDto, TEntity>.ConvertToEntity
 
             entity = (TEntity)convertToEntityMethod.Invoke(dtoFactory, new object[] { dto, entity });
@@ -378,5 +388,89 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
     {
         TDto ConvertToDto(TEntity entity, TDto dto);
         TEntity ConvertToEntity(TDto dto, TEntity entity);
+    }
+
+    public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
+        where TDto : IDto
+        where TEntity : IEntity
+    {
+        private IMemoryCache _memoryCache;
+
+        public DefaultDtoFactory(IMemoryCache memoryCache)
+        {
+            _memoryCache = memoryCache;
+        }
+
+        public TDto ConvertToDto(TEntity entity, TDto dto)
+        {
+            return (TDto)SimpleNameMapping(entity, dto);
+        }
+
+        public TEntity ConvertToEntity(TDto dto, TEntity entity)
+        {
+            return (TEntity)SimpleNameMapping(dto, entity);
+        }
+
+        protected virtual object SimpleNameMapping(object source, object target)
+        {
+            if (source == null || target == null)
+                return null;
+
+            var sourceType = source.GetType();
+            var targetType = target.GetType();
+
+            var cacheKey = $"{nameof(SimpleNameMapping)}_{nameof(sourceType.FullName)}_{targetType.FullName}";
+
+            if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
+            {
+                propertyMaps = new List<PropertyMap>();
+
+                sourceType
+                    .GetProperties()
+                    .ToList()
+                    .ForEach(_ =>
+                    {
+                        var targetProperty = targetType.GetProperty(_.Name);
+
+                        if (targetProperty != null)
+                        {
+                            propertyMaps.Add(new PropertyMap
+                            {
+                                SourceProperty = _,
+                                TargetProperty = targetProperty
+                            });
+                        }
+                    });
+
+                _memoryCache.Set(cacheKey, propertyMaps);
+            }
+
+            foreach (var propertyMap in propertyMaps)
+            {
+                var sourceValue = propertyMap.SourceProperty.GetValue(source);
+
+                if (propertyMap.TargetProperty.PropertyType.IsValueType ||
+                    propertyMap.TargetProperty.PropertyType == typeof(string))
+                {
+                    propertyMap.TargetProperty
+                        .SetValue(target, sourceValue);
+                }
+                else if (typeof(DtoBase).IsAssignableFrom(propertyMap.TargetProperty.PropertyType) ||
+                         typeof(BaseEntity).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+                {
+                    var targetvalue = Activator.CreateInstance(propertyMap.TargetProperty.PropertyType);
+
+                    SimpleNameMapping(sourceValue, targetvalue);
+                }
+            }
+
+            return target;
+        }
+
+        public class PropertyMap
+        {
+            public PropertyInfo SourceProperty { get; set; }
+            public PropertyInfo TargetProperty { get; set; }
+        }
     }
 }

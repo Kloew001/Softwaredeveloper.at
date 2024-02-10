@@ -9,7 +9,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     }
 
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class OrderByDefaultAttribute : Attribute
+    public class OrderByAttribute : Attribute
     {
         public enum SortDirection
         {
@@ -19,7 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public int Order { get; set; }
         public SortDirection Direction { get; set; }
 
-        public OrderByDefaultAttribute(int order = 1, SortDirection direction = SortDirection.Ascending)
+        public OrderByAttribute(int order = 1, SortDirection direction = SortDirection.Ascending)
         {
             Order = order;
             Direction = direction;
