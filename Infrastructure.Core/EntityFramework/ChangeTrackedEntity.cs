@@ -2,7 +2,7 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public abstract class ChangeTrackedEntity : BaseEntity
+    public abstract class ChangeTrackedEntity : Entity
     {
         [Column(nameof(CreatedById))]
         public Guid CreatedById { get; set; }

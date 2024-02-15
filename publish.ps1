@@ -2,7 +2,7 @@
 
 Set-Variable -Name "Projekt" -Value "RWA"
 Set-Variable -Name "TargetPath" -Value C:\Development\$Projekt
-Set-Variable -Name "VERSION" -Value "0.0.0.177"
+Set-Variable -Name "VERSION" -Value "0.0.0.193"
 
 Remove-Item $TargetPath\LocalShared\*.*
 
@@ -15,8 +15,8 @@ copy-item .\nuget\$package.$VERSION.nupkg $TargetPath\LocalShared
 
 Set-Location $TargetPath\$Projekt.Application
 dotnet add $Projekt.Application package $package -v $VERSION
-Set-Location $TargetPath\$Projekt.Server
-dotnet add $Projekt.Server package $package -v $VERSION
+#Set-Location $TargetPath\$Projekt.Server
+#dotnet add $Projekt.Server package $package -v $VERSION
 
 
 Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core.SqlServer

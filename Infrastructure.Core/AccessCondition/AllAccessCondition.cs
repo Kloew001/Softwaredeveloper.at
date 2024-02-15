@@ -4,7 +4,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
     public abstract class AllAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedService
-        where TEntity : BaseEntity
+        where TEntity : Entity
     {
         public override Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(true);
 

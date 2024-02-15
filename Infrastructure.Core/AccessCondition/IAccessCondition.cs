@@ -15,7 +15,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
     }
 
     public interface IAccessCondition<TEntity> : IAccessCondition, ITypedScopedService<IAccessCondition<TEntity>>
-        //where TEntity : BaseEntity
+        //where TEntity : Entity
     {
         Task<bool> CanReadAsync(TEntity entity);
         IQueryable<TEntity> CanReadQuery(IQueryable<TEntity> query);

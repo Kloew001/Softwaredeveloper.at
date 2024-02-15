@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
 namespace Infrastructure.Core.Web
 {
@@ -31,11 +32,14 @@ namespace Infrastructure.Core.Web
                 //(options.ModelBinderProviders.Single(_ => _.GetType() == typeof(Microsoft.AspNetCore.Mvc.ModelBinding.Binders.DateTimeModelBinderProvider)));
 
                 //options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
-            }).AddJsonOptions(options =>
+            })
+            .AddNewtonsoftJson(options =>
             {
-                options.JsonSerializerOptions.WriteIndented = false;
+                //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
-
+            
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

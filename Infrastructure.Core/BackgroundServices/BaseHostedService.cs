@@ -134,8 +134,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
                 if (backgroundServiceInfo == null)
                 {
-                    backgroundServiceInfo = context.CreateProxy<BackgroundserviceInfo>();
-                    await context.AddAsync(backgroundServiceInfo);
+                    backgroundServiceInfo = await context.CreateEntity<BackgroundserviceInfo>();
                     backgroundServiceInfo.Name = Name;
                 }
 

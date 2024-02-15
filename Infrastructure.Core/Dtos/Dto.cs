@@ -5,8 +5,9 @@
         Guid? Id { get; set; }
     }
 
-    public class DtoBase : IDto
+    public class Dto : IDto
     {
+        [Newtonsoft.Json.JsonProperty("id",  Order = -1)]
         public Guid? Id { get; set; }
     }
 }

@@ -4,10 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Microsoft.Extensions.Hosting;
-using DocumentFormat.OpenXml.Vml.Office;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -358,7 +355,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                 dtoFactory = ResolveTyped(dto.GetType(), typeof(TEntity));
             }
 
-            var convertToEntityMethod = dtoFactory.GetType().GetMethod("ConvertToEntity"); //IDtoFactory<TDto, TEntity>.ConvertToEntity
+            var convertToEntityMethod = dtoFactory.GetType()
+                .GetMethod("ConvertToEntity"); //IDtoFactory<TDto, TEntity>.ConvertToEntity
 
             entity = (TEntity)convertToEntityMethod.Invoke(dtoFactory, new object[] { dto, entity });
 
@@ -388,89 +386,5 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
     {
         TDto ConvertToDto(TEntity entity, TDto dto);
         TEntity ConvertToEntity(TDto dto, TEntity entity);
-    }
-
-    public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
-        where TDto : IDto
-        where TEntity : IEntity
-    {
-        private IMemoryCache _memoryCache;
-
-        public DefaultDtoFactory(IMemoryCache memoryCache)
-        {
-            _memoryCache = memoryCache;
-        }
-
-        public TDto ConvertToDto(TEntity entity, TDto dto)
-        {
-            return (TDto)SimpleNameMapping(entity, dto);
-        }
-
-        public TEntity ConvertToEntity(TDto dto, TEntity entity)
-        {
-            return (TEntity)SimpleNameMapping(dto, entity);
-        }
-
-        protected virtual object SimpleNameMapping(object source, object target)
-        {
-            if (source == null || target == null)
-                return null;
-
-            var sourceType = source.GetType();
-            var targetType = target.GetType();
-
-            var cacheKey = $"{nameof(SimpleNameMapping)}_{nameof(sourceType.FullName)}_{targetType.FullName}";
-
-            if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
-            {
-                propertyMaps = new List<PropertyMap>();
-
-                sourceType
-                    .GetProperties()
-                    .ToList()
-                    .ForEach(_ =>
-                    {
-                        var targetProperty = targetType.GetProperty(_.Name);
-
-                        if (targetProperty != null)
-                        {
-                            propertyMaps.Add(new PropertyMap
-                            {
-                                SourceProperty = _,
-                                TargetProperty = targetProperty
-                            });
-                        }
-                    });
-
-                _memoryCache.Set(cacheKey, propertyMaps);
-            }
-
-            foreach (var propertyMap in propertyMaps)
-            {
-                var sourceValue = propertyMap.SourceProperty.GetValue(source);
-
-                if (propertyMap.TargetProperty.PropertyType.IsValueType ||
-                    propertyMap.TargetProperty.PropertyType == typeof(string))
-                {
-                    propertyMap.TargetProperty
-                        .SetValue(target, sourceValue);
-                }
-                else if (typeof(DtoBase).IsAssignableFrom(propertyMap.TargetProperty.PropertyType) ||
-                         typeof(BaseEntity).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
-                {
-                    var targetvalue = Activator.CreateInstance(propertyMap.TargetProperty.PropertyType);
-
-                    SimpleNameMapping(sourceValue, targetvalue);
-                }
-            }
-
-            return target;
-        }
-
-        public class PropertyMap
-        {
-            public PropertyInfo SourceProperty { get; set; }
-            public PropertyInfo TargetProperty { get; set; }
-        }
     }
 }

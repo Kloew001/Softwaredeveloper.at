@@ -3,7 +3,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
-    public class ChronologyEntryDto : DtoBase
+    public class ChronologyEntryDto : Dto
     {
         public string Description { get; set; }
         public DateTime DateCreated { get; set; }

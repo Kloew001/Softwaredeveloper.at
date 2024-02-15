@@ -3,12 +3,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
+
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -87,8 +91,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             ApplyChangeTrackedEntity(modelBuilder);
             ApplyApplicationUser(modelBuilder);
             ApplyAuditEntity(modelBuilder);
+            ApplyGlobalFilters(modelBuilder);
 
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseSoftwaredeveloperDotAtDbContext).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
         }
 
@@ -206,5 +211,57 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public abstract void ApplyApplicationUser(ModelBuilder modelBuilder);
+
+
+        private void ApplyGlobalFilters(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                this.GetType()
+                    .GetMethod(nameof(ConfigureGlobalFilters),
+                            BindingFlags.Instance | BindingFlags.NonPublic)
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(this, new object[] { modelBuilder, entityType });
+            }
+        }
+
+        protected void ConfigureGlobalFilters<TEntity>(ModelBuilder modelBuilder, IMutableEntityType entityType)
+            where TEntity : class
+        {
+            if (entityType.BaseType == null && ShouldFilterEntity<TEntity>(entityType))
+            {
+                var filterExpression = CreateFilterExpression<TEntity>();
+                if (filterExpression != null)
+                {
+                    modelBuilder.Entity<TEntity>().HasQueryFilter(filterExpression);
+                }
+            }
+        }
+        protected virtual bool ShouldFilterEntity<TEntity>(IMutableEntityType entityType) where TEntity : class
+        {
+            if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsSoftDeleteFilterEnabled { get; set; } = true;
+
+        protected virtual Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>()
+            where TEntity : class
+        {
+            if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
+            {
+                Expression<Func<TEntity, bool>> softDeleteFilter = 
+                    e => !IsSoftDeleteFilterEnabled || !((ISoftDelete)e).IsDeleted;
+
+                return softDeleteFilter;
+            }
+
+            return null;
+        }
+
     }
 }

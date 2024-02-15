@@ -8,7 +8,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public static bool IsModified<TEntity, TProperty>(
             this TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
-            where TEntity : BaseEntity
+            where TEntity : Entity
         {
             var context = entity.ResolveDbContext();
 
@@ -19,7 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             this IDbContext context,
             TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
-            where TEntity : BaseEntity
+            where TEntity : Entity
         {
             return GetPropertyInfo(context, entity, propertyExpression).IsModified;
         }
@@ -27,7 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public static PropertyEntry GetPropertyInfo<TEntity, TProperty>(
             this TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
-            where TEntity : BaseEntity
+            where TEntity : Entity
         {
             var context = entity.ResolveDbContext();
 
@@ -38,7 +38,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             this IDbContext context,
             TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
-            where TEntity : BaseEntity
+            where TEntity : Entity
         {
             return context.Entry(entity).Property(propertyExpression);
         }

@@ -8,7 +8,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public Guid Id { get; set; }
     }
 
-    public abstract class BaseEntity : IEntity
+    public abstract class Entity : IEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -23,5 +23,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         //[ConcurrencyCheck]
         //[Timestamp]
         //public byte[] Timestamp { get; set; }
+
+        public override string ToString()
+        {
+            return $"[{GetType().Name} {Id}]";
+        }
     }
 }

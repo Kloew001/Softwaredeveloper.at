@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
+
 using System.Linq.Expressions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
@@ -7,6 +10,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
     public interface ISupportIndex
     {
         int Index { get; set; }
+    }
+
+    public interface ISupportMultilingualDisplayName<TTranslation>
+        where TTranslation : Entity, ISupportDisplayName
+    {
     }
 
     public interface ISupportDisplayName

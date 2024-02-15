@@ -5,23 +5,24 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Multilingual;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public abstract class BaseDbContext : DbContext,
+    public abstract class BaseSoftwaredeveloperDotAtDbContext : DbContext,
         IDbContext,
         ITypedScopedService<IDbContext>
-
     {
-        protected BaseDbContext()
+        public bool UseProxy { get; set; } = true;
+
+        protected BaseSoftwaredeveloperDotAtDbContext()
         {
         }
 
-        protected BaseDbContext(DbContextOptions options) : base(options)
+        protected BaseSoftwaredeveloperDotAtDbContext(DbContextOptions options) : base(options)
         {
         }
 
@@ -60,8 +61,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
         public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
 
-        //public virtual DbSet<LanguageCulture> LanguageCultures { get; set; }
-        //public virtual DbSet<MultilingualText> Multilinguals { get; set; }
+        public virtual DbSet<LanguageCulture> LanguageCultures { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -95,7 +95,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             dbContextHandler.UpdateChangeTrackedEntity(this);
         }
 
-        TEntity IDbContext.CreateProxy<TEntity>(params object[] constructorArguments) where TEntity : class
+        public async Task<TEntity> CreateEntity<TEntity>()
+            where TEntity : class, new()
+        {
+            if (UseProxy)
+            {
+                var proxy = CreateProxy<TEntity>(this, null);
+                await AddAsync(proxy);
+                return proxy;
+            }
+            else
+            {
+                var entity = new TEntity();
+                await AddAsync(entity);
+                return entity;
+            }
+        }
+
+        public TEntity CreateProxy<TEntity>(params object[] constructorArguments)
+            where TEntity : class
         {
             return ProxiesExtensions.CreateProxy<TEntity>(this, constructorArguments);
         }

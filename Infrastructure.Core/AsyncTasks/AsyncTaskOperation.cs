@@ -10,7 +10,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
-    public class AsyncTaskOperation : BaseEntity
+    public class AsyncTaskOperation : Entity
     {
         public AsyncTaskOperation()
         {

@@ -8,13 +8,15 @@ public static class ApplicationUserIds
     public static Guid AdminId = Guid.Parse("244D7C67-37AC-448C-92C4-398BC9090C71");
 }
 
-public class ApplicationUser : BaseEntity
+public class ApplicationUser : Entity
 {
     public string UserName { get; set; }
 
     public string NormalizedUserName { get; set; }
 
     public string Email { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
 
     public string NormalizedEmail { get; set; }
 
@@ -47,7 +49,7 @@ public class ApplicationUser : BaseEntity
     public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
 }
 
-public class ApplicationUserClaim : BaseEntity
+public class ApplicationUserClaim : Entity
 {
     public Guid UserId { get; set; }
 
@@ -83,7 +85,7 @@ public class ApplicationUserToken
     public string Value { get; set; }
 }
 
-public class ApplicationRole : BaseEntity
+public class ApplicationRole : Entity
 {
     public string Name { get; set; }
 
@@ -105,7 +107,7 @@ public class ApplicationUserRole
     public virtual ApplicationRole Role { get; set; }
 }
 
-public class ApplicationRoleClaim : BaseEntity
+public class ApplicationRoleClaim : Entity
 {
     public Guid RoleId { get; set; }
 

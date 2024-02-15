@@ -12,6 +12,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return string.IsNullOrEmpty(str);
         }
 
+        public static bool IsNotNullOrEmpty(this string str)
+        {
+            return !string.IsNullOrEmpty(str);
+        }
+
         public static string GenerateRandomString(string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", int length = 6)
         {
             var randomString = new StringBuilder();

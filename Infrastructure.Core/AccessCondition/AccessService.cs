@@ -25,7 +25,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             _sectionManager = sectionManager;
         }
 
-        public Task<bool> CanReadAsync(BaseEntity entity)
+        public Task<bool> CanReadAsync(Entity entity)
         {
             if (entity == null)
                 return Task.FromResult(true);
@@ -39,7 +39,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 .CanReadAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public IQueryable<BaseEntity> CanReadQuery(IQueryable<BaseEntity> query)
+        public IQueryable<Entity> CanReadQuery(IQueryable<Entity> query)
         {
             if (_sectionManager.IsActive<SecurityFreeSection>())
                 return query;
@@ -62,7 +62,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             return query;//TODO
         }
 
-        public Task<bool> CanCreateAsync(BaseEntity entity)
+        public Task<bool> CanCreateAsync(Entity entity)
         {
             if (entity == null)
                 return Task.FromResult(true);
@@ -76,7 +76,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 .CanCreateAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public Task<bool> CanUpdateAsync(BaseEntity entity)
+        public Task<bool> CanUpdateAsync(Entity entity)
         {
             if (entity == null)
                 return Task.FromResult(true);
@@ -90,7 +90,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 .CanUpdateAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public Task<bool> CanDeleteAsync(BaseEntity entity)
+        public Task<bool> CanDeleteAsync(Entity entity)
         {
             if (entity == null)
                 return Task.FromResult(true);
@@ -104,7 +104,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 .CanDeleteAsync(accessConditionInfo.SecurityEntity);
         }
 
-        public Task<bool> CanSaveAsync(BaseEntity entity)
+        public Task<bool> CanSaveAsync(Entity entity)
         {
             if (entity == null)
                 return Task.FromResult(true);
@@ -132,17 +132,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public class AccessConditionInfo
         {
-            public BaseEntity BaseEntity { get; set; }
+            public Entity Entity { get; set; }
 
-            public BaseEntity SecurityEntity { get; set; }
+            public Entity SecurityEntity { get; set; }
             public IAccessCondition AccessCondition { get; set; }
         }
 
-        private AccessConditionInfo ResolveAccessConditionInfo(BaseEntity entity)
+        private AccessConditionInfo ResolveAccessConditionInfo(Entity entity)
         {
             var accessConditionInfo = new AccessConditionInfo
             {
-                BaseEntity = entity
+                Entity = entity
             };
 
             var securityInfo = ResolveSecurityParentInfo(entity.GetType());
@@ -159,7 +159,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             if (securityInfo.SecurityProperty != null)
             {
-                var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as BaseEntity;
+                var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as Entity;
 
                 if (securityParent == null)
                     throw new InvalidOperationException($"securityparent is null '{securityInfo.EntityType.Name}' '{entity.Id}'");
