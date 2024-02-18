@@ -353,6 +353,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (_sectionManager.IsActive<SuppressValidationSection>())
                 return;
 
+            if (_validator == null) 
+                return;
+
             var validationResult = await _validator?.ValidateAsync(entity);
 
             if (validationResult.IsValid == false)

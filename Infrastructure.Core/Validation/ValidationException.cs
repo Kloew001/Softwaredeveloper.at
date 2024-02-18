@@ -10,7 +10,7 @@
     {
         public IEnumerable<ValidationError> Errors { get; set; }
 
-        public ValidationException(string message, IEnumerable<ValidationError> errors)
+        public ValidationException(string message, IEnumerable<ValidationError> errors = null)
         : base(message)
         {
             Errors = errors;
