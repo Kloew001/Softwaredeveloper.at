@@ -54,6 +54,8 @@ namespace Infrastructure.Core.Web
             app.UseAuthentication();
             app.UseAuthorization();
 
+            //app.UseProblemDetails();
+
             app.MapControllers();
 
             app.UseExceptionHandler();

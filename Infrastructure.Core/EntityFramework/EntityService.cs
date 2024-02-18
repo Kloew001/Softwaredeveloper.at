@@ -2,14 +2,18 @@
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using DocumentFormat.OpenXml.Vml.Office;
-using CsvHelper;
-using Microsoft.Extensions.Caching.Memory;
-using System.Reflection;
+using Microsoft.Extensions.Logging;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+using FluentValidation;
+using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
+using DocumentFormat.OpenXml.VariantTypes;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class SuppressSaveChangesSection : Section
+    {
+    }
+    public class SuppressValidationSection : Section
     {
     }
 
@@ -19,15 +23,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly IDbContext _context;
         protected readonly AccessService _accessService;
         protected readonly SectionManager _sectionManager;
+        protected readonly EntityValidator<TEntity> _validator;
 
         public EntityService(
             IDbContext context,
             AccessService accessService,
-            SectionManager sectionManager)
+            SectionManager sectionManager,
+            EntityValidator<TEntity> validator = null)
         {
             _context = context;
             _accessService = accessService;
             _sectionManager = sectionManager;
+            _validator = validator;
         }
 
         public virtual async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
@@ -166,19 +173,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return query;
         }
 
-        public virtual async Task<TDtoOut> CreateVirtualAsync<TDto, TDtoOut>(TDto dto)
-            where TDto : Dto, new()
-            where TDtoOut : Dto, new()
-        {
-            using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
-            {
-                var entity = await CreateInternalAsync<TDto>(dto);
+        //public virtual async Task<TDtoOut> CreateVirtualAsync<TDto, TDtoOut>(TDto dto)
+        //    where TDto : Dto, new()
+        //    where TDtoOut : Dto, new()
+        //{
+        //    using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
+        //    using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+        //    {
+        //        var entity = await CreateInternalAsync<TDto>(dto);
 
-                return entity.ConvertToDto<TDtoOut>();
-            }
-        }
+        //        return entity.ConvertToDto<TDtoOut>();
+        //    }
+        //}
 
-        public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
+        public virtual async Task<TDto> CreateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
         {
             var entity = await CreateInternalAsync<TDto>(dto);
@@ -190,7 +198,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 await _context.SaveChangesAsync();
             }
-            return entity.Id;
+
+            return entity.ConvertToDto<TDto>();
         }
 
         public virtual async Task<TEntity> CreateInternalAsync<TDto>(TDto dto)
@@ -219,6 +228,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (await _accessService.CanCreateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
+            if (!_sectionManager.IsActive<SuppressValidationSection>())
+                await ValidateAndThrowInternalAsync(entity);
+
             return entity;
         }
 
@@ -233,29 +245,29 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return Task.CompletedTask;
         }
 
-        public virtual async Task UpdateVirtualAsync<TDto>(TDto dto)
+        public virtual async Task<TDto> QuickCreateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
         {
             using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
-                await UpdateAsync(dto);
+                var createdDto = await CreateAsync<TDto>(dto);
+                return createdDto;
             }
         }
 
-        public virtual async Task<TDtoOut> UpdateVirtualAsync<TDto, TDtoOut>(TDto dto)
+        public virtual async Task<TDto> QuickUpdateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
-            where TDtoOut : Dto, new()
         {
             using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
-                var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
-                entity = await UpdateInternalAsync<TDto>(dto, entity);
-
-                return entity.ConvertToDto<TDtoOut>();
+                var updatedDto = await UpdateAsync(dto);
+                return updatedDto;
             }
         }
 
-        public virtual async Task UpdateAsync<TDto>(TDto dto)
+        public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
         {
             var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
@@ -269,6 +281,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 await _context.SaveChangesAsync();
             }
+
+            return entity.ConvertToDto<TDto>();
         }
 
         public virtual async Task<TEntity> UpdateInternalAsync<TDto>(TDto dto, TEntity entity)
@@ -280,6 +294,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             if (await _accessService.CanUpdateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
+
+            if (!_sectionManager.IsActive<SuppressValidationSection>())
+                await ValidateAndThrowInternalAsync(entity);
 
             return entity;
         }
@@ -315,6 +332,31 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected virtual Task OnDeleteInternalAsync(TEntity entity)
         {
             return Task.CompletedTask;
+        }
+
+        public virtual async Task ValidateAndThrowAsync<TDto>(TDto dto)
+          where TDto : Dto, new()
+        {
+            using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
+            {
+                var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
+
+                if (entity == null)
+                    entity = await CreateInternalAsync(dto);
+                else
+                    entity = await UpdateInternalAsync<TDto>(dto, entity);
+            }
+        }
+
+        protected async Task ValidateAndThrowInternalAsync(TEntity entity)
+        {
+            if (_sectionManager.IsActive<SuppressValidationSection>())
+                return;
+
+            var validationResult = await _validator?.ValidateAsync(entity);
+
+            if (validationResult.IsValid == false)
+                throw validationResult.ToValidationException();
         }
     }
 

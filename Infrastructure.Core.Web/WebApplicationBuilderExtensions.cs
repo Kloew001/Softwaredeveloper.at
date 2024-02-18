@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using static Infrastructure.Core.Web.Middleware.ValidationExceptionHandler;
 
 namespace Infrastructure.Core.Web
 {
@@ -41,9 +42,15 @@ namespace Infrastructure.Core.Web
             });
             
             builder.Services.AddEndpointsApiExplorer();
-
+            
+            builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-            builder.Services.AddProblemDetails();
+            builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
+            {
+                var problemCorrelationId = Guid.NewGuid().ToString();
+                //log problemCorrelationId into logging system
+                ctx.ProblemDetails.Instance = problemCorrelationId;
+            });
 
             return builder;
         }

@@ -1,12 +1,58 @@
 ﻿using DocumentFormat.OpenXml.InkML;
+
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+
+using MimeKit.Cryptography;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+
 using System.Diagnostics;
+using System.Net;
 
 namespace Infrastructure.Core.Web.Middleware
 {
+    public class ValidationExceptionHandler : IExceptionHandler
+    {
+        private readonly ILogger<ValidationExceptionHandler> _logger;
+        public ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger)
+        {
+            _logger = logger;
+        }
+
+        public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+        {
+            if (exception is ValidationException validationException)
+            {
+                var problemDetails = new ValidationProblemDetails(validationException);
+
+                httpContext.Response.StatusCode = problemDetails.Status.Value;
+
+                await httpContext.Response
+                    .WriteAsJsonAsync(problemDetails, cancellationToken);
+
+
+                return true;
+            }
+            return false;
+        }
+
+        public class ValidationProblemDetails : ProblemDetails
+        {
+            public IEnumerable<ValidationError> Errors { get; set; }
+
+            public ValidationProblemDetails(ValidationException validationException)
+            {
+                Status = StatusCodes.Status400BadRequest;
+                Title = validationException.Message;
+                Detail = validationException.Message;
+                Errors = validationException.Errors;
+            }
+        }
+    }
+
     public class GlobalExceptionHandler : IExceptionHandler
     {
         private readonly ILogger<GlobalExceptionHandler> _logger;
