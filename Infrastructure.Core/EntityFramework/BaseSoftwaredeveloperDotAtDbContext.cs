@@ -100,7 +100,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             if (UseProxy)
             {
-                var proxy = CreateProxy<TEntity>(this, null);
+                var proxy = CreateProxy<TEntity>();
                 await AddAsync(proxy);
                 return proxy;
             }
