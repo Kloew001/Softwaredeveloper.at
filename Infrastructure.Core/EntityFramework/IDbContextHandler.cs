@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 using System.Linq.Expressions;
@@ -100,7 +101,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public abstract void ApplyBaseEntity(ModelBuilder modelBuilder);
 
         public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
-        
+
         public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
         {
 
@@ -221,23 +222,54 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     .GetMethod(nameof(ConfigureGlobalFilters),
                             BindingFlags.Instance | BindingFlags.NonPublic)
                     .MakeGenericMethod(entityType.ClrType)
-                    .Invoke(this, new object[] { modelBuilder, entityType });
+                    .Invoke(this, new object[] { modelBuilder, entityType, null });
             }
         }
 
-        protected void ConfigureGlobalFilters<TEntity>(ModelBuilder modelBuilder, IMutableEntityType entityType)
+        protected void ConfigureGlobalFilters<TEntity>(ModelBuilder modelBuilder, IMutableEntityType entityType, IMutableNavigation mutableNavigation = null)
             where TEntity : class
         {
-            if (entityType.BaseType == null && ShouldFilterEntity<TEntity>(entityType))
+            var shoudlFilterEntity = (bool)this.GetType()
+                .GetMethod(nameof(ShouldFilterEntity),
+                                   BindingFlags.Instance | BindingFlags.NonPublic)
+                .MakeGenericMethod(mutableNavigation?.ClrType ?? entityType.ClrType)
+                .Invoke(this, null);
+
+            if (entityType.BaseType == null && shoudlFilterEntity)
             {
-                var filterExpression = CreateFilterExpression<TEntity>();
+                var filterExpression = CreateFilterExpression<TEntity>(mutableNavigation);
                 if (filterExpression != null)
                 {
-                    modelBuilder.Entity<TEntity>().HasQueryFilter(filterExpression);
+                    modelBuilder.Entity<TEntity>()
+                        .HasQueryFilter(filterExpression);
+                }
+            }
+
+
+            if (mutableNavigation == null)
+            {
+                foreach (var navigation in entityType.GetNavigations().ToList())
+                {
+                    if (!navigation.IsOnDependent || navigation.IsCollection)
+                        continue;
+
+                    if (typeof(IEntity).IsAssignableFrom(navigation.ClrType))
+                    {
+                        this.GetType()
+                           .GetMethod(nameof(ConfigureGlobalFilters), BindingFlags.Instance | BindingFlags.NonPublic)
+                           .MakeGenericMethod(entityType.ClrType)
+                           .Invoke(this, new object[] {
+                     modelBuilder,
+                       entityType,
+                       navigation
+                           });
+                    }
                 }
             }
         }
-        protected virtual bool ShouldFilterEntity<TEntity>(IMutableEntityType entityType) where TEntity : class
+
+        protected virtual bool ShouldFilterEntity<TEntity>()
+            where TEntity : class
         {
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
             {
@@ -249,19 +281,33 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public bool IsSoftDeleteFilterEnabled { get; set; } = true;
 
-        protected virtual Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>()
+        protected virtual Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>(IMutableNavigation mutableNavigation = null)
             where TEntity : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
+            if (typeof(ISoftDelete).IsAssignableFrom(mutableNavigation?.ClrType ?? typeof(TEntity)))
             {
-                Expression<Func<TEntity, bool>> softDeleteFilter = 
-                    e => !IsSoftDeleteFilterEnabled || !((ISoftDelete)e).IsDeleted;
+                if (mutableNavigation != null)
+                {
+                    Expression<Func<TEntity, bool>> softDeleteFilter =
+                        e => !IsSoftDeleteFilterEnabled || !EF.Property<ISoftDelete>(e, mutableNavigation.Name).IsDeleted;
 
-                return softDeleteFilter;
+                    return softDeleteFilter;
+                }
+                else
+                {
+                    Expression<Func<TEntity, bool>> softDeleteFilter =
+                        e => !IsSoftDeleteFilterEnabled || !((ISoftDelete)e).IsDeleted;
+
+                    return softDeleteFilter;
+                }
             }
 
+
+            /*
+             * 
+             *  modelBuilder.Entity<EventCategory>()
+                    .HasQueryFilter(t => !t.Event.IsDeleted);*/
             return null;
         }
-
     }
 }
