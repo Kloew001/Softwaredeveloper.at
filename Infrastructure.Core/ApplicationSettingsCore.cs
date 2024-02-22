@@ -23,8 +23,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
     public class HostedServicesConfiguration
     {
         public bool Enabled { get; set; } = true;
+        public TimeSpan? EnabledFromTime { get; set; }
+        public TimeSpan? EnabledToTime { get; set; }
+
         public int BatchSize { get; set; } = 10;
-        public int IntervalInSeconds { get; set; } = 60;
-        public int InitialDelayInSeconds { get; set; } = 10;
+
+        public TimeSpan? Interval { get; set; } = TimeSpan.FromSeconds(60);
+        public TimeSpan InitialDelay { get; set; } = TimeSpan.FromSeconds(10);
     }
 }

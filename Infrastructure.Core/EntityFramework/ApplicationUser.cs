@@ -40,6 +40,8 @@ public class ApplicationUser : Entity
 
     public int AccessFailedCount { get; set; }
 
+    public DateTime DateCreated { get; set; }
+
     public virtual ICollection<ApplicationUserClaim> ApplicationUserClaims { get; set; } = new List<ApplicationUserClaim>();
 
     public virtual ICollection<ApplicationUserLogin> ApplicationUserLogins { get; set; } = new List<ApplicationUserLogin>();

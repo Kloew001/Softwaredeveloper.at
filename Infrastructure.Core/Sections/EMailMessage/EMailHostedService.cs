@@ -22,9 +22,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         public EMailHostedService(
             IServiceScopeFactory serviceScopeFactory,
             ILogger<EMailHostedService> logger,
-            IApplicationSettings optionsAccessor,
+            IApplicationSettings settings,
             IHostApplicationLifetime appLifetime)
-            : base(serviceScopeFactory, appLifetime, logger, optionsAccessor)
+            : base(serviceScopeFactory, appLifetime, logger, settings)
         {
         }
 
@@ -83,7 +83,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                var date = DateTime.Now.AddSeconds(-1 * _hostedServicesConfiguration.InitialDelayInSeconds);
+                var date = DateTime.Now.Subtract(_hostedServicesConfiguration
+                    .InitialDelay);
 
                 var mailMessagesIds =
                     await context.Set<EmailMessage>()

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Microsoft.Extensions.Options;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
@@ -20,6 +21,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         public DateTime ExecutedAt { get; set; }
         public DateTime? LastFinishedAt { get; set; }
+
+        public DateTime? NextExecuteAt { get; set; }
 
         public string Message { get; set; }
 
@@ -48,6 +51,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             _serviceScopeFactory = serviceScopeFactory;
             _appLifetime = appLifetime;
             _logger = logger;
+            
             _applicationSettings = applicationSettings;
             _applicationSettings.HostedServices.TryGetValue(GetType().Name, out _hostedServicesConfiguration);
         }
@@ -56,8 +60,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         {
             _logger.LogInformation($"IHostedService.StartAsync for {Name}");
 
-            if (_hostedServicesConfiguration == null ||
-            _hostedServicesConfiguration?.Enabled != true)
+            if (CanStart() == false)
             {
                 _logger.LogWarning($"IHostedService {Name} do not have configuration");
                 return Task.CompletedTask;
@@ -69,6 +72,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             return Task.CompletedTask;
         }
 
+        protected virtual bool CanStart()
+        {
+            if (_hostedServicesConfiguration == null ||
+                _hostedServicesConfiguration?.Enabled != true)
+            {
+                _logger.LogWarning($"IHostedService {Name} do not have configuration");
+                return false;
+            }
+
+            return true;
+        }
+
         protected virtual async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             try
@@ -77,7 +92,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
                 try
                 {
-                    await CreateOrUpdateBackgroundServiceInfo();
+                    if (await CanStartBackgroundServiceInfo() == false)
+                        return;
+
+                    await StartBackgroundServiceInfo();
 
                     using (var scope = _serviceScopeFactory.CreateScope())
                     using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
@@ -120,7 +138,46 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         {
         }
 
-        protected virtual async Task CreateOrUpdateBackgroundServiceInfo()
+        protected virtual async Task<bool> CanStartBackgroundServiceInfo()
+        {
+            using (var scope = _serviceScopeFactory.CreateScope())
+            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
+            {
+                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
+                    throw new InvalidOperationException();
+
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+
+                var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
+
+                if (_hostedServicesConfiguration.Enabled == false)
+                    return false;
+
+                if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
+                    DateTime.Now.TimeOfDay < _hostedServicesConfiguration.EnabledFromTime.Value)
+                {
+                    return false;
+                }
+
+                if (_hostedServicesConfiguration.EnabledToTime.HasValue &&
+                    DateTime.Now.TimeOfDay > _hostedServicesConfiguration.EnabledToTime.Value)
+                {
+                    return false;
+                }
+
+                if (backgroundServiceInfo == null)
+                    return true;
+
+                if (backgroundServiceInfo.NextExecuteAt == null)
+                    return true;
+
+                if (backgroundServiceInfo.NextExecuteAt <= DateTime.Now)
+                    return true;
+
+                return false;
+            }
+        }
+        protected virtual async Task StartBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
@@ -139,11 +196,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 }
 
                 backgroundServiceInfo.ExecutedAt = DateTime.Now;
+                backgroundServiceInfo.NextExecuteAt = null;
                 backgroundServiceInfo.Message = $"started";
 
                 await context.SaveChangesAsync();
             }
         }
+
         protected virtual async Task FinsihedBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
@@ -157,6 +216,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
 
                 backgroundServiceInfo.LastFinishedAt = DateTime.Now;
+
+                if (_hostedServicesConfiguration.Interval.HasValue)
+                {
+                    backgroundServiceInfo.NextExecuteAt =
+                        DateTime.Now.Add(_hostedServicesConfiguration.Interval.Value);
+                }
+
                 backgroundServiceInfo.Message = $"finished";
 
                 await context.SaveChangesAsync();
@@ -179,6 +245,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 backgroundServiceInfo.LastErrorAt = DateTime.Now;
                 backgroundServiceInfo.LastErrorMessage = ex.Message;
                 backgroundServiceInfo.LastErrorStack = ex.StackTrace;
+
+                if (_hostedServicesConfiguration.Interval.HasValue)
+                {
+                    backgroundServiceInfo.NextExecuteAt =
+                        DateTime.Now.Add(_hostedServicesConfiguration.Interval.Value);
+                }
 
                 await context.SaveChangesAsync();
             }

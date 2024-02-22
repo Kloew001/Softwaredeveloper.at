@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
+using TomLonghurst.ReadableTimeSpan;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public class StartupCore<TApplicationSettings>
@@ -21,6 +23,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services = builder.Services;
             Configuration = builder.Configuration;
             HostEnvironment = builder.Environment;
+
+            ReadableTimeSpan.EnableConfigurationBinding();
 
             Services.Configure<TApplicationSettings>(Configuration);
 

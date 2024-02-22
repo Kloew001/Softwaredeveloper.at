@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
@@ -15,6 +16,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         {
         }
 
+        protected override bool CanStart()
+        {
+            if(!base.CanStart())
+                return false;
+
+            if (_hostedServicesConfiguration?.Interval.HasValue == false)
+            {
+                _logger.LogWarning($"IHostedService {Name} do not have Interval configuration");
+                return false;
+            }
+
+            return true;
+        }
+
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             try
@@ -23,7 +38,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 {
                     await base.ExecuteAsync(cancellationToken);
 
-                    await Task.Delay(TimeSpan.FromSeconds(_hostedServicesConfiguration.IntervalInSeconds), cancellationToken);
+                    await Task.Delay(_hostedServicesConfiguration.Interval.Value, cancellationToken);
                 }
             }
             catch (Exception ex)

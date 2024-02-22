@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
@@ -21,9 +22,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         public AsyncTaskExecutorHostedService(
             IServiceScopeFactory serviceScopeFactory,
             ILogger<AsyncTaskExecutorHostedService> logger,
-            IApplicationSettings optionsAccessor,
+            IApplicationSettings applicationSettings,
             IHostApplicationLifetime appLifetime)
-            : base(serviceScopeFactory, appLifetime, logger, optionsAccessor)
+            : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
         {
         }
 
