@@ -1,8 +1,8 @@
 
 
-Set-Variable -Name "Projekt" -Value "RWA"
+Set-Variable -Name "Projekt" -Value "MTGM"
 Set-Variable -Name "TargetPath" -Value C:\Development\$Projekt
-Set-Variable -Name "VERSION" -Value "0.0.0.207"
+Set-Variable -Name "VERSION" -Value "0.0.0.217"
 
 Remove-Item $TargetPath\LocalShared\*.*
 
@@ -19,10 +19,9 @@ dotnet add $Projekt.Application package $package -v $VERSION
 #dotnet add $Projekt.Server package $package -v $VERSION
 
 
-#Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core.PostgreSQL
-#Set-Variable -Name "package" -Value "SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL"
-Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core.SqlServer
-Set-Variable -Name "package" -Value "SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer"
+Set-Location C:\Development\Softwaredeveloper.at\Infrastructure.Core.PostgreSQL
+Set-Variable -Name "package" -Value "SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL"
+
 Set-Variable -Name "packageId" -Value $package.$VERSION.nupkg
 dotnet build --configuration Debug
 dotnet pack --configuration Debug /p:Version=$VERSION --no-build --output .\nuget

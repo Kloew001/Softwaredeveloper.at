@@ -48,6 +48,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                 targetProperties
                     .ForEach(targetProperty =>
                     {
+                        if (targetProperty.Name == "Id")
+                            return;
+
                         var sourceProperty = sourceType.GetProperty(targetProperty.Name);
 
                         if (sourceProperty != null)

@@ -1,0 +1,29 @@
+<div fxLayout="column"
+     fxLayoutAlign="space-between stretch"
+     fxFill>
+
+  <!-- Header ------------------------------------------------------------------------->
+  <div fxFlex="none">
+    <mat-toolbar #toolbar>
+      <mat-icon svgIcon="pwc-logo" class="" style="width: 50px;"></mat-icon>
+      SampleApp
+      <!--<mat-icon class="example-icon" aria-hidden="false" aria-label="Example user verified icon">verified_user</mat-icon>-->
+    </mat-toolbar>
+  </div>
+  <!----------------------------------------------------------------------------------->
+
+  <!-- Body ------------------------------------------------------------------------->
+  <div id="main-content-container"
+       fxFlex>
+    <router-outlet></router-outlet>
+  </div>
+  <!----------------------------------------------------------------------------------->
+
+  <!-- Footer ------------------------------------------------------------------------->
+  <div fxFlex="none">
+    <mat-toolbar fxFlex="100%">
+     <!-- <p>©2024 PwC. All rights reserved. PwC refers to the US member firm of the PwC network or one of its subsidiaries or affiliates.</p>-->
+    </mat-toolbar>
+  </div>
+  <!----------------------------------------------------------------------------------->
+</div>
