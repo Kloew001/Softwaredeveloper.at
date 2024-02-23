@@ -3,70 +3,70 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public interface ISelfRegisterService
+    public interface ISelfRegisterDependency
     {
     }
 
-    public interface ITransientService : ISelfRegisterService
+    public interface ITransientDependency : ISelfRegisterDependency
     {
     }
-    public interface IScopedService : ISelfRegisterService
+    public interface IScopedDependency : ISelfRegisterDependency
     {
     }
-    public interface ISingletonService : ISelfRegisterService
+    public interface ISingletonDependency : ISelfRegisterDependency
     {
     }
 
-    public interface ITypedService<TTypeRegisterFor> : ISelfRegisterService
+    public interface ITypedDependency<TTypeRegisterFor> : ISelfRegisterDependency
     {
     }
-    public interface ITypedTransientService<TTypeRegisterFor> : ITransientService, ITypedService<TTypeRegisterFor>
+    public interface ITypedTransientDependency<TTypeRegisterFor> : ITransientDependency, ITypedDependency<TTypeRegisterFor>
     {
     }
-    public interface ITypedScopedService<TTypeRegisterFor> : IScopedService, ITypedService<TTypeRegisterFor>
+    public interface ITypedScopedDependency<TTypeRegisterFor> : IScopedDependency, ITypedDependency<TTypeRegisterFor>
     {
     }
-    public interface ITypedSingletonService<TTypeRegisterFor> : ISingletonService, ITypedService<TTypeRegisterFor>
+    public interface ITypedSingletonDependency<TTypeRegisterFor> : ISingletonDependency, ITypedDependency<TTypeRegisterFor>
     {
     }
 
     public static class ServiceCollectionExtensions
     {
-        public static void RegisterSelfRegisterServices(this IServiceCollection services)
+        public static void RegisterSelfRegisterDependencies(this IServiceCollection services)
         {
             var serviceTypes = AppDomain.CurrentDomain.GetAssemblies()
                .SelectMany(a => a.GetExportedTypes())
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-               .Where(p => typeof(ISelfRegisterService).IsAssignableFrom(p))
+               .Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
                .ToList();
 
             foreach (var serviceType in serviceTypes)
             {
-                if (typeof(ITransientService).IsAssignableFrom(serviceType))
+                if (typeof(ITransientDependency).IsAssignableFrom(serviceType))
                     services.AddTransient(serviceType);
 
-                if (typeof(IScopedService).IsAssignableFrom(serviceType))
+                if (typeof(IScopedDependency).IsAssignableFrom(serviceType))
                     services.AddScoped(serviceType);
 
-                if (typeof(ISingletonService).IsAssignableFrom(serviceType))
+                if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
                     services.AddSingleton(serviceType);
 
                 //if (typeof(ITypedService<>).IsAssignableFrom(serviceType))
                 var genericArguments = serviceType.GetInterfaces()
                     .Where(_ => _.IsGenericType &&
-                                _.GetGenericTypeDefinition() == typeof(ITypedService<>))
+                                _.GetGenericTypeDefinition() == typeof(ITypedDependency<>))
                     .SelectMany(_ => _.GetGenericArguments())
                     .ToList();
 
                 foreach (var genericArgument in genericArguments)
                 {
-                    if (typeof(ITransientService).IsAssignableFrom(serviceType))
+                    if (typeof(ITransientDependency).IsAssignableFrom(serviceType))
                         services.AddTransient(genericArgument, serviceType);
 
-                    if (typeof(IScopedService).IsAssignableFrom(serviceType))
+                    if (typeof(IScopedDependency).IsAssignableFrom(serviceType))
                         services.AddScoped(genericArgument, serviceType);
 
-                    if (typeof(ISingletonService).IsAssignableFrom(serviceType))
+                    if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
                         services.AddSingleton(genericArgument, serviceType);
                 }
             }

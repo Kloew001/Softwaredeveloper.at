@@ -8,7 +8,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public interface IDataSeed : ITypedScopedService<IDataSeed>
+    public interface IDataSeed : ITypedScopedDependency<IDataSeed>
     {
         int Priority { get; }
         bool ExecuteInThread { get; set; }
@@ -17,7 +17,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         Task SeedAsync();
     }
 
-    public class DataSeedService : IScopedService
+    public class DataSeedService : IScopedDependency
     {
         private readonly ILogger<DataSeedService> _logger;
         private readonly IServiceProvider _serviceProvider;

@@ -17,7 +17,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
     }
 
-    public class EntityService<TEntity> : IScopedService
+    public class EntityService<TEntity> : IScopedDependency
         where TEntity : Entity
     {
         protected readonly IDbContext _context;

@@ -35,7 +35,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 
-    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedService
+    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedDependency
     //{
     //    private readonly ICurrentUserService _currentUserService;
     //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)

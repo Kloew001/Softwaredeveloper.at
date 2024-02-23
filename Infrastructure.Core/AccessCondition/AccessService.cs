@@ -9,7 +9,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
     {
     }
 
-    public class AccessService : IScopedService
+    public class AccessService : IScopedDependency
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;

@@ -45,7 +45,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
     }
 
-    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedService
+    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedDependency
     //{
     //    private readonly ICurrentUserService _currentUserService;
     //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)

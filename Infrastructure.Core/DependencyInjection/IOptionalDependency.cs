@@ -7,7 +7,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection
         T Value { get; }
     }
 
-    public class OptionalDependency<T> : IOptionalDependency<T>, ITransientService
+    public class OptionalDependency<T> : IOptionalDependency<T>, ITransientDependency
     {
         public OptionalDependency(IServiceProvider serviceProvider)
         {

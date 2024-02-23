@@ -28,7 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         void UpdateChangeTrackedEntity(DbContext context);
     }
 
-    public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonService<IDbContextHandler>
+    public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonDependency<IDbContextHandler>
     {
         public virtual async Task UpdateDatabaseAsync<TDbContext>(IHost host)
             where TDbContext : DbContext

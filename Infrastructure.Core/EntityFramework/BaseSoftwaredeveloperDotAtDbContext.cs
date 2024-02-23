@@ -14,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public abstract class BaseSoftwaredeveloperDotAtDbContext : DbContext,
         IDbContext,
-        ITypedScopedService<IDbContext>
+        ITypedScopedDependency<IDbContext>
     {
         public bool UseProxy { get; set; } = true;
 

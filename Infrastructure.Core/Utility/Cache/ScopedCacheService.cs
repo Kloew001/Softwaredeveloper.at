@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
 {
-    public class ScopedCache : IScopedService
+    public class ScopedCache : IScopedDependency
     {
         //https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Caching.Memory/src/MemoryCache.cs
         private readonly ConcurrentDictionary<string, object> _cache;

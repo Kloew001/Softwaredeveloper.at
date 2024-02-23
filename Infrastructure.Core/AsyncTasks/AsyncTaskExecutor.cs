@@ -41,7 +41,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         }
     }
 
-    public class AsyncTaskExecutor : IScopedService
+    public class AsyncTaskExecutor : IScopedDependency
     {
         private readonly ILogger<AsyncTaskExecutor> _logger;
         private readonly IServiceProvider _serviceProvider;

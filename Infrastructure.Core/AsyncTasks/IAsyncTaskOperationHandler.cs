@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         }
     }
 
-    public interface IAsyncTaskOperationHandler : ITransientService
+    public interface IAsyncTaskOperationHandler : ITransientDependency
     {
         public string OperationKey { get; }
         public Guid? ReferenceId { get; }

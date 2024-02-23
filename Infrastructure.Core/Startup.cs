@@ -39,7 +39,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             Services.AddHttpClient();
 
-            Services.RegisterSelfRegisterServices();
+            Services.RegisterSelfRegisterDependencies();
             Services.RegisterAllHostedService();
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())

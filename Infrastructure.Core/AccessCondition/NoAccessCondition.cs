@@ -2,7 +2,7 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public abstract class NoAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedService
+    public abstract class NoAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
         public override Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(false);

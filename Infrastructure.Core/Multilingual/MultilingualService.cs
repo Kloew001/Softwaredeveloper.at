@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public virtual LanguageCulture Culture { get; set; }
     }
 
-    public class ICurrentLanguageService : IScopedService
+    public class ICurrentLanguageService : IScopedDependency
     {
         LanguageCulture Current { get; set; }
     }
@@ -40,7 +40,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public LanguageCulture Current { get; set; }
     }
 
-    public class MultilingualService : IScopedService
+    public class MultilingualService : IScopedDependency
     {
 
     }

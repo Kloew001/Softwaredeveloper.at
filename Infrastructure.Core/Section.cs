@@ -2,7 +2,7 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public class SectionManager : IScopedService
+    public class SectionManager : IScopedDependency
     {
         private readonly IServiceProvider _serviceProvider;
 
@@ -27,7 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         }
     }
 
-    public abstract class Section : IScopedService
+    public abstract class Section : IScopedDependency
     {
         public List<SectionScope> Scopes { get; set; }
         public SectionScope CurrentScope => Scopes?.LastOrDefault(_ => _.IsActive != null);

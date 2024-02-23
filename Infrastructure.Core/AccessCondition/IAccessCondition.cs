@@ -14,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         Task<bool> CanSaveAsync(IEntity entity);
     }
 
-    public interface IAccessCondition<TEntity> : IAccessCondition, ITypedScopedService<IAccessCondition<TEntity>>
+    public interface IAccessCondition<TEntity> : IAccessCondition, ITypedScopedDependency<IAccessCondition<TEntity>>
         //where TEntity : Entity
     {
         Task<bool> CanReadAsync(TEntity entity);

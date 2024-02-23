@@ -12,7 +12,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     /// select pg_advisory_unlock(hashtext('TEST')) as "lockReleased";
     /// select* from pg_locks join pg_stat_activity using (pid) where locktype='advisory';
     /// </summary>
-    public sealed class PostgreSQLDistributedLock : IDistributedLock, ITransientService, ITypedTransientService<IDistributedLock>, IDisposable
+    public sealed class PostgreSQLDistributedLock : IDistributedLock, ITransientDependency, ITypedTransientDependency<IDistributedLock>, IDisposable
     {
         private string _lockId;
         private bool _disposed;

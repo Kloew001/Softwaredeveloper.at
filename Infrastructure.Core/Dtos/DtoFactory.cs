@@ -51,9 +51,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
     }
 
-    public class DtoFactory : ISingletonService
+    public class DtoFactory : ISingletonDependency
     {
-        public class DtoFactoryTypeMappingResolver : ISingletonService
+        public class DtoFactoryTypeMappingResolver : ISingletonDependency
         {
             private static Dictionary<Tuple<Type, Type>, Type> _dtoFactoryTypes;
 
@@ -376,7 +376,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
     }
 
-    public interface IDtoFactory : ISingletonService
+    public interface IDtoFactory : ISingletonDependency
     {
     }
 

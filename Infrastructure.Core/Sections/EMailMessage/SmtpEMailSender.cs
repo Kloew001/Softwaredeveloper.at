@@ -4,7 +4,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
-    public class SmtpEMailSender : IEMailSender, ITypedScopedService<IEMailSender>
+    public class SmtpEMailSender : IEMailSender, ITypedScopedDependency<IEMailSender>
     {
         private EMailServerConfiguration _config { get; set; }
 

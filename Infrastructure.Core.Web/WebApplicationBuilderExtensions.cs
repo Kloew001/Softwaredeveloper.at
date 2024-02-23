@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 using static Infrastructure.Core.Web.Middleware.ValidationExceptionHandler;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Infrastructure.Core.Web
 {
@@ -40,9 +41,9 @@ namespace Infrastructure.Core.Web
                 options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
-            
+
             builder.Services.AddEndpointsApiExplorer();
-            
+
             builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
@@ -89,7 +90,7 @@ namespace Infrastructure.Core.Web
             return builder;
         }
 
-        public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder)
+        public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
         {
             builder.Services.AddAuthentication(options =>
             {
@@ -102,12 +103,21 @@ namespace Infrastructure.Core.Web
                 options.BearerTokenExpiration = TimeSpan.FromMinutes(500); //TODO
             });
 
-            builder.Services.AddAuthorizationBuilder()
-                .AddPolicy("api", p =>
+            var authorizationBuilder = builder.Services.AddAuthorizationBuilder();
+
+
+            if (authorizationOptions != null)
+            {
+                authorizationOptions(authorizationBuilder);
+            }
+            else
+            {
+                authorizationBuilder.AddPolicy("api", p =>
                 {
                     p.RequireAuthenticatedUser();
                     p.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
                 });
+            }
 
             return builder;
         }

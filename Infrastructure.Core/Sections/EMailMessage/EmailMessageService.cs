@@ -4,7 +4,7 @@
 
 //namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 //{
-//    public class EmailMessageService : IScopedService
+//    public class EmailMessageService : IScopedDependency
 //    {
 //        public EmailMessageService(IDbContext context)
 //        {

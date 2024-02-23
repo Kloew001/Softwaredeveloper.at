@@ -15,7 +15,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
         }
     }
 
-    public class EnumCache : ISingletonService
+    public class EnumCache : ISingletonDependency
     {
         private readonly IMemoryCache _memoryCache;
 
