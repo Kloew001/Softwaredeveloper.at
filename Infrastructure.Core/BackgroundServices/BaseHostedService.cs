@@ -7,6 +7,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Options;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
@@ -51,7 +52,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             _serviceScopeFactory = serviceScopeFactory;
             _appLifetime = appLifetime;
             _logger = logger;
-            
+
             _applicationSettings = applicationSettings;
             _applicationSettings.HostedServices.TryGetValue(GetType().Name, out _hostedServicesConfiguration);
         }
@@ -79,6 +80,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             {
                 _logger.LogWarning($"IHostedService {Name} do not have configuration");
                 return false;
+            }
+
+            if (_hostedServicesConfiguration.EnabledFromTime.HasValue || _hostedServicesConfiguration.EnabledToTime.HasValue)
+            {
+                if (!_hostedServicesConfiguration.EnabledFromTime.HasValue || !_hostedServicesConfiguration.EnabledToTime.HasValue)
+                    _logger.LogError($"IHostedService {Name} EnabledFromTime and EnabledToTime must have value");
             }
 
             return true;
@@ -153,24 +160,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Enabled == false)
                     return false;
 
-                if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
-                    DateTime.Now.TimeOfDay < _hostedServicesConfiguration.EnabledFromTime.Value)
-                {
-                    return false;
-                }
+                //if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
+                //    DateTime.Now.TimeOfDay < _hostedServicesConfiguration.EnabledFromTime.Value)
+                //{
+                //    return false;
+                //}
 
-                if (_hostedServicesConfiguration.EnabledToTime.HasValue &&
-                    DateTime.Now.TimeOfDay > _hostedServicesConfiguration.EnabledToTime.Value)
-                {
-                    return false;
-                }
+                //if (_hostedServicesConfiguration.EnabledToTime.HasValue &&
+                //    DateTime.Now.TimeOfDay > _hostedServicesConfiguration.EnabledToTime.Value)
+                //{
+                //    return false;
+                //}
 
                 if (backgroundServiceInfo == null)
                     return true;
 
                 if (backgroundServiceInfo.NextExecuteAt == null)
-                    return true;
-
+                {
+                    var nextExecuteAt = CalcNextExecuteAt(DateTime.Now);
+                    return DateTime.Now >= nextExecuteAt;
+                }
                 if (backgroundServiceInfo.NextExecuteAt <= DateTime.Now)
                     return true;
 
@@ -220,13 +229,75 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Interval.HasValue)
                 {
                     backgroundServiceInfo.NextExecuteAt =
-                        DateTime.Now.Add(_hostedServicesConfiguration.Interval.Value);
+                        CalcNextExecuteAt();
                 }
 
                 backgroundServiceInfo.Message = $"finished";
 
                 await context.SaveChangesAsync();
             }
+        }
+
+        private IEnumerable<DateRange> GetEnabledDateRange(DateTime dateTime)
+        {
+            if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
+                _hostedServicesConfiguration.EnabledToTime.HasValue)
+            {
+                var enabledFromTime = _hostedServicesConfiguration.EnabledFromTime.Value;
+                var enabledToTime = _hostedServicesConfiguration.EnabledToTime.Value;
+                var isDayOverlapped = enabledToTime < enabledFromTime;
+
+                if (!isDayOverlapped)
+                {
+                    var enabledDateRange = new DateRange(
+                       dateTime.Date.Add(enabledFromTime),
+                       dateTime.Date.Add(enabledToTime));
+
+                    yield return enabledDateRange;
+                }
+                else
+                {
+                    var enabledDateRange = new DateRange(
+                       dateTime.Date,
+                       dateTime.Date.Add(enabledToTime));
+
+                    yield return enabledDateRange;
+
+                    enabledDateRange = new DateRange(
+                       dateTime.Date.Add(enabledFromTime),
+                       dateTime.Date.AddDays(1).Subtract(TimeSpan.FromSeconds(1)));
+
+                    yield return enabledDateRange;
+                }
+            }
+        }
+
+        private DateTime CalcNextExecuteAt(DateTime? dateTime = null)
+        {
+            if (dateTime == null)
+                dateTime = DateTime.Now;
+
+            var enabledDateRanges = GetEnabledDateRange(dateTime.Value).ToList();
+
+            var nextExecuteAt = dateTime.Value.Add(_hostedServicesConfiguration.Interval.Value);
+
+            if (!enabledDateRanges.Any() || 
+                enabledDateRanges.Any(_ => _.Includes(nextExecuteAt)))
+            {
+                return nextExecuteAt;
+            }
+
+            if (enabledDateRanges.Any() &&
+                enabledDateRanges.All(_ => !_.Includes(nextExecuteAt)))
+            {
+                var start = enabledDateRanges
+                    .Select(_ => _.Start)
+                    .OrderByDescending(_ => _)
+                    .First();
+                return start;
+            }
+
+            return nextExecuteAt;
         }
 
         protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
@@ -249,7 +320,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Interval.HasValue)
                 {
                     backgroundServiceInfo.NextExecuteAt =
-                        DateTime.Now.Add(_hostedServicesConfiguration.Interval.Value);
+                        CalcNextExecuteAt();
                 }
 
                 await context.SaveChangesAsync();

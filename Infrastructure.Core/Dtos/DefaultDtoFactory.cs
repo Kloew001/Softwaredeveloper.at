@@ -1,9 +1,6 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -40,52 +37,60 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
             if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
             {
+                var isDtoToEntity =
+                         typeof(Dto).IsAssignableFrom(sourceType) &&
+                         typeof(Entity).IsAssignableFrom(targetType);
+
+                var isEntityToDto =
+                         typeof(Entity).IsAssignableFrom(sourceType) &&
+                         typeof(Dto).IsAssignableFrom(targetType);
+
                 propertyMaps = new List<PropertyMap>();
 
                 var targetProperties = targetType.GetProperties().ToList();
                 var sourceProperties = sourceType.GetProperties().ToList();
 
                 targetProperties
-                    .ForEach(targetProperty =>
+                .ForEach(targetProperty =>
+                {
+                    if (isDtoToEntity && targetProperty.Name == "Id")
+                        return;
+
+                    var sourceProperty = sourceType.GetProperty(targetProperty.Name);
+
+                    if (sourceProperty != null)
                     {
-                        if (targetProperty.Name == "Id")
-                            return;
-
-                        var sourceProperty = sourceType.GetProperty(targetProperty.Name);
-
-                        if (sourceProperty != null)
+                        propertyMaps.Add(new PropertyMap
                         {
+                            TargetProperty = targetProperty,
+                            SourceProperties = new[] { sourceProperty.Name }
+                        });
+                    }
+                    else
+                    {
+                        //PersonName -> Person.Name
+                        var sourcePropertyFirstLevel = sourceProperties
+                            .FirstOrDefault(_ => targetProperty.Name.StartsWith(_.Name));
+
+                        if (sourcePropertyFirstLevel != null)
+                        {
+                            var secondLevelPropertyName = targetProperty.Name.Substring(sourcePropertyFirstLevel.Name.Length);
+
+                            var sourcePropertySecoundLevel = sourcePropertyFirstLevel.GetType().GetProperty(secondLevelPropertyName);
+
                             propertyMaps.Add(new PropertyMap
                             {
                                 TargetProperty = targetProperty,
-                                SourceProperties = new[] { sourceProperty.Name }
-                            });
-                        }
-                        else
-                        {
-                            //PersonName -> Person.Name
-                            var sourcePropertyFirstLevel = sourceProperties
-                                .FirstOrDefault(_ => targetProperty.Name.StartsWith(_.Name));
-
-                            if (sourcePropertyFirstLevel != null)
-                            {
-                                var secondLevelPropertyName = targetProperty.Name.Substring(sourcePropertyFirstLevel.Name.Length);
-
-                                var sourcePropertySecoundLevel = sourcePropertyFirstLevel.GetType().GetProperty(secondLevelPropertyName);
-
-                                propertyMaps.Add(new PropertyMap
+                                SourceProperties = new[]
                                 {
-                                    TargetProperty = targetProperty,
-                                    SourceProperties = new[]
-                                    {
                                         sourcePropertyFirstLevel.Name,
                                         sourcePropertySecoundLevel.Name
-                                    }
-                                });
-                            }
+                                }
+                            });
                         }
+                    }
 
-                    });
+                });
 
                 //if (typeof(IMultiLingualEntity<>).IsAssignableFrom(sourceType))
                 //{

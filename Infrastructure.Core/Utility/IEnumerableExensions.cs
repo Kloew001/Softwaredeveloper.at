@@ -12,8 +12,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         int Index { get; set; }
     }
 
-    public interface ISupportMultilingualDisplayName<TTranslation>
-        where TTranslation : Entity, ISupportDisplayName
+    public interface ISupportMultilingualDisplayName : ISupportDisplayName
     {
     }
 

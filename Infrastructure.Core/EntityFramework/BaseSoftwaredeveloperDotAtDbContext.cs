@@ -58,11 +58,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<BinaryContent> Contents { get; set; }
 
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
+
         public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
+        
         public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
 
-        public virtual DbSet<LanguageCulture> LanguageCultures { get; set; }
-
+        public virtual DbSet<MultilingualCulture> MultilingualCultures { get; set; }
+        public virtual DbSet<MultilingualGlobalText> MultilingualGlobalTexts { get; set; }
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

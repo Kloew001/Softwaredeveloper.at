@@ -7,23 +7,23 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    [Table(nameof(LanguageCulture))]
-    public class LanguageCulture : Entity, ISupportDefault, IEnableable
+    [Table(nameof(MultilingualCulture))]
+    public class MultilingualCulture : Entity, ISupportDefault, IActivateable
     {
         public bool IsDefault { get; set; }
         public bool IsEnabled { get; set; }
         public string Name { get; set; }
     }
 
-    public class LanguageCultureIds
+    public class MultilingualCultureIds
     {
-        public static Guid DeAt = Guid.Parse("023EB000-7FDF-4EF5-AA76-BC116F59EBEF");
-        public static Guid EnUs = Guid.Parse("A0AF7864-0DC1-49A6-A0D8-2F29157B3801");
+        public static Guid De = Guid.Parse("023EB000-7FDF-4EF5-AA76-BC116F59EBEF");
+        public static Guid En = Guid.Parse("A0AF7864-0DC1-49A6-A0D8-2F29157B3801");
     }
 
-    public class LanguageCultureConfiguration : IEntityTypeConfiguration<LanguageCulture>
+    public class MultilingualCultureConfiguration : IEntityTypeConfiguration<MultilingualCulture>
     {
-        public void Configure(EntityTypeBuilder<LanguageCulture> builder)
+        public void Configure(EntityTypeBuilder<MultilingualCulture> builder)
         {
             builder.HasIndex(_ => new
             {
@@ -37,16 +37,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                 _.Name,
             }).IsUnique();
 
-            builder.HasData(new LanguageCulture()
+            builder.HasData(new MultilingualCulture()
             {
-                Id = LanguageCultureIds.DeAt,
-                Name = "de-AT"
+                Id = MultilingualCultureIds.De,
+                Name = "de"
             });
 
-            builder.HasData(new LanguageCulture()
+            builder.HasData(new MultilingualCulture()
             {
-                Id = LanguageCultureIds.EnUs,
-                Name = "en-US"
+                Id = MultilingualCultureIds.En,
+                Name = "en"
             });
         }
     }
