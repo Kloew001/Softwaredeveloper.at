@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
@@ -160,27 +161,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Enabled == false)
                     return false;
 
-                //if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
-                //    DateTime.Now.TimeOfDay < _hostedServicesConfiguration.EnabledFromTime.Value)
-                //{
-                //    return false;
-                //}
+                var now = DateTime.Now;
 
-                //if (_hostedServicesConfiguration.EnabledToTime.HasValue &&
-                //    DateTime.Now.TimeOfDay > _hostedServicesConfiguration.EnabledToTime.Value)
-                //{
-                //    return false;
-                //}
-
-                if (backgroundServiceInfo == null)
-                    return true;
-
-                if (backgroundServiceInfo.NextExecuteAt == null)
+                if (backgroundServiceInfo == null || backgroundServiceInfo.NextExecuteAt == null)
                 {
-                    var nextExecuteAt = CalcNextExecuteAt(DateTime.Now);
+                    var nextExecuteAt = CalcNextExecuteAt(now, backgroundServiceInfo);
                     return DateTime.Now >= nextExecuteAt;
                 }
-                if (backgroundServiceInfo.NextExecuteAt <= DateTime.Now)
+
+                if (backgroundServiceInfo?.NextExecuteAt <= now)
                     return true;
 
                 return false;
@@ -219,18 +208,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             {
                 if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
                     throw new InvalidOperationException();
+                
+                var now = DateTime.Now;
 
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
                 var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
 
-                backgroundServiceInfo.LastFinishedAt = DateTime.Now;
+                backgroundServiceInfo.LastFinishedAt = now;
 
-                if (_hostedServicesConfiguration.Interval.HasValue)
-                {
-                    backgroundServiceInfo.NextExecuteAt =
-                        CalcNextExecuteAt();
-                }
+                backgroundServiceInfo.NextExecuteAt =
+                    CalcNextExecuteAt(now, backgroundServiceInfo);
 
                 backgroundServiceInfo.Message = $"finished";
 
@@ -272,19 +260,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             }
         }
 
-        private DateTime CalcNextExecuteAt(DateTime? dateTime = null)
+        private DateTime CalcNextExecuteAt(DateTime dateTime, BackgroundserviceInfo backgroundserviceInfo)
         {
-            if (dateTime == null)
-                dateTime = DateTime.Now;
+            var enabledDateRanges = GetEnabledDateRange(dateTime).ToList();
 
-            var enabledDateRanges = GetEnabledDateRange(dateTime.Value).ToList();
+            var nextExecuteAt = dateTime.Add(_hostedServicesConfiguration.Interval.Value);
 
-            var nextExecuteAt = dateTime.Value.Add(_hostedServicesConfiguration.Interval.Value);
-
-            if (!enabledDateRanges.Any() || 
-                enabledDateRanges.Any(_ => _.Includes(nextExecuteAt)))
+            if ((backgroundserviceInfo?.LastFinishedAt == null ||
+                backgroundserviceInfo?.LastFinishedAt < dateTime) &&
+                backgroundserviceInfo?.NextExecuteAt == null &&
+                (!enabledDateRanges.Any() ||
+                enabledDateRanges.Any(_ => _.Includes(dateTime))))
             {
-                return nextExecuteAt;
+                return dateTime;
             }
 
             if (enabledDateRanges.Any() &&
@@ -320,7 +308,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Interval.HasValue)
                 {
                     backgroundServiceInfo.NextExecuteAt =
-                        CalcNextExecuteAt();
+                        CalcNextExecuteAt(DateTime.Now, backgroundServiceInfo);
                 }
 
                 await context.SaveChangesAsync();
