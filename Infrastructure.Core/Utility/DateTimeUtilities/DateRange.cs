@@ -19,6 +19,11 @@
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
 
+        public override string ToString()
+        {
+            return $"{Start} - {End}"; 
+        }
+
         public bool Includes(DateTime value)
         {
             return Start <= value && value <= End;

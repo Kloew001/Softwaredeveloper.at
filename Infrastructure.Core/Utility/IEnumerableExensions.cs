@@ -3,6 +3,7 @@
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
@@ -29,6 +30,30 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
     public static class IEnumerableUtility
     {
+        public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int batchSize)
+        {
+            var batch = new List<T>(batchSize);
+            foreach (var item in source)
+            {
+                batch.Add(item);
+                if (batch.Count == batchSize)
+                {
+                    yield return batch;
+                    batch = new List<T>(batchSize);
+                }
+            }
+            if (batch.Count > 0)
+                yield return batch;
+        }
+
+        public static IEnumerable<T> Convert<T>(this System.Collections.IEnumerable source)
+        {
+            foreach (var item in source)
+            {
+                yield return (T)item;
+            }
+        }
+
         public static IEnumerable<T> OrderByIndex<T>(this IEnumerable<T> query)
             where T : ISupportIndex
         {

@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Data;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading.Tasks;
+
+using DocumentFormat.OpenXml.InkML;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
@@ -33,11 +33,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             var asyncTaskExecutor
                 = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
-            await asyncTaskExecutor.ExecuteBatchAsync(_hostedServicesConfiguration.BatchSize, cancellationToken);
+            if (await asyncTaskExecutor.AnyNextAsyncTaskOperationAsync(cancellationToken) == false)
+                return;
 
-            await asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100)));
+            var parallelTasks = new List<Task>
+            {
+                asyncTaskExecutor.ExecuteBatchAsync(_hostedServicesConfiguration.BatchSize, cancellationToken),
+                asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100))),
+                asyncTaskExecutor.HandleTimeout()
+            };
 
-            await asyncTaskExecutor.HandleTimeout();
+            await Task.WhenAll(parallelTasks);
         }
     }
 
@@ -61,8 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         private static Dictionary<Guid, Type> CollectAllHandler()
         {
             var handlerTypes =
-                AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(a => a.GetExportedTypes())
+                    AssemblyUtils.AllLoadedTypes()
                     .Where(t => t.IsClass && !t.IsInterface && !t.IsAbstract &&
                                 typeof(IAsyncTaskOperationHandler).IsAssignableFrom(t))
                     .ToDictionary(t =>
@@ -246,27 +251,44 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         }
 
         //private const int _waitingExecuteToRetryInSec = 120;
-        private async Task<IEnumerable<Guid>> GetNextAsyncTaskOperationIdsAsync(int take = 1, CancellationToken cancellationToken = default)
+        private async Task<IEnumerable<Guid>> GetNextAsyncTaskOperationIdsAsync(int take = 1, CancellationToken ct = default)
         {
             var dateNow = DateTime.Now;
 
-            var operationIds = await _context.Set<AsyncTaskOperation>()
-            .Where(_ => _.ExecuteAt != null &&
-                        _.ExecuteAt <= dateNow &&
-                        _.Status == AsyncTaskOperationStatus.Pending)
+            var watch = Stopwatch.StartNew();
 
-            //(o.Status == AsyncTaskOperationStatus.Pending ||
-            //(o.Status == AsyncTaskOperationStatus.Executing &&
-            // o.StartedAt.HasValue &&
-            // o.StartedAt < dateNow.Subtract(TimeSpan.FromSeconds(_waitingExecuteToRetryInSec)))) &&
-            .OrderBy(_ => _.ExecuteAt)
-            .ThenBy(_ => _.SortIndex)
-            .Select(_ => _.Id)
-            .Take(take)
-            .ToListAsync(cancellationToken);
+            var operationIds = await
+                _context.Set<AsyncTaskOperation>()
+                .Where(_ => _.ExecuteAt != null &&
+                            _.ExecuteAt <= dateNow &&
+                            _.Status == AsyncTaskOperationStatus.Pending)
+                .OrderBy(_ => _.ExecuteAt)
+                .ThenBy(_ => _.SortIndex)
+                .Select(_ => _.Id)
+                .Take(take)
+                .ToListAsync(ct);
+
+            var time = watch.ElapsedMilliseconds;
 
             return operationIds;
         }
+
+        public async Task<bool> AnyNextAsyncTaskOperationAsync(CancellationToken ct = default)
+        {
+            var watch = Stopwatch.StartNew();
+            var result = await AnyNextAsyncTaskOperationAsyncQuery(_context.As<DbContext>(), ct, DateTime.Now);
+            var time = watch.ElapsedMilliseconds;
+            return result;
+        }
+
+        private static readonly Func<DbContext, CancellationToken, DateTime, Task<bool>>
+            AnyNextAsyncTaskOperationAsyncQuery =
+            EF.CompileAsyncQuery((DbContext context, CancellationToken ct, DateTime dateNow) =>
+                context.Set<AsyncTaskOperation>()
+                    .Where(_ => _.ExecuteAt != null &&
+                                _.ExecuteAt <= dateNow &&
+                                _.Status == AsyncTaskOperationStatus.Pending)
+                    .Any());
 
         public TAsyncTaskOperationHandler CreateHandler<TAsyncTaskOperationHandler>()
             where TAsyncTaskOperationHandler : IAsyncTaskOperationHandler
@@ -366,17 +388,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return taskInQueueLocal;
         }
 
-        private async Task<IEnumerable<AsyncTaskOperation>> GetNotFinishedAsyncTasksAsync(params Guid[] referenceIds)
+        private Task<bool> AnyNotFinishedAsyncTasksAsync(params Guid[] referenceIds)
         {
             var timeout = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
 
-            var pendingTasks = await _context.Set<AsyncTaskOperation>()
-                .Where(o => o.ReferenceId != null && referenceIds.Contains(o.ReferenceId.Value) &&
-                          (o.Status == AsyncTaskOperationStatus.Pending ||
-                           o.Status == AsyncTaskOperationStatus.Executing))
-                .ToListAsync();
-
-            return pendingTasks;
+            if (referenceIds.Length == 1)
+                return _context.Set<AsyncTaskOperation>()
+                    .Where(o => o.ReferenceId == referenceIds[0] &&
+                                o.Status == AsyncTaskOperationStatus.Pending ||
+                                o.Status == AsyncTaskOperationStatus.Executing)
+                    .AnyAsync();
+            else
+            {
+                return _context.Set<AsyncTaskOperation>()
+                    .Where(o => o.ReferenceId != null &&
+                                referenceIds.Contains(o.ReferenceId.Value) &&
+                              (o.Status == AsyncTaskOperationStatus.Pending ||
+                               o.Status == AsyncTaskOperationStatus.Executing))
+                    .AnyAsync();
+            }
         }
 
         public int DefaultAsyncTaskTimeOutInSeconds { get; set; } = 10;
@@ -397,12 +427,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             while (watch.ElapsedMilliseconds < timeout)
             {
-                var notFinishedAsyncTasks = await GetNotFinishedAsyncTasksAsync(referenceIds);
+                var watch2 = Stopwatch.StartNew();
 
-                if (!notFinishedAsyncTasks.Any())
+                var anyNotFinishedAsyncTasks = await AnyNotFinishedAsyncTasksAsync(referenceIds);
+                var howon = watch2.ElapsedMilliseconds;
+
+                if (!anyNotFinishedAsyncTasks)
                     return;
 
-                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                await Task.Delay(TimeSpan.FromMilliseconds(25));
             }
 
             throw new TimeoutException();

@@ -62,8 +62,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                 _dtoFactoryTypes = new Dictionary<Tuple<Type, Type>, Type>();
 
                 var factoryTypes =
-                    AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(a => a.GetExportedTypes())
+                    AssemblyUtils.AllLoadedTypes()
                    .Where(p => p.IsAbstract == false &&
                                p.IsInterface == false &&
                                typeof(IDtoFactory).IsAssignableFrom(p))

@@ -42,6 +42,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             builder
                 .HasIndex(c => new
                 {
+                    c.ReferenceId,
+                    c.Status
+                });
+
+            builder
+                .HasIndex(c => new
+                {
                     c.ExecuteAt,
                     c.Status
                 });

@@ -9,8 +9,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
     {
         public static IEnumerable<Type> GetAllTypesWithAttribute(Type attributeType)
         {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetExportedTypes())
+            return AssemblyUtils.AllLoadedTypes()
                 .Where(p => p.IsAbstract == false &&
                             p.IsInterface == false &&
                             p.GetCustomAttributes(attributeType, true).Length > 0)

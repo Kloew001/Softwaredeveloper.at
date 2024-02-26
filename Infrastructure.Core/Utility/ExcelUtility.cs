@@ -38,7 +38,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             foreach (IXLWorksheet workSheet in workBook.Worksheets)
             {
-                var dt = new DataTable(workSheet.Name);
+                var dataTable = new DataTable(workSheet.Name);
 
                 workSheet
                 .FirstRowUsed()
@@ -48,16 +48,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                 {
                     var cellHeader = cell.GetString();
                     //cell.DataType
-                    dt.Columns.Add(new DataColumn(cellHeader));
+                    dataTable.Columns.Add(new DataColumn(cellHeader));
                 });
 
                 foreach (IXLRow row in workSheet.RowsUsed().Skip(1))
                 {
-                    DataRow dataRow = dt.NewRow();
+                    DataRow dataRow = dataTable.NewRow();
 
                     //foreach (IXLCell cell in row.Cells(row.FirstCellUsed().Address.ColumnNumber, row.LastCellUsed().Address.ColumnNumber))
 
-                    for (int i = 0; i < dt.Columns.Count; i++)
+                    for (int i = 0; i < dataTable.Columns.Count; i++)
                     {
                         var cell = row.Cell(i + 1);
 
@@ -74,10 +74,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                         else
                             dataRow[i] = cell.Value.ToString();
                     }
-                    dt.Rows.Add(dataRow);
+                    dataTable.Rows.Add(dataRow);
                 }
 
-                dataSet.Tables.Add(dt);
+                dataSet.Tables.Add(dataTable);
             }
 
             return dataSet;

@@ -13,6 +13,12 @@ using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using System.Data;
 using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Spreadsheet;
+using System.Collections;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
@@ -90,6 +96,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 var texts = await _context.Set<MultilingualGlobalText>()
                     .Where(_ => _.CultureId == culture.Id)
+                    .OrderBy(_ => _.Key)
                     .ToListAsync();
 
                 var result = texts.ToDictionary(_ => _.Key, _ => _.Text);
@@ -98,16 +105,64 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             });
         }
 
-        public async Task ImportExcel(byte[] excelContent)
+        public Task ImportJson(byte[] jsonContent)
+        {
+            string json = System.Text.Encoding.UTF8.GetString(jsonContent);
+
+            var cultures = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
+
+            var dataTable = new DataTable();
+            dataTable.Columns.Add(new DataColumn("TextKey"));
+            dataTable.Columns.Add(new DataColumn("Culture"));
+            dataTable.Columns.Add(new DataColumn("Text"));
+
+            foreach (var culture in cultures)
+            {
+                foreach (var text in culture.Value)
+                {
+                    DataRow dataRow = dataTable.NewRow();
+
+                    dataRow["TextKey"] = text.Key;
+                    dataRow["Culture"] = culture.Key;
+                    dataRow["Text"] = text.Value;
+
+                    dataTable.Rows.Add(dataRow);
+                }
+
+            }
+
+            return ImportDataTable(dataTable);
+        }
+
+        public Task ImportExcel(byte[] excelContent)
         {
             var dataTable = ExcelUtility.GetDataSetFromExcel(excelContent).Tables[0];
 
-            foreach (DataRow row in dataTable.Rows)
+            return ImportDataTable(dataTable);
+        }
+
+        public async Task ImportDataTable(DataTable dataTable)
+        {
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+                await context.Set<MultilingualGlobalText>().ExecuteDeleteAsync();
+            }
+
+            foreach (var rowBatch in dataTable.Rows.Convert<DataRow>().Batch(100))
             {
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
+                    var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+
                     var multilingualService = scope.ServiceProvider.GetRequiredService<MultilingualService>();
-                    await multilingualService.HandleDataRowImport(row);
+
+                    foreach (var row in rowBatch)
+                    {
+                        await multilingualService.HandleDataRowImport(row);
+                    }
+
+                    await context.SaveChangesAsync();
                 }
             }
         }
@@ -124,7 +179,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                     .SingleAsync();
             });
 
-            var key = row.Field<string>("TextKey");
+            var key = row.Field<string>("TextKey");//.ReformatToUpper();
 
             var multilingualText = await
                 _context.Set<MultilingualGlobalText>()
@@ -141,8 +196,65 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             }
 
             multilingualText.Text = row.Field<string>("Text");
+        }
+    }
 
-            await _context.SaveChangesAsync();
+    /* 
+    HOW TO USE:
+     
+    public class MultilingualDataSeedHostedService : BaseMultilingualDataSeedHostedService
+    {
+        public MultilingualDataSeedHostedService(IServiceScopeFactory serviceScopeFactory, ILogger<BaseMultilingualDataSeedHostedService> logger, IApplicationSettings applicationSettings, IHostApplicationLifetime appLifetime) : base(serviceScopeFactory, logger, applicationSettings, appLifetime)
+        {
+        }
+
+        protected override string GetFileName()
+        {
+            return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
+        }
+    }
+     */
+    public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
+    {
+        public BaseMultilingualDataSeedHostedService(
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<BaseMultilingualDataSeedHostedService> logger,
+            IApplicationSettings applicationSettings,
+            IHostApplicationLifetime appLifetime)
+            : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
+        {
+            string filePath = GetFileName();
+
+            _watcher = new FileSystemWatcher(System.IO.Path.GetDirectoryName(filePath));
+
+            _watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
+            _watcher.Filter = "*.json";
+            _watcher.EnableRaisingEvents = true;
+
+            _watcher.Changed += (sender, e) =>
+            {
+                _reloadJson = true;
+            };
+        }
+
+        private FileSystemWatcher _watcher;
+        private bool _reloadJson = true;
+
+        //return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
+        protected abstract string GetFileName();
+
+        protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
+        {
+            if (_reloadJson == false)
+                return;
+
+            string filePath = GetFileName();
+
+            var multilingualService = scope.ServiceProvider.GetService<MultilingualService>();
+
+            await multilingualService.ImportJson(FileUtiltiy.GetContent(filePath));
+
+            _reloadJson = false;
         }
     }
 }

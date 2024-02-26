@@ -7,6 +7,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using FluentValidation;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 using DocumentFormat.OpenXml.VariantTypes;
+using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Vml.Office;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -191,13 +193,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await CreateInternalAsync<TDto>(dto);
 
-            if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
-            {
-                if (await _accessService.CanSaveAsync(entity) == false)
-                    throw new UnauthorizedAccessException();
-
-                await _context.SaveChangesAsync();
-            }
+            await SaveChangesAsync(entity);
 
             return entity.Id;
         }
@@ -272,13 +268,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             entity = await UpdateInternalAsync(dto, entity);
 
-            if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
-            {
-                if (await _accessService.CanSaveAsync(entity) == false)
-                    throw new UnauthorizedAccessException();
-
-                await _context.SaveChangesAsync();
-            }
+            await SaveChangesAsync(entity);
 
             return entity.ConvertToDto<TDto>();
         }
@@ -307,18 +297,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task DeleteAsync(Guid id)
         {
-            await DeleteInternalAsync(id);
+            var entity = await GetSingleByIdInternalAsync(id);
 
+            await DeleteInternalAsync(entity);
+
+            await SaveChangesAsync(entity);
+        }
+
+        public async Task SaveChangesAsync(TEntity entity)
+        {
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
             {
+                if (await _accessService.CanSaveAsync(entity) == false)
+                    throw new UnauthorizedAccessException();
+
                 await _context.SaveChangesAsync();
             }
         }
 
-        public virtual async Task DeleteInternalAsync(Guid id)
+        public virtual async Task DeleteInternalAsync(TEntity entity)
         {
-            var entity = await GetSingleByIdInternalAsync(id);
-
             _context.Remove(entity);
 
             await OnDeleteInternalAsync(entity);
@@ -351,7 +349,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (_sectionManager.IsActive<SuppressValidationSection>())
                 return;
 
-            if (_validator == null) 
+            if (_validator == null)
                 return;
 
             var validationResult = await _validator?.ValidateAsync(entity);
@@ -383,6 +381,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             return service.GetCollectionQueryInternal(
                 _ => _.IsValidDateIncluded(validDate));
+        }
+
+        public static async Task SoftDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
+            where TEntity : Entity, ISoftDelete
+        {
+            var entity = await service.GetSingleByIdInternalAsync(id);
+
+            entity.IsDeleted = true;
+
+            await service.SaveChangesAsync(entity);
         }
     }
 }

@@ -5,10 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
@@ -208,7 +205,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             {
                 if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
                     throw new InvalidOperationException();
-                
+
                 var now = DateTime.Now;
 
                 var context = scope.ServiceProvider.GetService<IDbContext>();
@@ -266,26 +263,54 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
             var nextExecuteAt = dateTime.Add(_hostedServicesConfiguration.Interval.Value);
 
-            if ((backgroundserviceInfo?.LastFinishedAt == null ||
-                backgroundserviceInfo?.LastFinishedAt < dateTime) &&
-                backgroundserviceInfo?.NextExecuteAt == null &&
-                (!enabledDateRanges.Any() ||
-                enabledDateRanges.Any(_ => _.Includes(dateTime))))
+            var isFirstRun = backgroundserviceInfo?.LastFinishedAt == null;
+
+            //backgroundserviceInfo?.NextExecuteAt == null
+            if (!enabledDateRanges.Any())
             {
-                return dateTime;
+                if (isFirstRun)
+                {
+                    return dateTime;
+                }
+                else
+                {
+                    return nextExecuteAt;
+                }
+            }
+            else
+            {
+                if (isFirstRun)
+                {
+                    if (enabledDateRanges.Any(_ => _.Includes(dateTime)))
+                    {
+                        return dateTime;
+                    }
+                }
+
+                if (enabledDateRanges.Any(_ => _.Includes(nextExecuteAt)))
+                {
+                    return nextExecuteAt;
+                }
+                else
+                {
+                    var start = enabledDateRanges
+                        .Select(_ => _.Start)
+                        .OrderByDescending(_ => _)
+                        .First();
+
+                    if (start > dateTime)
+                        return start;
+
+                    var startNextDay = GetEnabledDateRange(dateTime.Date.AddDays(1).Date)
+                        .Select(_ => _.Start)
+                        .OrderByDescending(_ => _)
+                        .First();
+
+                    return startNextDay;
+                }
             }
 
-            if (enabledDateRanges.Any() &&
-                enabledDateRanges.All(_ => !_.Includes(nextExecuteAt)))
-            {
-                var start = enabledDateRanges
-                    .Select(_ => _.Start)
-                    .OrderByDescending(_ => _)
-                    .First();
-                return start;
-            }
-
-            return nextExecuteAt;
+            //throw new InvalidOperationException();
         }
 
         protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)

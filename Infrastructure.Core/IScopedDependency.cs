@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
@@ -34,8 +35,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
     {
         public static void RegisterSelfRegisterDependencies(this IServiceCollection services)
         {
-            var serviceTypes = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(a => a.GetExportedTypes())
+            var serviceTypes = AssemblyUtils.AllLoadedTypes()
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
                .Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
                .ToList();
@@ -74,8 +74,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public static void RegisterAllHostedService(this IServiceCollection services)
         {
-            var serviceTypes = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(a => a.GetExportedTypes())
+            var serviceTypes = AssemblyUtils.AllLoadedTypes()
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
                .Where(p => typeof(BaseHostedService).IsAssignableFrom(p))
                .ToList();
