@@ -24,7 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Infrastructure.Core.PostgreSQL\Infrastructure.Core.PostgreSQL.csproj" />
     <ProjectReference Include="..\..\Infrastructure.Core.Web\Infrastructure.Core.Web.csproj" />
-    <ProjectReference Include="..\..\SampleApp.Application\SampleApp.Application.csproj" />
     <ProjectReference Include="..\SampleApp.Application\SampleApp.Application.csproj" />
     <ProjectReference Include="..\sampleapp.client\sampleapp.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
