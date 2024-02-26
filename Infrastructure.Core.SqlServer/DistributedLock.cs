@@ -122,7 +122,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     releaseCmd.ExecuteNonQuery();
                     _transaction.Commit();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }

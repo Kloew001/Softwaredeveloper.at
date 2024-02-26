@@ -46,7 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 					types.Add(type);
 				}
 			}
-			catch (Exception e)
+            catch (Exception)
 			{
 				// log
 			}
