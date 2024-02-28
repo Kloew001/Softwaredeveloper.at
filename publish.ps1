@@ -2,7 +2,7 @@
 
 Set-Variable -Name "Projekt" -Value "MTGM"
 Set-Variable -Name "TargetPath" -Value C:\Development\$Projekt
-Set-Variable -Name "VERSION" -Value "0.0.0.217"
+Set-Variable -Name "VERSION" -Value "0.0.0.218"
 
 Remove-Item $TargetPath\LocalShared\*.*
 
