@@ -358,39 +358,4 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 throw validationResult.ToValidationException();
         }
     }
-
-    public static class EntityServiceExtensions
-    {
-        public static Task<IEnumerable<TDto>> GetAllActiveAsync<TDto, TEntity>(
-            this EntityService<TEntity> service,
-            DateTime? validDate = null)
-            where TEntity : Entity, ISupportValidDate
-            where TDto : Dto, new()
-        {
-            if (validDate == null)
-                validDate = DateTime.Now;
-            return service.GetCollectionAsync<TDto>(_ =>
-                    _.IsValidDateIncluded(validDate));
-        }
-
-        public static IQueryable<TEntity> GetAllActive<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
-            where TEntity : Entity, ISupportValidDate
-        {
-            if (validDate == null)
-                validDate = DateTime.Now;
-
-            return service.GetCollectionQueryInternal(
-                _ => _.IsValidDateIncluded(validDate));
-        }
-
-        public static async Task SoftDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
-            where TEntity : Entity, ISoftDelete
-        {
-            var entity = await service.GetSingleByIdInternalAsync(id);
-
-            entity.IsDeleted = true;
-
-            await service.SaveChangesAsync(entity);
-        }
-    }
 }

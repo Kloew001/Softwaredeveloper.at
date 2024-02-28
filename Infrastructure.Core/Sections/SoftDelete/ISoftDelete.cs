@@ -1,4 +1,4 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
 {
     public interface ISoftDelete
     {

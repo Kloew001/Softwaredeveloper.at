@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 using System.Linq.Expressions;
 using System.Reflection;
 
