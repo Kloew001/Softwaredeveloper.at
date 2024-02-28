@@ -3,9 +3,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+
 namespace SampleApp.Application.Sections.PersonSection
 {
-
     [Table(nameof(Person))]
     public class Person : Entity, ISoftDelete
     {
