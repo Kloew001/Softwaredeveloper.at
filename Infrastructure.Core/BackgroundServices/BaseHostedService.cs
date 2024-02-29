@@ -6,9 +6,18 @@ using System.ComponentModel.DataAnnotations;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 {
+    public enum BackgroundserviceInfoStateType
+    {
+        None = 0,
+        Executing = 1,
+        Queued = 3,
+        Error = 4,
+    }
+
     [Table(nameof(BackgroundserviceInfo))]
     public class BackgroundserviceInfo
     {
@@ -18,16 +27,28 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         public Guid Id { get; set; }
         public string Name { get; set; }
 
+        public BackgroundserviceInfoStateType State { get; set; } = BackgroundserviceInfoStateType.None;
+
         public DateTime ExecutedAt { get; set; }
         public DateTime? LastFinishedAt { get; set; }
 
         public DateTime? NextExecuteAt { get; set; }
 
         public string Message { get; set; }
-
         public DateTime? LastErrorAt { get; set; }
         public string LastErrorMessage { get; set; }
         public string LastErrorStack { get; set; }
+    }
+
+    public class BackgroundserviceInfoConfiguration : IEntityTypeConfiguration<BackgroundserviceInfo>
+    {
+        public void Configure(EntityTypeBuilder<BackgroundserviceInfo> builder)
+        {
+            builder.HasIndex(_ => new
+            {
+                _.Name,
+            }).IsUnique();
+        }
     }
 
     public abstract class BaseHostedService : IHostedService, IDisposable
@@ -95,29 +116,32 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             {
                 _logger.LogInformation($"IHostedService execute for {Name}");
 
-                try
+                using (var scope = _serviceScopeFactory.CreateScope())
+                using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
                 {
-                    if (await CanStartBackgroundServiceInfo() == false)
-                        return;
+                    if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
+                        throw new InvalidOperationException();
 
-                    await StartBackgroundServiceInfo();
-
-                    using (var scope = _serviceScopeFactory.CreateScope())
-                    using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
+                    try
                     {
-                        if (distributedLock.TryAcquireLock(Name, 3) == false)
-                            throw new InvalidOperationException();
+                        if (await CanStartBackgroundServiceInfo() == false)
+                            return;
 
-                        await ExecuteInternalAsync(scope, cancellationToken);
+                        await StartBackgroundServiceInfo();
+
+                        using (var scopeInner = _serviceScopeFactory.CreateScope())
+                        {
+                            await ExecuteInternalAsync(scopeInner, cancellationToken);
+                        }
+
+                        await FinishedBackgroundServiceInfo();
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
 
-                    await FinsihedBackgroundServiceInfo();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
-
-                    await ErrorBackgroundServiceInfo(ex);
+                        await ErrorBackgroundServiceInfo(ex);
+                    }
                 }
             }
             catch (Exception ex)
@@ -146,11 +170,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         protected virtual async Task<bool> CanStartBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
-                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
-                    throw new InvalidOperationException();
-
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
                 var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
@@ -158,12 +178,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Enabled == false)
                     return false;
 
-                var now = DateTime.Now;
+                if(backgroundServiceInfo?.State == BackgroundserviceInfoStateType.Executing)
+                    return false;
 
+                var now = DateTime.Now;
                 if (backgroundServiceInfo == null || backgroundServiceInfo.NextExecuteAt == null)
                 {
                     var nextExecuteAt = CalcNextExecuteAt(now, backgroundServiceInfo);
-                    return DateTime.Now >= nextExecuteAt;
+                    return now >= nextExecuteAt;
                 }
 
                 if (backgroundServiceInfo?.NextExecuteAt <= now)
@@ -175,11 +197,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         protected virtual async Task StartBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
-                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
-                    throw new InvalidOperationException();
-
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
                 var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
@@ -190,6 +208,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                     backgroundServiceInfo.Name = Name;
                 }
 
+                backgroundServiceInfo.State = BackgroundserviceInfoStateType.Executing;
                 backgroundServiceInfo.ExecutedAt = DateTime.Now;
                 backgroundServiceInfo.NextExecuteAt = null;
                 backgroundServiceInfo.Message = $"started";
@@ -198,26 +217,47 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             }
         }
 
-        protected virtual async Task FinsihedBackgroundServiceInfo()
+        protected virtual async Task FinishedBackgroundServiceInfo()
         {
             using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
             {
-                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
-                    throw new InvalidOperationException();
-
                 var now = DateTime.Now;
 
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
                 var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
 
+                backgroundServiceInfo.State = BackgroundserviceInfoStateType.Queued;
                 backgroundServiceInfo.LastFinishedAt = now;
 
                 backgroundServiceInfo.NextExecuteAt =
                     CalcNextExecuteAt(now, backgroundServiceInfo);
 
                 backgroundServiceInfo.Message = $"finished";
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
+        {
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+                var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
+
+                backgroundServiceInfo.State = BackgroundserviceInfoStateType.Error;
+                backgroundServiceInfo.Message = $"error";
+                backgroundServiceInfo.LastFinishedAt = null;
+                backgroundServiceInfo.LastErrorAt = DateTime.Now;
+                backgroundServiceInfo.LastErrorMessage = ex.Message;
+                backgroundServiceInfo.LastErrorStack = ex.StackTrace;
+
+                if (_hostedServicesConfiguration.Interval.HasValue)
+                {
+                    backgroundServiceInfo.NextExecuteAt =
+                        CalcNextExecuteAt(DateTime.Now, backgroundServiceInfo);
+                }
 
                 await context.SaveChangesAsync();
             }
@@ -313,38 +353,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             //throw new InvalidOperationException();
         }
 
-        protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
-            {
-                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
-                    throw new InvalidOperationException();
-
-                var context = scope.ServiceProvider.GetService<IDbContext>();
-                var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
-
-                backgroundServiceInfo.Message = $"error";
-                backgroundServiceInfo.LastFinishedAt = null;
-                backgroundServiceInfo.LastErrorAt = DateTime.Now;
-                backgroundServiceInfo.LastErrorMessage = ex.Message;
-                backgroundServiceInfo.LastErrorStack = ex.StackTrace;
-
-                if (_hostedServicesConfiguration.Interval.HasValue)
-                {
-                    backgroundServiceInfo.NextExecuteAt =
-                        CalcNextExecuteAt(DateTime.Now, backgroundServiceInfo);
-                }
-
-                await context.SaveChangesAsync();
-            }
-        }
-
         private async Task<BackgroundserviceInfo> GetBackgroundServiceInfo(IDbContext context)
         {
             return await
                 context.Set<BackgroundserviceInfo>()
-                .SingleOrDefaultAsync(_ => _.Name == Name);
+                .FirstOrDefaultAsync(_ => _.Name == Name);
         }
     }
 }
