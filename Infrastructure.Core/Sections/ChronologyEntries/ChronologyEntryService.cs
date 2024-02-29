@@ -5,11 +5,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
     public class ChronologyEntryService : EntityService<ChronologyEntry>
     {
-        public ChronologyEntryService(
-            IDbContext context,
-            AccessService accessService,
-            SectionManager sectionManager)
-            : base(context, accessService, sectionManager)
+        public ChronologyEntryService(EntityServiceDependency<ChronologyEntry> entityServiceDependency)
+            : base(entityServiceDependency)
         {
         }
 

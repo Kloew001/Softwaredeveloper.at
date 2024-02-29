@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 using System.ComponentModel.DataAnnotations.Schema;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
@@ -11,7 +13,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
     public class MultilingualCulture : Entity, ISupportDefault, IActivateable
     {
         public bool IsDefault { get; set; }
-        public bool IsEnabled { get; set; }
+        public bool IsActive { get; set; }
         public string Name { get; set; }
     }
 

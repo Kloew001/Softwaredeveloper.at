@@ -68,7 +68,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
             return query;
         }
 
-        public static Task<IEnumerable<TDto>> GetAllActiveAsync<TDto, TEntity>(
+        public static Task<IEnumerable<TDto>> GetAllValidAsync<TDto, TEntity>(
             this EntityService<TEntity> service,
             DateTime? validDate = null)
             where TEntity : Entity, ISupportValidDate
@@ -80,7 +80,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
                     _.IsValidDateIncluded(validDate));
         }
 
-        public static IQueryable<TEntity> GetAllActive<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
+        public static IQueryable<TEntity> GetAllValid<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
             where TEntity : Entity, ISupportValidDate
         {
             if (validDate == null)

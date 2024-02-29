@@ -2,13 +2,12 @@
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using Microsoft.Extensions.Logging;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
-using DocumentFormat.OpenXml.VariantTypes;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Vml.Office;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -19,24 +18,63 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
     }
 
-    public class EntityService<TEntity> : IScopedDependency
+    public class EntityServiceDependency<TEntity> : IScopedDependency
         where TEntity : Entity
     {
-        protected readonly IDbContext _context;
-        protected readonly AccessService _accessService;
-        protected readonly SectionManager _sectionManager;
-        protected readonly EntityValidator<TEntity> _validator;
+        internal ILogger<EntityService<TEntity>> Logger { get; private set; }
+        internal IDbContext DbContext { get; private set; }
+        internal AccessService AccessService { get; private set; }
+        internal SectionManager SectionManager { get; private set; }
+        internal EntityQueryService<TEntity> EntityQueryService { get; private set; }
+        internal EntityValidator<TEntity> Validator { get; private set; }
+        internal IMemoryCache MemoryCache { get; private set; }
+        internal ICurrentUserService CurrentUserService { get; private set; }
+     
 
-        public EntityService(
+        public EntityServiceDependency(
+            ILogger<EntityService<TEntity>> logger,
             IDbContext context,
             AccessService accessService,
             SectionManager sectionManager,
+            EntityQueryService<TEntity> entityQueryService,
+            IMemoryCache memoryCache,
+            ICurrentUserService currentUserService,
             EntityValidator<TEntity> validator = null)
         {
-            _context = context;
-            _accessService = accessService;
-            _sectionManager = sectionManager;
-            _validator = validator;
+            Logger = logger;
+            DbContext = context;
+            AccessService = accessService;
+            SectionManager = sectionManager;
+            EntityQueryService = entityQueryService;
+            CurrentUserService = currentUserService;
+            MemoryCache = memoryCache;
+            Validator = validator;
+        }
+    }
+
+    public class EntityService<TEntity> : IScopedDependency
+        where TEntity : Entity
+    {
+        protected readonly ILogger<EntityService<TEntity>> _logger;
+        protected readonly IDbContext _context;
+        protected readonly AccessService _accessService;
+        protected readonly SectionManager _sectionManager;
+        protected readonly EntityQueryService<TEntity> _entityQueryService;
+        protected readonly ICurrentUserService _currentUserService;
+        protected readonly EntityValidator<TEntity> _validator;
+
+        protected readonly IMemoryCache _memoryCache;
+
+        public EntityService(EntityServiceDependency<TEntity> entityServiceDependency)
+        {
+            _logger = entityServiceDependency.Logger;
+            _context = entityServiceDependency.DbContext;
+            _accessService = entityServiceDependency.AccessService;
+            _sectionManager = entityServiceDependency.SectionManager;
+            _entityQueryService = entityServiceDependency.EntityQueryService;
+            _currentUserService = entityServiceDependency.CurrentUserService;
+            _memoryCache = entityServiceDependency.MemoryCache;
+            _validator = entityServiceDependency.Validator;
         }
 
         public virtual async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
@@ -104,10 +142,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 //.Where(_=> _accessService.CanReadQuery(_))
                 .AsQueryable();
 
-            typeof(TEntity).GetProperties()
-                .Where(_ => _.GetCustomAttributes(typeof(AutoQueryIncludeAttribute), true)?.Any() == true)
-                .ToList()
-                .ForEach(_ => query = query.Include(_.Name));
+            query = IncludeAutoQueryProperties(query);
 
             if (queryExtension != null)
                 query = queryExtension(query);
@@ -117,76 +152,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return query;
         }
 
-        protected virtual IQueryable<TEntity> AppendOrderBy(IQueryable<TEntity> query)
+        protected virtual IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)
         {
-            if (query is IOrderedQueryable<TEntity>)
-                return query;
-
-            var sortOrders =
-                typeof(TEntity).GetProperties()
-                    .Select(_ => new { Property = _, Attribute = _.GetCustomAttributes(typeof(OrderByAttribute), false).SingleOrDefault() as OrderByAttribute })
-                    .Where(_ => _.Attribute != null)
-                    .ToList();
-
-            if (sortOrders.Any())
-            {
-                var isFirst = true;
-                foreach (var sortOrder in sortOrders.OrderBy(_ => _.Attribute.Order))
-                {
-                    var direction = sortOrder.Attribute.Direction;
-                    var order = sortOrder.Attribute.Order;
-                    if (isFirst)
-                    {
-                        if (direction == OrderByAttribute.SortDirection.Ascending)
-                            query = query.OrderByPropertyName(sortOrder.Property.Name);
-                        else
-                            query = query.OrderByPropertyNameDescending(sortOrder.Property.Name);
-                    }
-                    else
-                    {
-                        if (direction == OrderByAttribute.SortDirection.Ascending)
-                            query = query.ThenByPropertyName(sortOrder.Property.Name);
-                        else
-                            query = query.ThenByPropertyNameDescending(sortOrder.Property.Name);
-
-                    }
-
-                    isFirst = false;
-                }
-
-            }
-            else if (typeof(ISupportIndex).IsAssignableFrom(typeof(TEntity)))
-            {
-                query = query.OrderByPropertyName(nameof(ISupportIndex.Index));
-            }
-            else if (typeof(ISupportDisplayName).IsAssignableFrom(typeof(TEntity)))
-            {
-                query = query.OrderByPropertyName(nameof(ISupportDisplayName.DisplayName));
-            }
-            else if (typeof(ChangeTrackedEntity).IsAssignableFrom(typeof(TEntity)))
-            {
-                query = query.OrderByPropertyNameDescending(nameof(ChangeTrackedEntity.DateModified));
-            }
-            else
-            {
-                query = query.OrderBy(_ => _.Id);
-            }
-
-            return query;
+            return _entityQueryService.IncludeAutoQueryProperties(query);
         }
 
-        //public virtual async Task<TDtoOut> CreateVirtualAsync<TDto, TDtoOut>(TDto dto)
-        //    where TDto : Dto, new()
-        //    where TDtoOut : Dto, new()
-        //{
-        //    using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
-        //    using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
-        //    {
-        //        var entity = await CreateInternalAsync<TDto>(dto);
-
-        //        return entity.ConvertToDto<TDtoOut>();
-        //    }
-        //}
+        protected virtual IQueryable<TEntity> AppendOrderBy(IQueryable<TEntity> query)
+        {
+            return _entityQueryService.AppendDefaultOrderBy(query);
+        }
 
         public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
