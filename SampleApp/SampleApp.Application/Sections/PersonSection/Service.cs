@@ -3,12 +3,8 @@ namespace SampleApp.Application.Sections.PersonSection
 {
     public class PersonService : EntityService<Person>
     {
-        public PersonService(
-            IDbContext context,
-            AccessService accessService,
-            SectionManager sectionManager,
-            PersonValidator validator)
-            : base(context, accessService, sectionManager, validator)
+        public PersonService(EntityServiceDependency<Person> entityServiceDependency) 
+            : base(entityServiceDependency)
         {
         }
 
