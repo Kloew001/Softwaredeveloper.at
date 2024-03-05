@@ -47,6 +47,20 @@
             return Guid.Parse(enumVal?.GetAttributeOfType<EnumExtensionAttribute>()?.Id);
         }
 
+        public static T GetEnumFromId<T>(this Guid id) where T : Enum
+        {
+            foreach(T enumVal in Enum.GetValues(typeof(T)))
+            {
+                var attribute = enumVal.GetAttributeOfType<EnumExtensionAttribute>();
+                if(attribute != null && Guid.Parse(attribute.Id) == id)
+                {
+                    return enumVal;
+                }
+            }
+
+            throw new ArgumentException($"No enum of type {typeof(T)} with ID {id} found.");
+        }
+
         public static string GetShortName(this Enum enumVal)
         {
             return enumVal?.GetAttributeOfType<EnumExtensionAttribute>()?.ShortName;
