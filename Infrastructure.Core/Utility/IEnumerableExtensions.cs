@@ -77,5 +77,10 @@
             var randomizer = new Random();
             return source.OrderBy(_ => randomizer.Next());
         }
+
+        public static T GetRandom<T>(this IEnumerable<T> source)
+        {
+            return source.OrderByRandom().FirstOrDefault();
+        }
     }
 }

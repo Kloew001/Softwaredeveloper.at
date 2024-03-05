@@ -2,6 +2,13 @@
 {
     public static class DateTimeUtility
     {
+        public static DateTime RandomDate(this DateTime start, DateTime end)
+        {
+            var gen = new Random();
+            int range = (end - start).Days;
+            return start.AddDays(gen.Next(range));
+        }
+
         public static DateTime LastDayOfMonth(int year, int month)
         {
             DateTime date;

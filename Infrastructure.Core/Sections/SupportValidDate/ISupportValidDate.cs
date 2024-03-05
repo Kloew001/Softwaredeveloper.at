@@ -2,7 +2,7 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
 {
-    public interface ISupportValidDate 
+    public interface ISupportValidDate  //: IDateRange<DateTime>
     {
         DateTime? ValidFrom { get; set; }
         DateTime? ValidTo { get; set; }

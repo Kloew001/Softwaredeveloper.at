@@ -143,11 +143,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
         public async Task ImportDataTable(DataTable dataTable)
         {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-                await context.Set<MultilingualGlobalText>().ExecuteDeleteAsync();
-            }
+            //using (var scope = _serviceScopeFactory.CreateScope())
+            //{
+            //    var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+            //    await context.Set<MultilingualGlobalText>().ExecuteDeleteAsync();
+            //}
 
             foreach (var rowBatch in dataTable.Rows.Convert<DataRow>().Batch(100))
             {

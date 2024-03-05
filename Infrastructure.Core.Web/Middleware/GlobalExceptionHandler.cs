@@ -45,7 +45,7 @@ namespace Infrastructure.Core.Web.Middleware
 
             public ValidationProblemDetails(ValidationException validationException)
             {
-                Status = StatusCodes.Status400BadRequest;
+                Status = StatusCodes.Status412PreconditionFailed;
                 Title = validationException.Message;
                 Detail = validationException.Message;
                 Errors = validationException.Errors;

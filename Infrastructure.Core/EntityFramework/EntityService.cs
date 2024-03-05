@@ -189,6 +189,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return entity;
         }
 
+        public virtual async Task<TEntity> QuickCreateInternalAsync(Action<TEntity> modifyEntity = null)
+        {
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+            {
+                var entity = await CreateInternalAsync(modifyEntity);
+                return entity;
+            }
+        }
+
         public virtual async Task<TEntity> CreateInternalAsync(Action<TEntity> modifyEntity = null)
         {
             var entity = _context.Set<TEntity>().CreateProxy();
