@@ -10,7 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public interface IDataSeed : ITypedScopedDependency<IDataSeed>
     {
-        int Priority { get; }
+        decimal Priority { get; }
         bool ExecuteInThread { get; set; }
         bool AutoExecute { get; set; }
 

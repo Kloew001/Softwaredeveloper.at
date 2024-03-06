@@ -1,9 +1,6 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
-    public interface IDateRange : IDateRange<DateTime>
-    {
-    }
-    public interface INullableDateRange : IDateRange<DateTime>
+    public interface IDateTimeRange : IDateRange<DateTime>
     {
     }
 

@@ -29,7 +29,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public EntityValidator<TEntity> Validator { get; private set; }
         public IMemoryCache MemoryCache { get; private set; }
         public ICurrentUserService CurrentUserService { get; private set; }
-     
+
 
         public EntityServiceDependency(
             ILogger<EntityService<TEntity>> logger,
@@ -52,7 +52,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
     }
 
-    public class EntityService<TEntity> : IScopedDependency
+    public class EntityService<TEntity> : IScopedDependency//, ITypedScopedDependency<TEntity>
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;

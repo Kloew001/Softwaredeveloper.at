@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 {
     [ApiController]
     [Authorize(policy: "api")]

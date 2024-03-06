@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core;
+
 using System.Security.Claims;
 
 namespace Infrastructure.Core.Web
@@ -36,7 +38,7 @@ namespace Infrastructure.Core.Web
         }
         private Guid? _currentUserId;
 
-        public Guid GetCurrentUserId()
+        public Guid? GetCurrentUserId()
         {
             if (_currentUserId.HasValue)
                 return _currentUserId.Value;
@@ -48,13 +50,10 @@ namespace Infrastructure.Core.Web
             if (id != null)
                 _currentUserId = Guid.Parse(id);
 
-            if (_currentUserId.HasValue == false)
-                throw new UnauthorizedAccessException();
-
-            return _currentUserId.Value;
+            return _currentUserId;
         }
 
-        public void SetCurrentUserId(Guid currentUserId)
+        public void SetCurrentUserId(Guid? currentUserId)
         {
             _currentUserId = currentUserId;
         }
