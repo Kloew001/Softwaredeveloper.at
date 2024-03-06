@@ -21,15 +21,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     public class EntityServiceDependency<TEntity> : IScopedDependency
         where TEntity : Entity
     {
-        internal ILogger<EntityService<TEntity>> Logger { get; private set; }
-        internal IDbContext DbContext { get; private set; }
-        internal AccessService AccessService { get; private set; }
-        internal SectionManager SectionManager { get; private set; }
-        internal EntityQueryService<TEntity> EntityQueryService { get; private set; }
-        internal EntityValidator<TEntity> Validator { get; private set; }
-        internal IMemoryCache MemoryCache { get; private set; }
-        internal ICurrentUserService CurrentUserService { get; private set; }
-     
+        public ILogger<EntityService<TEntity>> Logger { get; private set; }
+        public IDbContext DbContext { get; private set; }
+        public AccessService AccessService { get; private set; }
+        public SectionManager SectionManager { get; private set; }
+        public EntityQueryService<TEntity> EntityQueryService { get; private set; }
+        public EntityValidator<TEntity> Validator { get; private set; }
+        public IMemoryCache MemoryCache { get; private set; }
+        public ICurrentUserService CurrentUserService { get; private set; }
+
 
         public EntityServiceDependency(
             ILogger<EntityService<TEntity>> logger,
@@ -52,7 +52,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
     }
 
-    public class EntityService<TEntity> : IScopedDependency
+    public class EntityService<TEntity> : IScopedDependency//, ITypedScopedDependency<TEntity>
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;
@@ -65,8 +65,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         protected readonly IMemoryCache _memoryCache;
 
+        public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
+
         public EntityService(EntityServiceDependency<TEntity> entityServiceDependency)
         {
+            EntityServiceDependency = entityServiceDependency;
+
             _logger = entityServiceDependency.Logger;
             _context = entityServiceDependency.DbContext;
             _accessService = entityServiceDependency.AccessService;
@@ -183,6 +187,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             });
 
             return entity;
+        }
+
+        public virtual async Task<TEntity> QuickCreateInternalAsync(Action<TEntity> modifyEntity = null)
+        {
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+            {
+                var entity = await CreateInternalAsync(modifyEntity);
+                return entity;
+            }
         }
 
         public virtual async Task<TEntity> CreateInternalAsync(Action<TEntity> modifyEntity = null)

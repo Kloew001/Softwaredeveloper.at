@@ -35,6 +35,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
+            if(accessConditionInfo == null)
+                return Task.FromResult(true);
+
             return accessConditionInfo.AccessCondition
                 .CanReadAsync(accessConditionInfo.SecurityEntity);
         }
@@ -72,6 +75,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
+            if (accessConditionInfo == null)
+                return Task.FromResult(true);
+
             return accessConditionInfo.AccessCondition
                 .CanCreateAsync(accessConditionInfo.SecurityEntity);
         }
@@ -85,6 +91,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
+
+            if (accessConditionInfo == null)
+                return Task.FromResult(true);
 
             return accessConditionInfo.AccessCondition
                 .CanUpdateAsync(accessConditionInfo.SecurityEntity);
@@ -100,6 +109,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
 
+            if (accessConditionInfo == null)
+                return Task.FromResult(true);
+
             return accessConditionInfo.AccessCondition
                 .CanDeleteAsync(accessConditionInfo.SecurityEntity);
         }
@@ -113,6 +125,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 return Task.FromResult(true);
 
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
+
+            if (accessConditionInfo == null)
+                return Task.FromResult(true);
 
             return accessConditionInfo.AccessCondition
                 .CanSaveAsync(accessConditionInfo.SecurityEntity);
@@ -167,7 +182,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
                 return ResolveAccessConditionInfo(securityParent);
             }
 
-            throw new InvalidOperationException($"no accessDefinition found for '{securityInfo.EntityType.Name}'");
+            return null;
+            //throw new InvalidOperationException($"no accessDefinition found for '{securityInfo.EntityType.Name}'");
         }
 
         private SecurityParentInfo ResolveSecurityParentInfo(Type entityType)

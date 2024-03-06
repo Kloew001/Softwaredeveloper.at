@@ -1,29 +1,81 @@
 <div fxLayout="column"
      fxLayoutAlign="space-between stretch"
      fxFill>
+  <mat-toolbar #headerToolbar>
+    <div fxLayout="row" fxFill fxLayoutAlign="space-between center">
+      <button mat-icon-button
+              (click)="sidenav.toggle()"
+              *ngIf="useSidebar && sidenav?.mode === 'over'">
+        <mat-icon *ngIf="!sidenav.opened">menu</mat-icon>
+        <mat-icon *ngIf="sidenav.opened">close</mat-icon>
+      </button>
 
-  <!-- Header ------------------------------------------------------------------------->
-  <div fxFlex="none">
-    <mat-toolbar #toolbar>
-      <mat-icon svgIcon="pwc-logo" class="" style="width: 50px;"></mat-icon>
-      SampleApp
-      <!--<mat-icon class="example-icon" aria-hidden="false" aria-label="Example user verified icon">verified_user</mat-icon>-->
-    </mat-toolbar>
+      <span [routerLink]="'/'"
+            style="cursor: pointer;"
+            fxLayout="row"
+            fxLayoutAlign="start center"
+            fxLayoutGap="2">
+        <img src='/assets/logo.png'
+                  style="width: 50px;"/> 
+        <!--<mat-icon svgIcon="app-logo">
+        </mat-icon>-->
+        <span class="apptitle">
+          {{appTitle | async}}
+        </span>
+      </span>
+      <div fxFlex></div>
+    </div>
+  </mat-toolbar>
+
+  @if(useSidebar){
+  <div fxFlex>
+    <mat-sidenav-container autosize>
+      <mat-sidenav #sidenav="matSidenav">
+        <mat-nav-list>
+
+          <button mat-button class="menu-button" routerLink="/home">
+            <mat-icon>home</mat-icon>
+            <span>Home</span>
+          </button>
+
+          <mat-divider></mat-divider>
+
+          <a mat-list-item>
+            <span class="entry">
+              <mat-icon>house</mat-icon>
+              <span *ngIf="!isCollapsed">Dashboard</span>
+            </span>
+          </a>
+        </mat-nav-list>
+      </mat-sidenav>
+      <mat-sidenav-content>
+        <div fxLayout="column"
+             fxLayoutAlign="space-between stretch"
+             fxFill>
+          <!-- Body ------------------------------------------------------------------------->
+          <div id="main-content-container" fxFlex>
+            <router-outlet></router-outlet>
+          </div>
+          <!-- Footer ------------------------------------------------------------------------->
+          <div fxFlex="none" id="footerToolbar">
+            <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
+          </div>
+        </div>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
   </div>
-  <!----------------------------------------------------------------------------------->
+  }
+  @else{
 
   <!-- Body ------------------------------------------------------------------------->
-  <div id="main-content-container"
-       fxFlex>
+  <div id="main-content-container" fxFlex>
     <router-outlet></router-outlet>
   </div>
-  <!----------------------------------------------------------------------------------->
 
   <!-- Footer ------------------------------------------------------------------------->
-  <div fxFlex="none">
-    <mat-toolbar fxFlex="100%">
-    
-    </mat-toolbar>
+  <div fxFlex="none" id="footerToolbar">
+    <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
   </div>
-  <!----------------------------------------------------------------------------------->
+  }
+
 </div>

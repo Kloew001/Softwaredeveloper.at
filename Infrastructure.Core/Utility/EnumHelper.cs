@@ -2,6 +2,14 @@
 {
     public static class EnumHelper
     {
+        public static T GetRandom<T>()
+            where T : Enum
+        {
+            var values = Enum.GetValues(typeof(T));
+            var random = new Random();
+            return (T)values.GetValue(random.Next(values.Length));
+        }
+        
         public static T GetAttributeOfType<T>(this Enum enumVal)
             where T : Attribute
         {

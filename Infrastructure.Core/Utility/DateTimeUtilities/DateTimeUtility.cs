@@ -1,7 +1,16 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.StateHolidays;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class DateTimeUtility
     {
+        public static DateTime RandomDate(this DateTime start, DateTime end)
+        {
+            var gen = new Random();
+            int range = (end - start).Days;
+            return start.AddDays(gen.Next(range));
+        }
+
         public static DateTime LastDayOfMonth(int year, int month)
         {
             DateTime date;
@@ -155,120 +164,22 @@
             return LastWerktag(folgetag);
         }
 
-        public static bool IsSaOrSoLocalTime(this DateTime dateTime)
+        public static bool IsSaOrSo(this DateTime dateTime)
         {
             return dateTime.DayOfWeek == DayOfWeek.Saturday ||
                    dateTime.DayOfWeek == DayOfWeek.Sunday;
         }
 
-        public static bool IsFeiertag(this DateTime dateTime)
-        {
-            return FeiertagService.GetInstance(dateTime.Year)
-                .IsFeiertag(dateTime);
-        }
-
         public static bool IsSaSoOrFeiertag(this DateTime dateTime)
         {
-            return IsSaOrSoLocalTime(dateTime) ||
-                   IsFeiertag(dateTime);
+            return IsSaOrSo(dateTime) ||
+                   IsStateHoliday(dateTime);
+        }
+
+        public static bool IsStateHoliday(this DateTime dateTime)
+        {
+            return StateHolidaysHelper.GetInstance(dateTime.Year)
+                .IsStateHoliday(dateTime);
         }
     }
-
-    /// <summary>
-    /// https://www.feiertage-oesterreich.at
-    /// </summary>
-    public class FeiertagService
-    {
-        private static object balanceLock = new();
-
-        private static Dictionary<int, FeiertagService> InstancesPerYear = new();
-
-        public static FeiertagService GetInstance(int year)
-        {
-            lock (balanceLock)
-            {
-                if (InstancesPerYear.ContainsKey(year) == false)
-                    InstancesPerYear.Add(year, new FeiertagService(year));
-            }
-
-            return InstancesPerYear[year];
-        }
-
-        public List<Feiertag> Feiertage { get; set; } = new();
-
-        public int Year { get; set; }
-
-        public bool IsFeiertag(DateTime value)
-        {
-            return Feiertage.Any(_ => _.Datum.Date == value.Date);
-        }
-
-        private FeiertagService(int year)
-        {
-            Year = year;
-
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 1, 1), "Neujahr"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 1, 6), "Heilige Drei Könige"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 5, 1), "Staatsfeiertag"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 8, 15), "Mariä Himmelfahrt"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 10, 26), "Nationalfeiertag"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 11, 1), "Allerheiligen"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 12, 8), "Mariä Empfängnis"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 12, 25), "Weihnachten"));
-            Feiertage.Add(new Feiertag(true, new DateTime(year, 12, 26), "Stefanitag"));
-
-            var osterSonntag = GetOsterSonntag();
-
-            Feiertage.Add(new Feiertag(false, osterSonntag, "Ostersonntag"));
-            //Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(-3), "Gründonnerstag"));
-
-            //https://www.wko.at/service/arbeitsrecht-sozialrecht/karfreitag-persoenlicher-feiertag.html
-            //Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(-2), "Karfreitag"));
-
-            Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(1), "Ostermontag"));
-
-            Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(39), "Christi Himmelfahrt"));
-            Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(49), "Pfingstsonntag"));
-            Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(50), "Pfingstmontag"));
-            Feiertage.Add(new Feiertag(false, osterSonntag.AddDays(60), "Fronleichnam"));
-        }
-
-        private DateTime GetOsterSonntag()
-        {
-            int g, h, c, j, l, i;
-
-            g = Year % 19;
-            c = Year / 100;
-            h = ((c - (c / 4)) - (((8 * c) + 13) / 25) + (19 * g) + 15) % 30;
-            i = h - (h / 28) * (1 - (29 / (h + 1)) * ((21 - g) / 11));
-            j = (Year + (Year / 4) + i + 2 - c + (c / 4)) % 7;
-
-            l = i - j;
-            int month = (int)(3 + ((l + 40) / 44));
-            int day = (int)(l + 28 - 31 * (month / 4));
-
-            return new DateTime(Year, month, day);
-        }
-
-        public class Feiertag : IComparable<Feiertag>
-        {
-            public string Name { get; set; }
-            public DateTime Datum { get; set; }
-            public bool IsFix { get; set; }
-
-
-            public Feiertag(bool isFix, DateTime datum, string name)
-            {
-                IsFix = isFix;
-                Datum = datum;
-                Name = name;
-            }
-
-            public int CompareTo(Feiertag other)
-            {
-                return this.Datum.Date.CompareTo(other.Datum.Date);
-            }
-        }
-    }
-
 }

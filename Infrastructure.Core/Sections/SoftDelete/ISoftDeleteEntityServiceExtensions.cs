@@ -1,4 +1,5 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
 {
@@ -10,6 +11,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
             var entity = await service.GetSingleByIdInternalAsync(id);
 
             entity.IsDeleted = true;
+
+            if (!(await service.EntityServiceDependency.AccessService.CanDeleteAsync(entity)))
+                throw new UnauthorizedAccessException();
 
             await service.SaveChangesAsync(entity);
         }

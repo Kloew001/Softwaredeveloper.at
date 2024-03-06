@@ -22,10 +22,10 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL" Version="0.0.0.216" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Infrastructure.Core.PostgreSQL\Infrastructure.Core.PostgreSQL.csproj" />
     <ProjectReference Include="..\..\Infrastructure.Core\Infrastructure.Core.csproj" />
   </ItemGroup>
 

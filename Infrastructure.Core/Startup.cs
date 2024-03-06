@@ -1,9 +1,12 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FluentValidation;
+
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using TomLonghurst.ReadableTimeSpan;
 
@@ -23,6 +26,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services = builder.Services;
             Configuration = builder.Configuration;
             HostEnvironment = builder.Environment;
+
+            ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
 
             ReadableTimeSpan.EnableConfigurationBinding();
 

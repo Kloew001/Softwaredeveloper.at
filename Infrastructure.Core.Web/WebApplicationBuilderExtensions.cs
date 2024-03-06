@@ -9,9 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
-using static Infrastructure.Core.Web.Middleware.ValidationExceptionHandler;
 using Microsoft.AspNetCore.Authorization;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace Infrastructure.Core.Web
 {
@@ -35,11 +34,15 @@ namespace Infrastructure.Core.Web
 
                 //options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
             })
+            //.AddApplicationPart(typeof(BaseApiController).Assembly)
+
             .AddNewtonsoftJson(options =>
             {
                 //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                 options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+
+                options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Local;
             });
 
             builder.Services.AddEndpointsApiExplorer();
@@ -100,7 +103,7 @@ namespace Infrastructure.Core.Web
             })
             .AddBearerToken(IdentityConstants.BearerScheme, options =>
             {
-                options.BearerTokenExpiration = TimeSpan.FromMinutes(500); //TODO
+                options.BearerTokenExpiration = TimeSpan.FromMinutes(60);
             });
 
             var authorizationBuilder = builder.Services.AddAuthorizationBuilder();

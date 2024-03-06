@@ -6,8 +6,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public interface ICurrentUserService
     {
-        Guid GetCurrentUserId();
-        void SetCurrentUserId(Guid currentUserId);
+        Guid? GetCurrentUserId();
+        void SetCurrentUserId(Guid? currentUserId);
         bool IsAuthenticated { get; }
     }
 
@@ -33,9 +33,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             _previousUserId = null;
         }
 
-        public Guid GetCurrentUserId()
+        public Guid? GetCurrentUserId()
         {
-            return _currentUserId.HasValue ? _currentUserId.Value : Guid.Empty;
+            return _currentUserId.HasValue ? _currentUserId.Value : null;
         }
 
         public ApplicationUser GetCurrentUser()
@@ -43,13 +43,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             return _context.Set<ApplicationUser>().SingleOrDefault(u => u.Id == _currentUserId);
         }
 
-        public void SetCurrentUser(Guid id)
+        public void SetCurrentUser(Guid? id)
         {
             _previousUserId = _currentUserId;
             _currentUserId = id;
         }
 
-        public void SetCurrentUserId(Guid currentUserId)
+        public void SetCurrentUserId(Guid? currentUserId)
         {
             _currentUserId = currentUserId;
         }
