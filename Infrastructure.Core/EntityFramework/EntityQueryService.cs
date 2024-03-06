@@ -108,7 +108,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)
         {
             var autoQueryIncludePropertyNames = _memoryCache.GetOrCreate(
-                $"{nameof(EntityQueryService<TEntity>)}_AutoQueryIncludePropertyNames", _ =>
+                $"{nameof(EntityQueryService<TEntity>)}_{typeof(TEntity).Name}_AutoQueryIncludePropertyNames", _ =>
             {
                 return typeof(TEntity)
                 .GetProperties()
