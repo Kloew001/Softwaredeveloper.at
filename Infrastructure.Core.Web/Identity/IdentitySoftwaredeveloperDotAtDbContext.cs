@@ -39,7 +39,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             var dbContextHandler = this.GetService<EntityFramework.IDbContextHandler>() as EntityFramework.BaseDbContextHandler;
 
             dbContextHandler.ApplyDateTime(modelBuilder);
-            dbContextHandler.ApplyEnumToStringValueConverter(modelBuilder);
+            //dbContextHandler.ApplyEnumToStringValueConverter(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentitySoftwaredeveloperDotAtDbContext).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);

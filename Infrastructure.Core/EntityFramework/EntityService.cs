@@ -18,9 +18,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
     }
 
-    public class EntityServiceDependency<TEntity> : IScopedDependency
+    public class EntityServiceDependency<TEntity> : ITransientDependency
         where TEntity : Entity
     {
+        private readonly IServiceProvider _serviceProvider;
         public ILogger<EntityService<TEntity>> Logger { get; private set; }
         public IDbContext DbContext { get; private set; }
         public AccessService AccessService { get; private set; }
@@ -30,17 +31,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public IMemoryCache MemoryCache { get; private set; }
         public ICurrentUserService CurrentUserService { get; private set; }
 
-
         public EntityServiceDependency(
+            IServiceProvider serviceProvider,
             ILogger<EntityService<TEntity>> logger,
             IDbContext context,
             AccessService accessService,
             SectionManager sectionManager,
             EntityQueryService<TEntity> entityQueryService,
             IMemoryCache memoryCache,
-            ICurrentUserService currentUserService,
-            EntityValidator<TEntity> validator = null)
+            ICurrentUserService currentUserService)
         {
+            _serviceProvider = serviceProvider;
+
             Logger = logger;
             DbContext = context;
             AccessService = accessService;
@@ -48,11 +50,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             EntityQueryService = entityQueryService;
             CurrentUserService = currentUserService;
             MemoryCache = memoryCache;
-            Validator = validator;
+
+            Validator = GetService<EntityValidator<TEntity>>();
+        }
+
+        public T GetService<T>()
+        {
+            return _serviceProvider.GetService<T>();
         }
     }
 
-    public class EntityService<TEntity> : IScopedDependency//, ITypedScopedDependency<TEntity>
+    public class EntityService<TEntity> : IScopedDependency//, ITypedScopedDependency<EntityService<TEntity>>
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;

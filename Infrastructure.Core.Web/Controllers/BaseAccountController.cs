@@ -17,17 +17,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
             public required string Password { get; set; }
         }
 
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public BaseAccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+        {
+            _signInManager = signInManager;
+            _userManager = userManager;
+        }
+
         [HttpPost]
         [AllowAnonymous]
         public async Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, ProblemHttpResult>> Authenticate
             ([FromBody] AuthenticateRequest request,
             [FromServices] IServiceProvider sp)
         {
-            var signInManager = sp.GetRequiredService<SignInManager<ApplicationUser>>();
+            _signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
 
-            signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
-
-            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, false, lockoutOnFailure: true);
+            var result = await _signInManager.PasswordSignInAsync(request.Email, request.Password, false, lockoutOnFailure: true);
 
             if (!result.Succeeded)
             {
@@ -42,5 +49,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
             return TypedResults.Empty;
         }
 
+        [HttpGet]
+        public async Task<List<string>> GetRoleInfos()
+        {
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            var roles = await _userManager.GetRolesAsync(user);
+            return roles.ToList();
+        }
     }
 }

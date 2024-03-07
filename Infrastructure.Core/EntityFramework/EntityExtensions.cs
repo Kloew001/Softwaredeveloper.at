@@ -1,25 +1,43 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+
 using System.Linq.Expressions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class EntityExtensions
     {
-        public static bool IsModified<TEntity, TProperty>(
+        public static bool IsNotModified<TEntity, TProperty>(
             this TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
             where TEntity : Entity
+        {
+            return !IsModified(entity, propertyExpression);
+        }
+
+        public static bool IsModified<TEntity, TProperty>(
+        this TEntity entity,
+        Expression<Func<TEntity, TProperty>> propertyExpression)
+        where TEntity : Entity
         {
             var context = entity.ResolveDbContext();
 
             return IsModified(context, entity, propertyExpression);
         }
 
-        public static bool IsModified<TEntity, TProperty>(
+        public static bool IsNotModified<TEntity, TProperty>(
             this IDbContext context,
             TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
             where TEntity : Entity
+        {
+            return !IsModified(context, entity, propertyExpression);
+        }
+
+        public static bool IsModified<TEntity, TProperty>(
+        this IDbContext context,
+        TEntity entity,
+        Expression<Func<TEntity, TProperty>> propertyExpression)
+        where TEntity : Entity
         {
             return GetPropertyInfo(context, entity, propertyExpression).IsModified;
         }

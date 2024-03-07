@@ -46,7 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         public bool AutoExecute { get; set; } = false;
 
 
-        private readonly UserManager<ApplicationUser> _userManager;
+        protected readonly UserManager<ApplicationUser> _userManager;
 
         public BaseApplicationUserDataSeed(UserManager<ApplicationUser> userManager)
         {
@@ -63,7 +63,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             string password,
             string roleName)
         {
-            var user = _userManager.FindByNameAsync(username).GetAwaiter().GetResult();
+            var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
             {
