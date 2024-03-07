@@ -5,7 +5,7 @@ namespace SampleApp.Application.Sections.PersonSection
 {
     public class PersonDataSeed : IDataSeed
     {
-        public int Priority => 10;
+        public decimal Priority => 10;
         public bool ExecuteInThread { get; set; } = true;
         public bool AutoExecute { get; set; } = true;
 

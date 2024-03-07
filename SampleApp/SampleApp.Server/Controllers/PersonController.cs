@@ -1,6 +1,8 @@
 ﻿
 using SampleApp.Application.Sections.PersonSection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
+
 namespace RWA.Server.Controllers
 {
     public class PersonController : BaseApiController
