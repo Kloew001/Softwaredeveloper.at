@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
@@ -45,7 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             var sortOrders =
                  _memoryCache.GetOrCreate(
-                $"{nameof(EntityQueryService<TEntity>)}_AppendDefaultOrderBy_sortOrders", _ =>
+                $"{nameof(EntityQueryService<TEntity>)}_{typeof(TEntity).Name}_AppendDefaultOrderBy_sortOrders", _ =>
                 {
                     return typeof(TEntity).GetProperties()
                     .Select(_ =>

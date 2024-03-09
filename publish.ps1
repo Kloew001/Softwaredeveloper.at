@@ -2,7 +2,7 @@
 
 Set-Variable -Name "Projekt" -Value "RWA"
 Set-Variable -Name "TargetPath" -Value C:\Development\$Projekt
-Set-Variable -Name "VERSION" -Value "0.0.0.221"
+Set-Variable -Name "VERSION" -Value "0.0.0.224"
 
 Remove-Item $TargetPath\LocalShared\*.*
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 public static class ApplicationUserIds
 {
@@ -104,7 +105,7 @@ public class ApplicationUserRole
 {
     public Guid UserId { get; set; }
     public virtual ApplicationUser User { get; set; }
-    
+
     public Guid RoleId { get; set; }
     public virtual ApplicationRole Role { get; set; }
 }

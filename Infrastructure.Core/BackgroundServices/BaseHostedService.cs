@@ -62,6 +62,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         public virtual string Name { get => GetType().Name; }
 
+        public bool BackgroundServiceInfoEnabled { get; set; } = true;
+
         protected BaseHostedService(
             IServiceScopeFactory serviceScopeFactory,
             IHostApplicationLifetime appLifetime,
@@ -169,6 +171,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         protected virtual async Task<bool> CanStartBackgroundServiceInfo()
         {
+            if(BackgroundServiceInfoEnabled == false)
+                return true;
+
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();
@@ -194,8 +199,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 return false;
             }
         }
+
         protected virtual async Task StartBackgroundServiceInfo()
         {
+            if(BackgroundServiceInfoEnabled == false)
+                return;
+
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();
@@ -219,6 +228,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         protected virtual async Task FinishedBackgroundServiceInfo()
         {
+            if (BackgroundServiceInfoEnabled == false)
+                return;
+
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var now = DateTime.Now;
@@ -241,6 +253,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
         {
+            if (BackgroundServiceInfoEnabled == false)
+                return;
+
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();

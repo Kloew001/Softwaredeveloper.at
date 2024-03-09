@@ -81,7 +81,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
                     _.IsValidDateIncluded(validDate));
         }
 
-        public static IQueryable<TEntity> GetAllValid<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
+        public static Task<IQueryable<TEntity>> GetAllValid<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
             where TEntity : Entity, ISupportValidDateRange
         {
             if (validDate == null)

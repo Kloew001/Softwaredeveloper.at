@@ -2,8 +2,6 @@
 using System.Diagnostics;
 using System.Reflection;
 
-using DocumentFormat.OpenXml.InkML;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,8 +9,6 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
@@ -26,6 +22,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             IHostApplicationLifetime appLifetime)
             : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
         {
+            BackgroundServiceInfoEnabled = false;
         }
 
         protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)

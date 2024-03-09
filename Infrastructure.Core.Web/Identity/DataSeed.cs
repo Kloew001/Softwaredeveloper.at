@@ -1,6 +1,7 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
@@ -21,7 +22,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             _roleManager = roleManager;
         }
 
-        public async Task SeedAsync()
+        public async Task SeedAsync(CancellationToken cancellationToken)
         {
             foreach (var roleType in Enum.GetValues<TUserRoles>())
             {
@@ -53,7 +54,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             _userManager = userManager;
         }
 
-        public abstract Task SeedAsync();
+        public abstract Task SeedAsync(CancellationToken cancellationToken);
 
         protected async Task<ApplicationUser> EnsureUserAsync(
             Guid id,

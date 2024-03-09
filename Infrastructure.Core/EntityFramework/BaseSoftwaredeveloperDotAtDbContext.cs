@@ -3,12 +3,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {

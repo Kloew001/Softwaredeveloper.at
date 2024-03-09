@@ -14,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable
                     _.IsActive(isEnabled));
         }
 
-        public static IQueryable<TEntity> GetAllActive<TEntity>(this EntityService<TEntity> service, bool isEnabled = true)
+        public static Task<IQueryable<TEntity>> GetAllActive<TEntity>(this EntityService<TEntity> service, bool isEnabled = true)
             where TEntity : Entity, IActivateable
         {
             return service.GetCollectionQueryInternal(

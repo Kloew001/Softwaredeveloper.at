@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public class PostgreSQLDbContextHandler : BaseDbContextHandler

@@ -3,9 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public interface IDataSeed : ITypedScopedDependency<IDataSeed>
@@ -14,7 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         bool ExecuteInThread { get; set; }
         bool AutoExecute { get; set; }
 
-        Task SeedAsync();
+        Task SeedAsync(CancellationToken cancellationToken);
     }
 
     public class DataSeedService : IScopedDependency
@@ -43,33 +40,33 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 {
                     var dataSeedType = dataSeed.GetType();
 
-                    tasks.Add(TaskExtension.StartNewWithCurrentUser(_serviceProvider, async (serviceScopeInner) =>
+                    tasks.Add(TaskExtension.StartNewWithCurrentUser(_serviceProvider, cancellationToken, async (serviceScopeInner, ct) =>
                     {
                         var serviceProvider = serviceScopeInner.ServiceProvider;
 
                         var dataSeedService = serviceProvider.GetService<DataSeedService>();
                         var dataSeedInner = serviceProvider.GetService(dataSeedType) as IDataSeed;
 
-                        await dataSeedService.ExecuteSeedAsync(dataSeedInner);
+                        await dataSeedService.ExecuteSeedAsync(dataSeedInner, ct);
                     }));
                 }
 
                 foreach (var dataSeed in dataSeedGroup.Where(_ => _.ExecuteInThread == false))
                 {
-                    await ExecuteSeedAsync(dataSeed);
+                    await ExecuteSeedAsync(dataSeed, cancellationToken);
                 }
 
                 Task.WaitAll(tasks.ToArray(), cancellationToken);
             }
         }
 
-        private async Task ExecuteSeedAsync(IDataSeed dataSeed)
+        private async Task ExecuteSeedAsync(IDataSeed dataSeed, CancellationToken cancellationToken)
         {
             var dataSeedType = dataSeed.GetType();
 
             try
             {
-                await dataSeed.SeedAsync();
+                await dataSeed.SeedAsync(cancellationToken);
             }
             catch (Exception ex)
             {

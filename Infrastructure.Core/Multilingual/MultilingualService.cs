@@ -223,6 +223,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             IHostApplicationLifetime appLifetime)
             : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
         {
+            BackgroundServiceInfoEnabled = false;
+
             string filePath = GetFileName();
 
             _watcher = new FileSystemWatcher(System.IO.Path.GetDirectoryName(filePath));

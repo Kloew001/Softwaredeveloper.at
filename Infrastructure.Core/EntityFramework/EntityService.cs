@@ -116,7 +116,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task<TEntity> GetSingleInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
-            var query = GetCollectionQueryInternal(queryExtension);
+            var query = await GetCollectionQueryInternal(queryExtension);
 
             var entity = await query.SingleOrDefaultAsync();
 
@@ -139,15 +139,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return dtos;
         }
 
-        public virtual Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : Dto, new()
         {
-            var query = GetCollectionQueryInternal(queryExtension);
+            var query = await GetCollectionQueryInternal(queryExtension);
 
-            return GetCollectionAsync<TDto>(query);
+            return await GetCollectionAsync<TDto>(query);
         }
 
-        public virtual IQueryable<TEntity> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual Task<IQueryable<TEntity>> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = _context
                 .Set<TEntity>()
@@ -161,7 +161,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             query = AppendOrderBy(query);
 
-            return query;
+            return Task.FromResult(query);
         }
 
         protected virtual IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)

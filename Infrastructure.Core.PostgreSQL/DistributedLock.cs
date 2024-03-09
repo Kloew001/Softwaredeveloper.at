@@ -55,7 +55,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             var sessionLockCommand = $"SELECT pg_try_advisory_lock(hashtext('{lockId}'))";
             
-            _logger.LogInformation("Trying to acquire session lock for Lock Id {@LockId}", lockId);
+            _logger.LogDebug("Trying to acquire session lock for Lock Id {@LockId}", lockId);
             
             var commandQuery = new NpgsqlCommand(sessionLockCommand, _connection);
             
@@ -63,11 +63,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             
             if (result != null && bool.TryParse(result.ToString(), out var lockAcquired) && lockAcquired)
             {
-                _logger.LogInformation("Lock {@LockId} acquired", lockId);
+                _logger.LogDebug("Lock {@LockId} acquired", lockId);
                 return true;
             }
 
-            _logger.LogInformation("Lock {@LockId} rejected", lockId);
+            _logger.LogDebug("Lock {@LockId} rejected", lockId);
 
             for (var r = 0; r < retry; r++)
             {
@@ -88,7 +88,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         private void ReleaseLock()
         {
             var transactionLockCommand = $"SELECT pg_advisory_unlock(hashtext('{_lockId}'))";
-            _logger.LogInformation("Releasing session lock for {@LockId}", _lockId);
+            _logger.LogDebug("Releasing session lock for {@LockId}", _lockId);
             var commandQuery = new NpgsqlCommand(transactionLockCommand, _connection);
             commandQuery.ExecuteScalar();
         }

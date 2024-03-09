@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -86,7 +87,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             ApplyBaseEntity(modelBuilder);
 
-            //ApplyEnumToStringValueConverter(modelBuilder);
+            ApplyEnumToStringValueConverter(modelBuilder);
             ApplyDateTime(modelBuilder);
             ApplyDecimal(modelBuilder);
             ApplyChangeTrackedEntity(modelBuilder);
@@ -135,20 +136,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        //public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
-        //{
-        //    foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
-        //    {
-        //        var enumType = GetEnumType(property.ClrType);
-        //        if (enumType == null)
-        //            continue;
+        public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
+        {
+            return;
+            //foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+            //{
+            //    var enumType = GetEnumType(property.ClrType);
+            //    if (enumType == null)
+            //        continue;
 
-        //        var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
+            //    var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
 
-        //        var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
-        //        property.SetValueConverter(converter);
-        //    }
-        //}
+            //    var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
+            //    property.SetValueConverter(converter);
+            //}
+        }
 
         private static Type GetEnumType(Type type)
         {
