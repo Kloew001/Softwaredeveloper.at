@@ -1,24 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-using System.Collections.Generic;
-using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using System.Data;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Spreadsheet;
-using System.Collections;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {

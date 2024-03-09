@@ -19,7 +19,7 @@ namespace SampleApp.Application.Sections.PersonSection
         }
 
 
-        public Task SeedAsync()
+        public Task SeedAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
 
