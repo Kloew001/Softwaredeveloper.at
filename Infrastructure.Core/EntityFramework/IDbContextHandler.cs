@@ -135,21 +135,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 }
             }
         }
-
+        public bool UseEnumAsString { get; set; } = false;
         public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
         {
-            return;
-            //foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
-            //{
-            //    var enumType = GetEnumType(property.ClrType);
-            //    if (enumType == null)
-            //        continue;
+            if (UseEnumAsString == false)
+                return;
+            foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+            {
+                var enumType = GetEnumType(property.ClrType);
+                if (enumType == null)
+                    continue;
 
-            //    var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
+                var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
 
-            //    var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
-            //    property.SetValueConverter(converter);
-            //}
+                var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
+                property.SetValueConverter(converter);
+            }
         }
 
         private static Type GetEnumType(Type type)
