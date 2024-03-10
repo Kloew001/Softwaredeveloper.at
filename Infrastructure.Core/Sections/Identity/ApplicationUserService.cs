@@ -1,7 +1,6 @@
 ﻿
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
@@ -11,6 +10,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             EntityServiceDependency<ApplicationUser> entityServiceDependency)
             : base(entityServiceDependency)
         {
+        }
+
+        public Task<ApplicationUserDetailDto> GetCurrentUserAsync()
+        {
+            var currentUserId = _currentUserService.GetCurrentUserId();
+
+            return GetSingleByIdAsync<ApplicationUserDetailDto>(currentUserId.Value);
         }
 
         public async Task<bool> IsInRoleAsync(Guid userId, Guid roleId)

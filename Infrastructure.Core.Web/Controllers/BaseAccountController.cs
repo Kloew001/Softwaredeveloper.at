@@ -48,13 +48,5 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
             return TypedResults.Empty;
         }
-
-        [HttpGet]
-        public async Task<List<string>> GetRoleInfos()
-        {
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-            var roles = await _userManager.GetRolesAsync(user);
-            return roles.ToList();
-        }
     }
 }
