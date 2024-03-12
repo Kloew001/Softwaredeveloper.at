@@ -1,5 +1,7 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.StateHolidays;
 
+using System.Globalization;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class DateTimeUtility
@@ -9,6 +11,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             var gen = new Random();
             int range = (end - start).Days;
             return start.AddDays(gen.Next(range));
+        }
+
+        public static int WeekNumber(this DateTime date)
+        {
+            var culture = CultureInfo.CurrentCulture;
+            var calendar = culture.Calendar;
+            var dateTimeFormat = culture.DateTimeFormat;
+            return calendar.GetWeekOfYear(date, dateTimeFormat.CalendarWeekRule, dateTimeFormat.FirstDayOfWeek);
         }
 
         public static DateTime LastDayOfMonth(int year, int month)

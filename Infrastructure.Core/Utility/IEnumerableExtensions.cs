@@ -1,4 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
 
     public interface ISupportMultilingualDisplayName : ISupportDisplayName
@@ -81,6 +83,11 @@
         public static T GetRandom<T>(this IEnumerable<T> source)
         {
             return source.OrderByRandom().FirstOrDefault();
+        }
+
+        public static int GetRandom(this Random random, int min = 0, int max = 100)
+        {
+            return random.Next(min, max);
         }
     }
 }

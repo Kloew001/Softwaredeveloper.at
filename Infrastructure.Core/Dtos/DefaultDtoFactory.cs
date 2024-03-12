@@ -153,7 +153,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         typeof(DtoFactoryExtensions)
                         .GetMethod(nameof(DtoFactoryExtensions.ConvertToDto))
                         .MakeGenericMethod(propertyMap.TargetProperty.PropertyType)
-                        .Invoke(null, new object[] { sourceEntity });
+                        .Invoke(null, new object[] { sourceEntity, null });
 
                     propertyMap.TargetProperty
                         .SetValue(target, dto);

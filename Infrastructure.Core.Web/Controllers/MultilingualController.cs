@@ -20,5 +20,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         public Task<IDictionary<string, string>> GetAllGlobalText(
             [FromRoute(Name = "culture")] string cultureName = "de")
             => _service.GetAllGlobalTextsAsync(cultureName);
+
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<FileContentResult> ExportExcel()
+        {
+            var fileInfo = await _service.ExportExcelAsync();
+
+            return File(fileInfo.Content, fileInfo.FileContentType, fileInfo.FileName);
+        }
+
     }
 }

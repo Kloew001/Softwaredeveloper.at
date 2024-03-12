@@ -1,14 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    public class MultilingualGlobalText : Entity
+    public class MultilingualGlobalText : Entity, ISupportIndex
     {
         public Guid CultureId { get; set; }
         public virtual MultilingualCulture Culture { get; set; }
+
+        public int Index { get; set; }
+        public bool IsInitialData { get; set; }
 
         public string Key { get; set; }
 

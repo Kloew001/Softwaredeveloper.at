@@ -33,7 +33,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
                 {
                     Id = _.Id,
                     Name = _.Name
-                });
+                }).ToList();
 
             return dto;
         }

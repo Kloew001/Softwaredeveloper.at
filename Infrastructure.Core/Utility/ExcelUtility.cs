@@ -84,5 +84,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             return dataSet;
         }
+
+        public static byte[] GetExcelFromDataSet(DataSet dataSet)
+        {
+            using var memoryStream = new MemoryStream();
+            using var workBook = new XLWorkbook();
+
+            foreach (DataTable dataTable in dataSet.Tables)
+            {
+                var workSheet = workBook.Worksheets.Add(dataTable.TableName);
+
+                workSheet.Cell(1, 1).InsertTable(dataTable);
+            }
+
+            workBook.SaveAs(memoryStream);
+
+            return memoryStream.ToArray();
+        }
+
     }
 }

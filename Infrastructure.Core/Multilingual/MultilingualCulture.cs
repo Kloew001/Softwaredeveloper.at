@@ -42,12 +42,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             builder.HasData(new MultilingualCulture()
             {
                 Id = MultilingualCultureIds.De,
+                IsActive = true,
                 Name = "de"
             });
 
             builder.HasData(new MultilingualCulture()
             {
                 Id = MultilingualCultureIds.En,
+                IsActive = true,
                 Name = "en"
             });
         }
