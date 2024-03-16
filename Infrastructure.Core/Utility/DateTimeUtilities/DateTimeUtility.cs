@@ -13,13 +13,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return start.AddDays(gen.Next(range));
         }
 
-        public static int WeekNumber(this DateTime date)
+        public static int GetWeekNumber(this DateTime date)
         {
             var culture = CultureInfo.CurrentCulture;
             var calendar = culture.Calendar;
             var dateTimeFormat = culture.DateTimeFormat;
             return calendar.GetWeekOfYear(date, dateTimeFormat.CalendarWeekRule, dateTimeFormat.FirstDayOfWeek);
         }
+
+        public static int GetWeeksCountBetween(this DateTime start, DateTime end)
+        {
+            var startWeek = start.GetWeekNumber();
+            var endWeek = end.GetWeekNumber();
+            var weekCount = endWeek - startWeek + 1;
+            return weekCount;
+        }
+
 
         public static DateTime LastDayOfMonth(int year, int month)
         {
@@ -131,6 +140,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return date;
         }
 
+
+
+        public static DateTime AddTimeFromDayEnd(this DateTime dateTime)
+        {
+            return dateTime.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+        }
+
         public static DateTime LastDayOfMonth(this DateTime dateTime)
         {
             var date = new DateTime(dateTime.Year, dateTime.Month,
@@ -158,7 +174,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         {
             var folgetag = dateTime.NextDay();
 
-            if (folgetag.IsSaSoOrFeiertag() == false)
+            if (folgetag.IsSaSoOrStateHolyday() == false)
                 return folgetag;
 
             return NextWerktag(folgetag);
@@ -168,7 +184,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         {
             var folgetag = dateTime.PreviousDay();
 
-            if (folgetag.IsSaSoOrFeiertag() == false)
+            if (folgetag.IsSaSoOrStateHolyday() == false)
                 return folgetag;
 
             return LastWerktag(folgetag);
@@ -180,7 +196,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                    dateTime.DayOfWeek == DayOfWeek.Sunday;
         }
 
-        public static bool IsSaSoOrFeiertag(this DateTime dateTime)
+        public static bool IsSaSoOrStateHolyday(this DateTime dateTime)
         {
             return IsSaOrSo(dateTime) ||
                    IsStateHoliday(dateTime);

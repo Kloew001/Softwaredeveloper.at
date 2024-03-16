@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
     public class AsyncTaskExecutorHostedService : TimerHostedService
@@ -296,7 +294,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return asyncTaskOperationHandler;
         }
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(params IAsyncTaskOperationHandler[] asyncTaskOperationHandlers)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IEnumerable<IAsyncTaskOperationHandler> asyncTaskOperationHandlers, TimeSpan? delay = null)
         {
             var asyncTaskOperationIds = new List<AsyncTaskOperation>();
             var sortIndex = 0;
@@ -304,7 +302,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             foreach (var asyncTaskOperationHandler in asyncTaskOperationHandlers)
             {
                 asyncTaskOperationIds.AddRange(
-                    await EnqueueAsync(asyncTaskOperationHandler, sortIndex));
+                    await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay));
 
                 sortIndex++;
             }
@@ -312,7 +310,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return asyncTaskOperationIds;
         }
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync<TAsyncTaskOperationHandler>(int sortIndex = 0, TimeSpan? delay = null)
+            where TAsyncTaskOperationHandler : IAsyncTaskOperationHandler
+        {
+            var asyncTaskOperationHandler = CreateHandler<TAsyncTaskOperationHandler>();
+
+            return await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay);
+        }
+
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null)
         {
             if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
                 return await GetAsyncTaskIdsInQueueAsync(asyncTaskOperationHandler);
@@ -321,6 +327,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             var parameter = JsonConvert.SerializeObject(asyncTaskOperationHandler, new JsonSerializerSettings());
 
+            var now = DateTime.Now;
+
             var asyncTask = new AsyncTaskOperation()
             {
                 OperationHandlerId = asyncTaskOperationHandler.GetOperationHandlerId(),
@@ -328,8 +336,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 ReferenceId = asyncTaskOperationHandler.ReferenceId,
                 ParameterSerialized = parameter,
                 ExecuteById = currentUserId,
-                CreatedAt = DateTime.Now,
-                ExecuteAt = DateTime.Now,
+                CreatedAt = now,
+                ExecuteAt = now.Add(delay ?? TimeSpan.Zero),
                 Status = AsyncTaskOperationStatus.Pending,
                 SortIndex = sortIndex,
                 RetryCount = 0,

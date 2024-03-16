@@ -28,7 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public int BatchSize { get; set; } = 10;
 
-        public TimeSpan? Interval { get; set; } = TimeSpan.FromSeconds(60);
+        public TimeSpan? Interval { get; set; }
         public TimeSpan InitialDelay { get; set; } = TimeSpan.FromSeconds(10);
     }
 }

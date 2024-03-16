@@ -169,6 +169,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         {
         }
 
+
+
         protected virtual async Task<bool> CanStartBackgroundServiceInfo()
         {
             if(BackgroundServiceInfoEnabled == false)
@@ -183,7 +185,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 if (_hostedServicesConfiguration.Enabled == false)
                     return false;
 
-                if(backgroundServiceInfo?.State == BackgroundserviceInfoStateType.Executing)
+                if (IsTimeouted(backgroundServiceInfo))
+                    return true;
+
+                if (IsExecuting(backgroundServiceInfo))
                     return false;
 
                 var now = DateTime.Now;
@@ -198,6 +203,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
                 return false;
             }
+        }
+
+        private bool IsExecuting(BackgroundserviceInfo backgroundServiceInfo)
+        {
+            return backgroundServiceInfo?.State == BackgroundserviceInfoStateType.Executing;
+        }
+
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(60);
+
+        private bool IsTimeouted(BackgroundserviceInfo backgroundServiceInfo)
+        {
+            if(IsExecuting(backgroundServiceInfo) && 
+                _hostedServicesConfiguration.Interval.IsNull())
+            {
+                var now = DateTime.Now;
+                return now.Subtract(backgroundServiceInfo.ExecutedAt) > Timeout;
+            }
+
+            return false;
         }
 
         protected virtual async Task StartBackgroundServiceInfo()
@@ -315,6 +339,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         private DateTime CalcNextExecuteAt(DateTime dateTime, BackgroundserviceInfo backgroundserviceInfo)
         {
             var enabledDateRanges = GetEnabledDateRange(dateTime).ToList();
+
+            if(_hostedServicesConfiguration.Interval.IsNull())
+                return dateTime;
 
             var nextExecuteAt = dateTime.Add(_hostedServicesConfiguration.Interval.Value);
 

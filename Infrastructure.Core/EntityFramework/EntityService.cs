@@ -306,8 +306,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 if (await _accessService.CanSaveAsync(entity) == false)
                     throw new UnauthorizedAccessException();
 
+                await OnSaveInternalAsync(entity);
+
                 await _context.SaveChangesAsync();
             }
+        }
+
+        protected virtual Task OnSaveInternalAsync(TEntity entity)
+        {
+            return Task.CompletedTask;
         }
 
         public virtual async Task DeleteInternalAsync(TEntity entity)

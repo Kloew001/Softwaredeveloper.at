@@ -16,5 +16,16 @@
         {
             return (T)obj;
         }
+        
+        public static bool IsFalse(this bool boolean)
+        {
+            return boolean == false;
+        }
+
+        public static bool IsTrue(this bool boolean)
+        {
+            return boolean == true;
+        }
+
     }
 }

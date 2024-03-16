@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 
 using System.Linq.Expressions;
 
@@ -40,6 +43,61 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         where TEntity : Entity
         {
             return GetPropertyInfo(context, entity, propertyExpression).IsModified;
+        }
+
+        public static bool IsNew<TEntity>(
+            this TEntity entity)
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+
+            return IsNew(context, entity);
+        }
+
+        public static bool IsNew<TEntity>(
+            this IDbContext context, TEntity entity)
+            where TEntity : Entity
+        {
+            return context.Entry(entity).State ==
+                EntityState.Added;
+        }
+
+        public static bool IsModified<TEntity>(
+            this TEntity entity)
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+
+            return IsModified(context, entity);
+        }
+
+        public static bool IsModified<TEntity>(
+            this IDbContext context, TEntity entity)
+            where TEntity : Entity
+        {
+            return context.Entry(entity).State ==
+                EntityState.Modified;
+        }
+
+        public static bool IsDeleted<TEntity>(
+            this TEntity entity)
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+
+            return IsDeleted(context, entity);
+        }
+
+        public static bool IsDeleted<TEntity>(
+            this IDbContext context, TEntity entity)
+            where TEntity : Entity
+        {
+            if (entity is ISoftDelete softDelete &&
+                softDelete.IsDeleted)
+                return true;
+
+            return context.Entry(entity).State ==
+                EntityState.Deleted;
         }
 
         public static PropertyEntry GetPropertyInfo<TEntity, TProperty>(
