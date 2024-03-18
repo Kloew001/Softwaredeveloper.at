@@ -87,7 +87,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 if (distributedLock.TryAcquireLock(lockName, 3) == false)
                     throw new InvalidOperationException();
 
-                asyncTaskOperationIds = await GetNextAsyncTaskOperationIdsAsync(batchSize, cancellationToken);
+                var dateNow = DateTime.Now;
+
+                await RemoveDuplicatesAsync(dateNow, cancellationToken);
+
+                asyncTaskOperationIds = await GetNextAsyncTaskOperationIdsAsync(dateNow, batchSize, cancellationToken);
 
                 await SetExecutingAsync(asyncTaskOperationIds);
             }
@@ -98,7 +102,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             {
                 var scope = _serviceProvider.CreateScope();
                 var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
+
                 var task = asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
+
                 tasks.Add(task);
                 scopes.Add(scope);
             }
@@ -245,34 +251,69 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             }
         }
 
-        //private const int _waitingExecuteToRetryInSec = 120;
-        private async Task<IEnumerable<Guid>> GetNextAsyncTaskOperationIdsAsync(int take = 1, CancellationToken ct = default)
+        private async Task RemoveDuplicatesAsync(DateTime dateNow, CancellationToken cancellationToken)
         {
-            var dateNow = DateTime.Now;
+            var operationKeys = await
+                GetPendingQuery(dateNow)
+                  .GroupBy(_ => _.OperationKey)
+                  .Where(_ => _.Count() > 1)
+                  .Select(_ => _.Key)
+                  .ToListAsync(cancellationToken);
 
+            if (operationKeys.Count == 0)
+                return;
+
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+                var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
+
+                foreach (var operationKey in operationKeys)
+                {
+                    var operations = await
+                        asyncTaskExecutor.GetPendingQuery(dateNow)
+                        .Where(_ => _.OperationKey == operationKey)
+                        .OrderBy(_ => _.ExecuteAt)
+                        .Skip(1)
+                        .ToListAsync(cancellationToken);
+
+                    operations.ForEach(_ =>
+                        _.Status = AsyncTaskOperationStatus.Duplicate);
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        //private const int _waitingExecuteToRetryInSec = 120;
+        private async Task<IEnumerable<Guid>> GetNextAsyncTaskOperationIdsAsync(DateTime dateNow, int take = 1, CancellationToken cancellationToken = default)
+        {
             var watch = Stopwatch.StartNew();
 
             var operationIds = await
-                _context.Set<AsyncTaskOperation>()
-                .Where(_ => _.ExecuteAt != null &&
-                            _.ExecuteAt <= dateNow &&
-                            _.Status == AsyncTaskOperationStatus.Pending)
+                GetPendingQuery(dateNow)
                 .OrderBy(_ => _.ExecuteAt)
                 .ThenBy(_ => _.SortIndex)
                 .Select(_ => _.Id)
                 .Take(take)
-                .ToListAsync(ct);
+                .ToListAsync(cancellationToken);
 
             var time = watch.ElapsedMilliseconds;
 
             return operationIds;
         }
 
+        private IQueryable<AsyncTaskOperation> GetPendingQuery(DateTime dateNow)
+        {
+            return _context.Set<AsyncTaskOperation>()
+                            .Where(_ => _.ExecuteAt != null &&
+                                        _.ExecuteAt <= dateNow &&
+                                        _.Status == AsyncTaskOperationStatus.Pending);
+        }
+
         public async Task<bool> AnyNextAsyncTaskOperationAsync(CancellationToken ct = default)
         {
-            var watch = Stopwatch.StartNew();
             var result = await AnyNextAsyncTaskOperationAsyncQuery(_context.As<DbContext>(), ct, DateTime.Now);
-            var time = watch.ElapsedMilliseconds;
             return result;
         }
 
@@ -376,6 +417,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
         private async Task<bool> HasAsyncTaskInQueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler)
         {
+            var hasTaskInQueueLocal = _context.Set<AsyncTaskOperation>()
+                .Local
+                .Any(o => o.OperationKey == asyncTaskOperationHandler.OperationKey &&
+                          o.Status == AsyncTaskOperationStatus.Pending);
+
+            if (hasTaskInQueueLocal)
+                return true;
+
             var hasTaskInQueue = await _context.Set<AsyncTaskOperation>()
                 .AnyAsync(o => o.OperationKey == asyncTaskOperationHandler.OperationKey &&
                           o.Status == AsyncTaskOperationStatus.Pending);

@@ -46,6 +46,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                     c.ExecuteAt,
                     c.Status
                 });
+
+            builder
+                .HasIndex(c => new
+                {
+                    c.OperationKey
+                });
         }
     }
 }

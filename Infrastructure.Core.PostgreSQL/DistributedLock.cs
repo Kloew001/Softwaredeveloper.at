@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
+using System.Data;
 using System.Threading;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
@@ -51,7 +52,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             _lockId = lockId;
 
-            await _connection.OpenAsync();
+            if(_connection.State != ConnectionState.Open)
+                await _connection.OpenAsync();
 
             var sessionLockCommand = $"SELECT pg_try_advisory_lock(hashtext('{lockId}'))";
             

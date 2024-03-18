@@ -1,29 +1,23 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
-    public interface IDateTimeRange : IDateRange<DateTime>
+    public interface IDateTimeRange : IRange<DateTime>
     {
-    }
-
-    public interface IDateRange<T>
-    {
-        T Start { get; }
-        T End { get; }
     }
 
     public static class DateRangeExensions
     {
-        public static bool Includes(this IDateRange<DateTime> range, DateTime other)
+        public static bool Includes(this IRange<DateTime> range, DateTime other)
         {
             return range.Start <= other && other <= range.End;
         }
 
-        public static bool Includes(this IDateRange<DateTime> range, IDateRange<DateTime> other)
+        public static bool Includes(this IRange<DateTime> range, IRange<DateTime> other)
         {
             return range.Start <= other.Start && other.End <= range.End;
         }
     }
 
-    public class DateRange : IDateRange<DateTime>
+    public class DateRange : IRange<DateTime>
     {
         public DateRange(DateTime start, DateTime end)
         {
@@ -38,6 +32,5 @@
         {
             return $"{Start} - {End}";
         }
-
     }
 }

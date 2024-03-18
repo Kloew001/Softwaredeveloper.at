@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using System.Data;
 using System.Text;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
@@ -57,7 +58,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _lockId = lockId;
 
 
-            await _connection.OpenAsync();
+            if (_connection.State != ConnectionState.Open)
+                await _connection.OpenAsync();
+
             _transaction = (SqlTransaction)await _connection.BeginTransactionAsync();
             
             using (SqlCommand createCmd = _connection.CreateCommand())

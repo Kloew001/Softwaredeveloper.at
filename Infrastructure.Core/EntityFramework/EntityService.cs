@@ -255,6 +255,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 return updatedDto;
             }
         }
+        public virtual async Task<TEntity> QuickUpdateInternalAsync(TEntity entity)
+        {
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+            {
+                var updatedDto = await UpdateInternalAsync(entity);
+                return updatedDto;
+            }
+        }
 
         public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
             where TDto : Dto, new()
@@ -272,20 +280,36 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TDto : Dto, new()
         {
             dto.ConvertToEntity(entity);
-
             await OnUpdateInternalAsync(dto, entity);
 
-            if (await _accessService.CanUpdateAsync(entity) == false)
-                throw new UnauthorizedAccessException();
-
-            if (!_sectionManager.IsActive<SuppressValidationSection>())
-                await ValidateAndThrowInternalAsync(entity);
-
+            entity = await UpdateInternalAsync(entity);
+        
             return entity;
+        }
+
+        public virtual async Task<TEntity> UpdateInternalAsync(TEntity entity)
+        {
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+            {
+                await OnUpdateInternalAsync(entity);
+
+                if (await _accessService.CanUpdateAsync(entity) == false)
+                    throw new UnauthorizedAccessException();
+
+                if (!_sectionManager.IsActive<SuppressValidationSection>())
+                    await ValidateAndThrowInternalAsync(entity);
+
+                return entity;
+            }
         }
 
         protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)
             where TDto : Dto, new()
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task OnUpdateInternalAsync(TEntity entity)
         {
             return Task.CompletedTask;
         }
