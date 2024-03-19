@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using System.Data;
-using Newtonsoft.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -83,7 +81,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 var texts = await _context.Set<MultilingualGlobalText>()
                     .Where(_ => _.CultureId == culture.Id)
-                    .OrderBy(_=>_.IsInitialData)
+                    .OrderBy(_ => _.IsInitialData)
                     .ThenBy(_ => _.Index)
                     .ToListAsync();
 
@@ -91,183 +89,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 return result;
             });
-        }
-
-        public async Task<Utility.FileInfo> ExportExcelAsync()
-        {
-            var dataSet = await GetDataSetFromDB();
-
-            var excelContent = ExcelUtility.GetExcelFromDataSet(dataSet);
-
-            return new Utility.FileInfo()
-            {
-                Content = excelContent,
-                FileContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                FileName = "Multilingual.xlsx"
-            };
-        }
-
-        private async Task<DataSet> GetDataSetFromDB()
-        {
-            var cultures = await _context.Set<MultilingualCulture>()
-                .Where(_ => _.IsActive)
-                .OrderBy(_ => _.IsDefault)
-                .ThenBy(_ => _.Name)
-                .Select(_ => _.Name)
-                .ToListAsync();
-
-            var dataSet = new DataSet();
-
-            foreach (var culture in cultures)
-            {
-                var dataTable = new DataTable();
-                dataTable.TableName = culture;
-                dataTable.Columns.Add(new DataColumn("TextKey"));
-                dataTable.Columns.Add(new DataColumn("Text"));
-
-                var texte = await _context.Set<MultilingualGlobalText>()
-                    .Where(_ => _.Culture.Name == culture)
-                    .Where(_ => _.IsInitialData == false)
-                    .OrderBy(_ => _.Index)
-                    .ToListAsync();
-
-                foreach (var text in texte)
-                {
-                    DataRow dataRow = dataTable.NewRow();
-
-                    dataRow["TextKey"] = text.Key;
-                    dataRow["Text"] = text.Text;
-
-                    dataTable.Rows.Add(dataRow);
-                }
-
-                dataSet.Tables.Add(dataTable);
-            }
-
-            return dataSet;
-        }
-
-        private DataSet GetDataSetFromJson(byte[] jsonContent)
-        {
-            string json = System.Text.Encoding.UTF8.GetString(jsonContent);
-
-            var cultures = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
-
-            var dataSet = new DataSet();
-
-            foreach (var culture in cultures)
-            {
-                var dataTable = new DataTable();
-                dataTable.TableName = culture.Key;
-
-                dataTable.Columns.Add(new DataColumn("TextKey"));
-                dataTable.Columns.Add(new DataColumn("Text"));
-
-                foreach (var text in culture.Value)
-                {
-                    DataRow dataRow = dataTable.NewRow();
-
-                    dataRow["TextKey"] = text.Key;
-                    dataRow["Text"] = text.Value;
-
-                    dataTable.Rows.Add(dataRow);
-                }
-
-                dataSet.Tables.Add(dataTable);
-            }
-
-            return dataSet;
-        }
-
-        public Task ImportExcel(byte[] excelContent)
-        {
-            var dataSet = ExcelUtility.GetDataSetFromExcel(excelContent);
-            return ImportDataSet(dataSet);
-        }
-
-        public Task ImportJson(byte[] jsonContent)
-        {
-            var dataSet = GetDataSetFromJson(jsonContent);
-            return ImportDataSet(dataSet);
-        }
-
-        public async Task ImportDataSet(DataSet dataSet)
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-                await context.Set<MultilingualGlobalText>()
-                    .Where(_=> _.IsInitialData == false)
-                    .ExecuteDeleteAsync();
-            }
-
-            foreach (var dataTable in dataSet.Tables.Convert<DataTable>())
-            {
-                var i = 0;
-                foreach (var rowBatch in dataTable.Rows.Convert<DataRow>().Batch(100))
-                {
-                    using (var scope = _serviceScopeFactory.CreateScope())
-                    {
-                        var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
-                        var multilingualService = scope.ServiceProvider.GetRequiredService<MultilingualService>();
-
-                        foreach (var row in rowBatch)
-                        {
-                            await multilingualService.HandleRowImport(new MultilingualRow()
-                            {
-                                cultureName = dataTable.TableName,
-                                TextKey = row.Field<string>("TextKey"),
-                                Text = row.Field<string>("Text"),
-                                Index = i++,
-                            });
-                        }
-
-                        await context.SaveChangesAsync();
-                    }
-                }
-            }
-        }
-
-        public class MultilingualRow
-        {
-            public string TextKey { get; set; }
-            public string cultureName { get; set; }
-            public string Text { get; set; }
-            public int Index { get; set; }
-        }
-
-        private async Task HandleRowImport(MultilingualRow row)
-        {
-            var cultureName = row.cultureName;
-
-            var cultureId = await _memoryCache.GetOrCreateAsync($"{HandleRowImport}_{cultureName}", async (entry) =>
-            {
-                return await _context.Set<MultilingualCulture>()
-                    .Where(_ => _.Name == cultureName)
-                    .Select(_ => _.Id)
-                    .SingleAsync();
-            });
-
-            var textKey = row.TextKey;
-
-            var multilingualText = await
-                _context.Set<MultilingualGlobalText>()
-                    .Where(_ => _.CultureId == cultureId &&
-                                _.Key == textKey)
-                    .SingleOrDefaultAsync();
-
-            if (multilingualText == null)
-            {
-                multilingualText = await _context.CreateEntity<MultilingualGlobalText>();
-
-                multilingualText.CultureId = cultureId;
-                multilingualText.Key = textKey;
-            }
-
-            multilingualText.Text = row.Text;
-            multilingualText.Index = row.Index;
-            multilingualText.IsInitialData = false;
         }
     }
 
@@ -324,9 +145,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             string filePath = GetFileName();
 
-            var multilingualService = scope.ServiceProvider.GetService<MultilingualService>();
+            var multilingualService = scope.ServiceProvider.GetService<JsonMultilingualService>();
 
-            await multilingualService.ImportJson(FileUtiltiy.GetContent(filePath));
+            await multilingualService.ImportAsync(FileUtiltiy.GetContent(filePath));
 
             _reloadJson = false;
         }

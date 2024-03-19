@@ -2,6 +2,8 @@
 
 using Microsoft.EntityFrameworkCore;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
     public class ApplicationUserService : EntityService<ApplicationUser>
@@ -19,12 +21,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return GetSingleByIdAsync<ApplicationUserDetailDto>(currentUserId.Value);
         }
 
-        public async Task<bool> IsInRoleAsync(Guid userId, Guid roleId)
+        public Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds)
+        {
+            return IsInRoleAsync(_currentUserService.GetCurrentUserId().Value, roleIds);
+        }
+
+        public async Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
             var isUserIndRole = await _context
                 .Set<ApplicationUserRole>()
                     .AnyAsync(_ => _.UserId == userId &&
-                        _.RoleId == roleId);
+                        roleIds.Contains(_.RoleId));
 
             return isUserIndRole;
         }
