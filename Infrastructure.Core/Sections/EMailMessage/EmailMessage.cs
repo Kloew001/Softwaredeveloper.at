@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
+    public class EMailIgnoreSection : Section
+    {
+    }
+
     [Table(nameof(EmailMessage))]
     public class EmailMessage
     {
@@ -12,7 +15,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         [Required]
         public Guid Id { get; set; }
 
-        public DateTime DateCreated { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.Now;
+        public DateTime SendAt { get; set; } = DateTime.Now;
+        public DateTime? SentAt { get; set; } = null;
 
         public EmailMessageStatusType Status { get; set; } = EmailMessageStatusType.Created;
 

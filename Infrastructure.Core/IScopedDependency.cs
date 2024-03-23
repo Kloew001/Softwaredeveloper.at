@@ -61,13 +61,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 foreach (var genericArgument in genericArguments)
                 {
                     if (typeof(ITransientDependency).IsAssignableFrom(serviceType))
-                        services.AddTransient(genericArgument, serviceType);
+                    {
+                        //services.AddTransient(genericArgument, serviceType);
+                        services.AddTransient(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
 
                     if (typeof(IScopedDependency).IsAssignableFrom(serviceType))
-                        services.AddScoped(genericArgument, serviceType);
+                    {
+                        //services.AddScoped(genericArgument, serviceType);
+                        services.AddScoped(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
 
                     if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
-                        services.AddSingleton(genericArgument, serviceType);
+                    {
+                        //services.AddSingleton(genericArgument, serviceType);
+                        services.AddSingleton(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
                 }
             }
         }

@@ -47,6 +47,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterSelfRegisterDependencies();
             Services.RegisterAllHostedService();
 
+            Services.AddScoped<IEMailSender, NoEmailSender>();
+
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
 

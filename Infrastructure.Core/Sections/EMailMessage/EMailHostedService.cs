@@ -6,16 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
-    public class EMailServerConfiguration
-    {
-        public string FromName { get; set; }
-        public string FromEmail { get; set; }
-        public string UserName { get; set; }
-        public string Password { get; set; }
-        public string SmtpServer { get; set; }
-        public int Port { get; set; }
-    }
-
     public class EMailHostedService : TimerHostedService
     {
         public EMailHostedService(
@@ -56,7 +46,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
                     try
                     {
-                        emailSender.Send(mailMessage);
+                        await emailSender.SendAsync(mailMessage);
+
+                        mailMessage.ErrorMessage = null;
+                        mailMessage.SentAt = DateTime.Now;
                         mailMessage.Status = EmailMessageStatusType.Sent;
                     }
                     catch (Exception ex)
@@ -88,8 +81,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                 var mailMessagesIds =
                     await context.Set<EmailMessage>()
                         .Where(_ => _.Status == EmailMessageStatusType.Created &&
-                                    _.DateCreated < date)
-                        .OrderByDescending(_ => _.DateCreated)
+                                    _.SendAt < date)
+                        .OrderByDescending(_ => _.SendAt)
                         .Select(_ => _.Id)
                         .Take(_hostedServicesConfiguration.BatchSize)
                         .ToListAsync();
