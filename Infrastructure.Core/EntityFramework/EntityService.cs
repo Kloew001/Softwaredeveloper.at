@@ -197,7 +197,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return entity;
         }
 
-        public virtual async Task<TEntity> QuickCreateInternalAsync(Action<TEntity> modifyEntity = null)
+        public virtual async Task<TEntity> QuickCreateInternalAsync(Func<TEntity, Task> modifyEntity = null)
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
@@ -206,13 +206,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public virtual async Task<TEntity> CreateInternalAsync(Action<TEntity> modifyEntity = null)
+        public virtual async Task<TEntity> CreateInternalAsync(Func<TEntity, Task> modifyEntity = null)
         {
             var entity = _context.Set<TEntity>().CreateProxy();
             await _context.AddAsync(entity);
 
             if (modifyEntity != null)
-                modifyEntity(entity);
+                await modifyEntity(entity);
 
             await OnCreateInternalAsync(entity);
 
