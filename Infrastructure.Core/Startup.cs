@@ -27,6 +27,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Configuration = builder.Configuration;
             HostEnvironment = builder.Environment;
 
+            if(ApplicationUserIds.ServiceAdminId == Guid.Empty)
+                throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
+
             ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
 
             ReadableTimeSpan.EnableConfigurationBinding();

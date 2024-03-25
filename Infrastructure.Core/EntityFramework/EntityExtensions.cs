@@ -1,14 +1,49 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class EntityExtensions
     {
+        public static IDbContext ResolveDbContext(this IEntity entity)
+        {
+            var lazyLoader = (ILazyLoader)entity.GetType()
+                .GetProperty("LazyLoader")
+                .GetValue(entity, null);
+
+            var dbContext = (IDbContext)lazyLoader.GetType()
+                .GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(lazyLoader, null);
+
+            return dbContext;
+        }
+
+        public static TProperty GetOriginalValue<TEntity, TProperty>(
+            this TEntity entity,
+            Expression<Func<TEntity, TProperty>> propertyExpression)
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+            return GetOriginalValue(context, entity, propertyExpression);
+        }
+
+        public static TProperty GetOriginalValue<TEntity, TProperty>(
+            this IDbContext context,
+            TEntity entity,
+            Expression<Func<TEntity, TProperty>> propertyExpression)
+            where TEntity : Entity
+        {
+            var propertyInfo = GetPropertyInfo(context, entity, propertyExpression);
+
+            return propertyInfo.OriginalValue;
+        }
+
         public static bool IsNotModified<TEntity, TProperty>(
             this TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
@@ -100,7 +135,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 EntityState.Deleted;
         }
 
-        public static PropertyEntry GetPropertyInfo<TEntity, TProperty>(
+        public static PropertyEntry<TEntity, TProperty> GetPropertyInfo<TEntity, TProperty>(
             this TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)
             where TEntity : Entity
@@ -110,7 +145,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return context.GetPropertyInfo(entity, propertyExpression);
         }
 
-        public static PropertyEntry GetPropertyInfo<TEntity, TProperty>(
+        public static PropertyEntry<TEntity, TProperty> GetPropertyInfo<TEntity, TProperty>(
             this IDbContext context,
             TEntity entity,
             Expression<Func<TEntity, TProperty>> propertyExpression)

@@ -63,8 +63,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             var allSections = _serviceProvider.GetServices<ISection>();
 
-            var s = _serviceProvider.GetService(allSections.First().GetType());
-
             return allSections
                 .Where(_ => _.IsActive);
         }

@@ -1,12 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
+﻿
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 public static class ApplicationUserIds
 {
-    public static Guid ServiceAdminId = Guid.Parse("01706405-553A-48F9-BF78-C86F88AA6096");
-    public static Guid AdminId = Guid.Parse("244D7C67-37AC-448C-92C4-398BC9090C71");
+    public static Guid ServiceAdminId = Guid.Empty;
+}
+
+public static class ICurrentUserServiceExtension
+{
+    public static bool IsServiceAdmin(this ICurrentUserService currentUserService)
+    {
+        return currentUserService.GetCurrentUserId() == ApplicationUserIds.ServiceAdminId;
+    }
 }
 
 public class ApplicationUser : Entity
