@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
+using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {

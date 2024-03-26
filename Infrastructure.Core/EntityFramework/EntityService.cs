@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     public class EntityServiceDependency<TEntity> : ITransientDependency
         where TEntity : Entity
     {
-        private readonly IServiceProvider _serviceProvider;
+        public IServiceProvider ServiceProvider { get; private set; }
         public ILogger<EntityService<TEntity>> Logger { get; private set; }
         public IDbContext DbContext { get; private set; }
         public AccessService AccessService { get; private set; }
@@ -41,7 +41,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             IMemoryCache memoryCache,
             ICurrentUserService currentUserService)
         {
-            _serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
 
             Logger = logger;
             DbContext = context;
@@ -56,7 +56,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public T GetService<T>()
         {
-            return _serviceProvider.GetService<T>();
+            return ServiceProvider.GetService<T>();
         }
     }
 
@@ -94,7 +94,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await GetSingleByIdInternalAsync(id);
 
-            var dto = entity.ConvertToDto<TDto>();
+            var dto = entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
 
             return dto;
         }
@@ -109,7 +109,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await GetSingleInternalAsync(queryExtension);
 
-            var dto = entity.ConvertToDto<TDto>();
+            var dto = entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
 
             return dto;
         }
@@ -134,7 +134,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entities = await query.ToListAsync();
 
-            var dtos = entities.ConvertToDtos<TDto>();
+            var dtos = entities.ConvertToDtos<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
 
             return dtos;
         }
@@ -189,7 +189,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await CreateInternalAsync(async (e) =>
             {
-                dto.ConvertToEntity(e);
+                dto.ConvertToEntity(e, serviceProvider: EntityServiceDependency.ServiceProvider);
 
                 await OnCreateInternalAsync(dto, e);
             });
@@ -273,34 +273,31 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await SaveChangesAsync(entity);
 
-            return entity.ConvertToDto<TDto>();
+            return entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
         }
 
         public virtual async Task<TEntity> UpdateInternalAsync<TDto>(TDto dto, TEntity entity)
             where TDto : Dto, new()
         {
-            dto.ConvertToEntity(entity);
+            dto.ConvertToEntity(entity, serviceProvider: EntityServiceDependency.ServiceProvider);
             await OnUpdateInternalAsync(dto, entity);
 
             entity = await UpdateInternalAsync(entity);
-        
+
             return entity;
         }
 
         public virtual async Task<TEntity> UpdateInternalAsync(TEntity entity)
         {
-            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
-            {
-                await OnUpdateInternalAsync(entity);
+            await OnUpdateInternalAsync(entity);
 
-                if (await _accessService.CanUpdateAsync(entity) == false)
-                    throw new UnauthorizedAccessException();
+            if (await _accessService.CanUpdateAsync(entity) == false)
+                throw new UnauthorizedAccessException();
 
-                if (!_sectionManager.IsActive<SuppressValidationSection>())
-                    await ValidateAndThrowInternalAsync(entity);
+            if (!_sectionManager.IsActive<SuppressValidationSection>())
+                await ValidateAndThrowInternalAsync(entity);
 
-                return entity;
-            }
+            return entity;
         }
 
         protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)

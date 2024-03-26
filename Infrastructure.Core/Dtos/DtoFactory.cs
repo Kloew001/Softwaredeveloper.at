@@ -18,36 +18,36 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO Should Update DeepLevel References
-        public static TDto ConvertToDto<TDto>(this IEntity entitiy, IDtoFactory dtoFactory = null)
+        public static TDto ConvertToDto<TDto>(this IEntity entitiy, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TDto : IDto, new()
         {
-            return _factory.ConvertToDto<TDto>(entitiy, default, dtoFactory);
+            return _factory.ConvertToDto<TDto>(entitiy, default, dtoFactory, serviceProvider);
         }
 
-        public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null)
+        public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TDto : IDto, new()
         {
-            return _factory.ConvertToDtos<TDto>(entities, dtoFactory);
+            return _factory.ConvertToDtos<TDto>(entities, dtoFactory, serviceProvider);
         }
 
-        public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity, IDtoFactory dtoFactory = null)
+        public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : IEntity
         {
-            return _factory.ConvertToEntity<TEntity>(dto, entity, dtoFactory);
+            return _factory.ConvertToEntity<TEntity>(dto, entity, dtoFactory, serviceProvider);
         }
 
         //TODO ShouldUpdateRecerences
-        public static ICollection<TEntity> ConvertIdsToEntities<TEntity>(this IEnumerable<Guid> dtoIds, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
+        public static ICollection<TEntity> ConvertIdsToEntities<TEntity>(this IEnumerable<Guid> dtoIds, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : class, IEntity
         {
-            return _factory.ConvertIdsToEntities<TEntity>(rootEntity, dtoIds, entities, dtoFactory);
+            return _factory.ConvertIdsToEntities<TEntity>(rootEntity, dtoIds, entities, dtoFactory, serviceProvider);
         }
 
         //TODO ShouldUpdateRecerences
-        public static ICollection<TEntity> ConvertToEntities<TEntity>(this IEnumerable<IDto> dto, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
+        public static ICollection<TEntity> ConvertToEntities<TEntity>(this IEnumerable<IDto> dto, IEntity rootEntity, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : class, IEntity
         {
-            return _factory.ConvertToEntities<TEntity>(rootEntity, dto, entities, dtoFactory);
+            return _factory.ConvertToEntities<TEntity>(rootEntity, dto, entities, dtoFactory, serviceProvider);
         }
     }
 
@@ -201,18 +201,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             return cachedfactory;
         }
 
-        public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null)
+        public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TDto : IDto, new()
         {
             if (entities == null)
                 return null;
 
             return entities
-                .Select(_ => ConvertToDto(_, new TDto(), dtoFactory))
+                .Select(_ => ConvertToDto(_, new TDto(), dtoFactory, serviceProvider))
                 .ToList();
         }
 
-        public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default, IDtoFactory dtoFactory = null)
+        public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TDto : IDto, new()
         {
             if (entity == null)
@@ -226,12 +226,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
             var convertToDtoMethod = dtoFactory.GetType().GetMethod("ConvertToDto"); //IDtoFactory<TDto, TEntity>.ConvertToDto
 
-            dto = (TDto)convertToDtoMethod.Invoke(dtoFactory, new object[] { entity, dto });
+            dto = (TDto)convertToDtoMethod.Invoke(dtoFactory, new object[] { entity, dto, serviceProvider });
 
             return dto;
         }
 
-        public TDto ConvertToDto<TFactory, TEntity, TDto>(TEntity entity, TDto dto)
+        public TDto ConvertToDto<TFactory, TEntity, TDto>(TEntity entity, TDto dto, IServiceProvider serviceProvider = null)
             where TFactory : IDtoFactory<TDto, TEntity>
             where TDto : IDto, new()
             where TEntity : IEntity
@@ -241,11 +241,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (factory == null)
                 throw new MissingMethodException();
 
-            return factory.ConvertToDto(entity, dto);
+            return factory.ConvertToDto(entity, dto, serviceProvider ?? _serviceProvider);
         }
 
         //TODO ShouldUpdateRecerences
-        public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEntity rootEntity, IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
+        public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEntity rootEntity, IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : class, IEntity
         {
             if (dtoIds == null)
@@ -292,7 +292,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         //TODO ShouldUpdateRecerences
-        public ICollection<TEntity> ConvertToEntities<TEntity>(IEntity rootEntity, IEnumerable<IDto> dtos, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null)
+        public ICollection<TEntity> ConvertToEntities<TEntity>(IEntity rootEntity, IEnumerable<IDto> dtos, ICollection<TEntity> entities = null, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : class, IEntity
         {
             if (dtos == null)
@@ -337,13 +337,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         itemsCollection.Add(entity);
                     }
 
-                    _.dto.ConvertToEntity(entity, dtoFactory); //TODO ShouldUpdateRecerences paramter
+                    _.dto.ConvertToEntity(entity, dtoFactory, serviceProvider); //TODO ShouldUpdateRecerences paramter
                 });
 
             return itemsCollection;
         }
 
-        public TEntity ConvertToEntity<TEntity>(IDto dto, TEntity entity, IDtoFactory dtoFactory = null)
+        public TEntity ConvertToEntity<TEntity>(IDto dto, TEntity entity, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
             where TEntity : IEntity
         {
             if (dto == null)
@@ -357,12 +357,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             var convertToEntityMethod = dtoFactory.GetType()
                 .GetMethod("ConvertToEntity"); //IDtoFactory<TDto, TEntity>.ConvertToEntity
 
-            entity = (TEntity)convertToEntityMethod.Invoke(dtoFactory, new object[] { dto, entity });
+            entity = (TEntity)convertToEntityMethod.Invoke(dtoFactory, new object[] { dto, entity, serviceProvider });
 
             return entity;
         }
 
-        public TEntity ConvertToEntity<TDto, TEntity>(TDto dto, TEntity entity)
+        public TEntity ConvertToEntity<TDto, TEntity>(TDto dto, TEntity entity, IServiceProvider serviceProvider = null)
             where TDto : IDto
             where TEntity : IEntity
         {
@@ -371,7 +371,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (factory == null)
                 return entity;
 
-            return factory.ConvertToEntity(dto, entity);
+            return factory.ConvertToEntity(dto, entity, serviceProvider ?? _serviceProvider);
         }
     }
 
@@ -383,7 +383,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         where TDto : IDto
         where TEntity : IEntity
     {
-        TDto ConvertToDto(TEntity entity, TDto dto);
-        TEntity ConvertToEntity(TDto dto, TEntity entity);
+        TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider);
+        TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider);
     }
 }

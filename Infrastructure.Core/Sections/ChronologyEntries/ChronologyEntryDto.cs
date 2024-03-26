@@ -13,7 +13,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 
     public class ChronologyEntryDtoFactory : IDtoFactory<ChronologyEntryDto, ChronologyEntry>
     {
-        public ChronologyEntryDto ConvertToDto(ChronologyEntry entity, ChronologyEntryDto dto)
+        public ChronologyEntryDto ConvertToDto(ChronologyEntry entity, ChronologyEntryDto dto, IServiceProvider serviceProvider)
         {
             dto.Id = entity.Id;
             dto.Description = entity.Description;
@@ -23,7 +23,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
             return dto;
         }
 
-        public ChronologyEntry ConvertToEntity(ChronologyEntryDto dto, ChronologyEntry entity)
+        public ChronologyEntry ConvertToEntity(ChronologyEntryDto dto, ChronologyEntry entity, IServiceProvider serviceProvider)
         {
             throw new NotImplementedException();
         }

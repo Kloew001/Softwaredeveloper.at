@@ -4,29 +4,32 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public static class TaskExtension
     {
-        public static Task StartNewWithScope(this IServiceProvider serviceProvider, Func<IServiceScope, CancellationToken, Task> action, CancellationToken cancellationToken = default)
+        public static IServiceScope CreateChildScope(
+            this IServiceProvider parentServiceProvider,
+            bool restoreParentSettings = true)
         {
-            return Task.Run(async () => 
-            {
-                using (var serviceScope = serviceProvider.CreateScope())
-                {
-                    await action(serviceScope, cancellationToken);
-                }
-            });
-        }
+            var scopeInner = parentServiceProvider.CreateScope();
+            var serivceProviderInner = scopeInner.ServiceProvider;
 
-        public static Task StartNewWithCurrentUser(this IServiceProvider serviceProvider,  Func<IServiceScope, CancellationToken, Task> action, CancellationToken cancellationToken = default)
-        {
-            var currentUserService = serviceProvider.GetService<ICurrentUserService>();
-            var currentUserId = currentUserService.GetCurrentUserId();
-
-            return StartNewWithScope(serviceProvider, async (serviceScope, ct) => 
+            if (restoreParentSettings)
             {
-                var currentUserService = serviceScope.ServiceProvider.GetService<ICurrentUserService>();
-                currentUserService.SetCurrentUserId(currentUserId);
-            
-                await action(serviceScope, ct);
-            }, cancellationToken);
+                var currentUserId =
+                    parentServiceProvider.GetService<ICurrentUserService>()
+                    .GetCurrentUserId();
+
+                var activeSectionTypes =
+                    parentServiceProvider.GetService<SectionManager>()
+                    .GetAllActiveSectionTypes();
+
+                serivceProviderInner
+                    .GetService<ICurrentUserService>()
+                        .SetCurrentUserId(currentUserId);
+
+                serivceProviderInner.GetService<SectionManager>()
+                .CreateSectionScopes(activeSectionTypes);
+            }
+
+            return scopeInner;
         }
     }
 }

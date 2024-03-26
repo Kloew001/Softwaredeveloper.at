@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
     public class ApplicationUserDtoFactory : IDtoFactory<ApplicationUserDetailDto, ApplicationUser>
     {
-        public ApplicationUserDetailDto ConvertToDto(ApplicationUser entity, ApplicationUserDetailDto dto)
+        public ApplicationUserDetailDto ConvertToDto(ApplicationUser entity, ApplicationUserDetailDto dto, IServiceProvider serviceProvider)
         {
             dto.Id = entity.Id;
             dto.Email = entity.Email;
@@ -38,7 +38,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return dto;
         }
 
-        public ApplicationUser ConvertToEntity(ApplicationUserDetailDto dto, ApplicationUser entity)
+        public ApplicationUser ConvertToEntity(ApplicationUserDetailDto dto, ApplicationUser entity, IServiceProvider serviceProvider)
         {
             throw new NotImplementedException();
         }

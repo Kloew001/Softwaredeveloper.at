@@ -11,6 +11,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             _serviceProvider = serviceProvider;
         }
 
+        public IEnumerable<SectionScope> CreateSectionScopes(IEnumerable<Type> sectionTypes, bool isActive = true)
+        {
+            var sectionScopes = new List<SectionScope>();
+
+            foreach (var type in sectionTypes)
+            {
+                var sectionScope =
+                GetType()
+                    .GetMethod(nameof(CreateSectionScope))
+                    .MakeGenericMethod(type)
+                    .Invoke(this, new object[] { isActive })
+                    .As<SectionScope>();
+
+                sectionScopes.Add(sectionScope);
+            }
+
+            return sectionScopes;
+        }
+
         public SectionScope CreateSectionScope<T>(bool isActive = true) where T : Section
         {
             var section = _serviceProvider.GetService<T>();
@@ -30,27 +49,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             var section = _serviceProvider.GetService<T>();
 
             return section.IsActive;
-        }
-
-        public IEnumerable<SectionScope> ReactivateSections(SectionManager otherScopedSectionManager)
-        {
-            var sectionScopes = new List<SectionScope>();
-
-            var sectionTypes = otherScopedSectionManager.GetAllActiveSectionTypes();
-
-            foreach (var type in sectionTypes)
-            {
-                var sectionScope =
-                GetType()
-                    .GetMethod(nameof(CreateSectionScope))
-                    .MakeGenericMethod(type)
-                    .Invoke(this, new object[] { true })
-                    .As<SectionScope>();
-
-                sectionScopes.Add(sectionScope);
-            }
-
-            return sectionScopes;
         }
 
         public IEnumerable<Type> GetAllActiveSectionTypes()

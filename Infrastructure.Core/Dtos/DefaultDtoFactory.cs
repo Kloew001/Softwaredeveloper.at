@@ -15,12 +15,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             _memoryCache = memoryCache;
         }
 
-        public TDto ConvertToDto(TEntity entity, TDto dto)
+        public TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider)
         {
             return (TDto)SimpleNameMapping(entity, dto);
         }
 
-        public TEntity ConvertToEntity(TDto dto, TEntity entity)
+        public TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider)
         {
             return (TEntity)SimpleNameMapping(dto, entity);
         }
