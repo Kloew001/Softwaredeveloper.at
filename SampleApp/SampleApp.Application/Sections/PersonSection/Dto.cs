@@ -11,7 +11,7 @@ namespace SampleApp.Application.Sections.PersonSection
 
     public class PersonDtoFactory : IDtoFactory<PersonDto, Person>
     {
-        public PersonDto ConvertToDto(Person entity, PersonDto dto)
+        public PersonDto ConvertToDto(Person entity, PersonDto dto, IServiceProvider serviceProvider)
         {
             dto.Id = entity.Id;
             dto.FirstName = entity.FirstName;
@@ -20,7 +20,7 @@ namespace SampleApp.Application.Sections.PersonSection
             return dto;
         }
 
-        public Person ConvertToEntity(PersonDto dto, Person entity)
+        public Person ConvertToEntity(PersonDto dto, Person entity, IServiceProvider serviceProvider)
         {
             entity.FirstName = dto.FirstName;
             entity.LastName = dto.LastName;
