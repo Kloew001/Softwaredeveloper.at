@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-
-using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
 
 using System.Data;
 
@@ -14,107 +13,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         Task<Utility.FileInfo> ExportToFileAsync();
     }
 
-    public class ExcelMultilingualService : MultilingualImportExportHandlerService, IScopedDependency
+    public class MultilingualConfiguration
     {
-        public ExcelMultilingualService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory)
-            : base(context, memoryCache, serviceScopeFactory)
-        {
-        }
-
-        public override Task ImportAsync(byte[] content)
-        {
-            var dataSet = ExcelUtility.GetDataSetFromExcel(content);
-            return ImportDataSet(dataSet);
-        }
-
-        public override async Task<Utility.FileInfo> ExportToFileAsync()
-        {
-            var dataSet = await GetDataSetFromDB();
-
-            var excelContent = ExcelUtility.GetExcelFromDataSet(dataSet);
-
-            return new Utility.FileInfo()
-            {
-                Content = excelContent,
-                FileContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                FileName = "Multilingual.xlsx"
-            };
-        }
-    }
-
-    public class JsonMultilingualService : MultilingualImportExportHandlerService, IScopedDependency
-    {
-        public JsonMultilingualService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory)
-            : base(context, memoryCache, serviceScopeFactory)
-        {
-        }
-
-        public override Task ImportAsync(byte[] content)
-        {
-            var dataSet = GetDataSetFromContent(content);
-            return ImportDataSet(dataSet);
-        }
-
-        public override async Task<Utility.FileInfo> ExportToFileAsync()
-        {
-            var jsonObj = new Dictionary<string, Dictionary<string, string>>();
-
-            var dataSet = await GetDataSetFromDB();
-
-            foreach (DataTable dataTable in dataSet.Tables)
-            {
-                var culture = new Dictionary<string, string>();
-
-                foreach (DataRow row in dataTable.Rows)
-                {
-                    culture.Add(row.Field<string>("TextKey"), row.Field<string>("Text"));
-                }
-
-                jsonObj.Add(dataTable.TableName, culture);
-            }
-
-            var jsonContent = JsonConvert.SerializeObject(jsonObj, Formatting.Indented);
-
-            return new Utility.FileInfo()
-            {
-                Content = System.Text.Encoding.UTF8.GetBytes(jsonContent),
-                FileContentType = "application/json",
-                FileName = "multilingual.json"
-            };
-        }
-
-        private DataSet GetDataSetFromContent(byte[] jsonContent)
-        {
-            string json = System.Text.Encoding.UTF8.GetString(jsonContent);
-
-            var cultures = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
-
-            var dataSet = new DataSet();
-
-            foreach (var culture in cultures)
-            {
-                var dataTable = new DataTable();
-                dataTable.TableName = culture.Key;
-
-                dataTable.Columns.Add(new DataColumn("TextKey"));
-                dataTable.Columns.Add(new DataColumn("Text"));
-
-                foreach (var text in culture.Value)
-                {
-                    DataRow dataRow = dataTable.NewRow();
-
-                    dataRow["TextKey"] = text.Key;
-                    dataRow["Text"] = text.Value;
-
-                    dataTable.Rows.Add(dataRow);
-                }
-
-                dataSet.Tables.Add(dataTable);
-            }
-
-            return dataSet;
-        }
-
+        public bool EnabledAdministration { get; set; } = true;
     }
 
     public abstract class MultilingualImportExportHandlerService : IMultilingualImportExportHandlerService
@@ -122,17 +23,28 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         private readonly IDbContext _context;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        protected readonly IApplicationSettings _applicationSettings;
 
-        public MultilingualImportExportHandlerService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory)
+        public MultilingualImportExportHandlerService(
+            IDbContext context, 
+            IMemoryCache memoryCache, 
+            IServiceScopeFactory serviceScopeFactory,
+            IApplicationSettings applicationSettings)
         {
             _context = context;
             _memoryCache = memoryCache;
             _serviceScopeFactory = serviceScopeFactory;
+            _applicationSettings = applicationSettings;
         }
-
 
         public abstract Task ImportAsync(byte[] content);
         public abstract Task<Utility.FileInfo> ExportToFileAsync();
+
+        protected void CheckEnabledAndThrow()
+        {
+            if (_applicationSettings.Multilingual?.EnabledAdministration != true)
+                throw new InvalidOperationException("Multilingual is not enabled");
+        }
 
         protected async Task<DataSet> GetDataSetFromDB()
         {

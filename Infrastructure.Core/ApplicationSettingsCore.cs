@@ -9,6 +9,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
 
         EMailServerConfiguration EMailServer { get; set; }
+        MultilingualConfiguration Multilingual { get; set; }
     }
 
     public abstract class CoreApplicationSettings : IApplicationSettings
@@ -18,6 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
 
         public EMailServerConfiguration EMailServer { get; set; }
+        public MultilingualConfiguration Multilingual { get; set; }
     }
 
     public class HostedServicesConfiguration

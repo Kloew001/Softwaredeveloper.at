@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
@@ -12,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         private readonly JsonMultilingualService _jsonMultilingualService;
 
         public MultilingualController(
-            MultilingualService service, 
+            MultilingualService service,
             ExcelMultilingualService excelMultilingualService,
             JsonMultilingualService jsonMultilingualService)
         {
@@ -37,6 +39,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
             return File(fileInfo.Content, fileInfo.FileContentType, fileInfo.FileName);
         }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [EnableRateLimiting("largeFileUpload")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task ImportExcel(IFormFile file)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                file.CopyTo(memoryStream);
+
+                await _excelMultilingualService.ImportAsync(memoryStream.ToArray());
+            }
+        }
+
         [AllowAnonymous]
         [HttpGet]
         public async Task<FileContentResult> ExportJson()
@@ -46,5 +63,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
             return File(fileInfo.Content, fileInfo.FileContentType, fileInfo.FileName);
         }
 
+        [AllowAnonymous]
+        [HttpPost]
+        [EnableRateLimiting("largeFileUpload")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task ImportJson(IFormFile file)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                file.CopyTo(memoryStream);
+
+                await _jsonMultilingualService.ImportAsync(memoryStream.ToArray());
+            }
+        }
     }
 }
