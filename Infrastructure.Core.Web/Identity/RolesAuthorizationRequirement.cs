@@ -40,44 +40,37 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             AuthorizationHandlerContext context,
             RolesAuthorizationRequirement requirement)
         {
-            try
-            {
-                var currentUserId = _currentUserService.GetCurrentUserId();
+            var currentUserId = _currentUserService.GetCurrentUserId();
 
-                if (currentUserId == null)
-                    return;
+            if (currentUserId == null)
+                return;
 
-                var isUserIndRole = await _memoryCache.GetOrCreateAsync(
-                       $"{nameof(RolesAuthorizationRequirementHandler)}_{currentUserId}_{string.Join(";", requirement.AllowedRoles)}",
-                       async entry =>
+            var isUserIndRole = await _memoryCache.GetOrCreateAsync(
+                   $"{nameof(RolesAuthorizationRequirementHandler)}_{currentUserId}_{string.Join(";", requirement.AllowedRoles)}",
+                   async entry =>
+                   {
+                       entry.SlidingExpiration = TimeSpan.FromMinutes(5);
+
+                       foreach (var allowedRole in requirement.AllowedRoles)
                        {
-                           entry.SlidingExpiration = TimeSpan.FromMinutes(5);
+                           var roleId = await _dbContext.Set<ApplicationRole>()
+                                       .Where(_ => _.NormalizedName == allowedRole.Normalize().ToUpper())
+                                       .Select(_ => _.Id)
+                                       .SingleAsync();
 
-                           foreach (var allowedRole in requirement.AllowedRoles)
-                           {
-                               var roleId = await _dbContext.Set<ApplicationRole>()
-                                           .Where(_ => _.NormalizedName == allowedRole.Normalize().ToUpper())
-                                           .Select(_ => _.Id)
-                                           .SingleAsync();
+                           var isUserIndRole = await
+                           _applicationUserService.IsInRoleAsync(currentUserId.Value, roleId);
 
-                               var isUserIndRole = await
-                               _applicationUserService.IsInRoleAsync(currentUserId.Value, roleId);
+                           if (isUserIndRole)
+                               return true;
+                       }
 
-                               if (isUserIndRole)
-                                   return true;
-                           }
+                       return false;
+                   });
 
-                           return false;
-                       });
-
-                if (isUserIndRole)
-                {
-                    context.Succeed(requirement);
-                }
-            }
-            catch (Exception ex)
+            if (isUserIndRole)
             {
-                Console.WriteLine(ex.Message);
+                context.Succeed(requirement);
             }
         }
     }
