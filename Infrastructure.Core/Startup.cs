@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using TomLonghurst.ReadableTimeSpan;
@@ -53,7 +53,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterAllHostedService();
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
-            Services.AddScoped<IMonitoreService, MonitoreService>();
+            Services.AddScoped<IMonitorService, MonitorService>();
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();

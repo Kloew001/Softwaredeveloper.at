@@ -2,18 +2,29 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
+
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 {
-    public class MonitoreController : BaseApiController
+    public class MonitorController : BaseApiController
     {
-        private readonly IMonitoreService _monitoreService;
+        private readonly IMonitorService _monitoreService;
 
-        public MonitoreController(IMonitoreService monitoreService)
+        public MonitorController(IMonitorService monitoreService)
         {
             _monitoreService = monitoreService;
         }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public string Version() => Assembly.GetEntryAssembly().GetName().Version.ToString();
+
+        [HttpGet]
+        [AllowAnonymous]
+        public string Now() => DateTime.Now.ToString();
+
 
         [HttpGet]
         [AllowAnonymous]

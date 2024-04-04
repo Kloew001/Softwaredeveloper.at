@@ -2,9 +2,9 @@
 
 using System.Diagnostics;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor
 {
-    public interface IMonitoreService
+    public interface IMonitorService
     {
         Task<bool> IsAlive();
         Task<DBConnectionInfo> DBConnectionInfo();
@@ -17,11 +17,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore
         public string SpeedTestAppToDB { get; set; }
     }
 
-    public class MonitoreService : IMonitoreService
+    public class MonitorService : IMonitorService
     {
         protected readonly IDbContext _dbContext;
 
-        public MonitoreService(IDbContext dbContext)
+        public MonitorService(IDbContext dbContext)
         {
             _dbContext = dbContext;
         }
