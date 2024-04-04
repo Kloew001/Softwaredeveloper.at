@@ -26,8 +26,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         protected readonly IApplicationSettings _applicationSettings;
 
         public MultilingualImportExportHandlerService(
-            IDbContext context, 
-            IMemoryCache memoryCache, 
+            IDbContext context,
+            IMemoryCache memoryCache,
             IServiceScopeFactory serviceScopeFactory,
             IApplicationSettings applicationSettings)
         {
@@ -121,6 +121,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                         await context.SaveChangesAsync();
                     }
                 }
+            }
+
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var multilingualService = scope.ServiceProvider.GetRequiredService<MultilingualService>();
+                await multilingualService.ResetCache();
             }
         }
 

@@ -60,17 +60,30 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
         public const string _cacheKey = $"{nameof(MultilingualService)}_{nameof(GetAllGlobalTextsAsync)}_";
 
+        public async Task ResetCache()
+        {
+            var cultureNames = await _context.Set<MultilingualCulture>().Select(_ => _.Name).ToListAsync();
+
+            foreach (var cultureName in cultureNames)
+            {
+                _memoryCache.Remove(_cacheKey + cultureName);
+            }
+        }
+
         public async Task<IDictionary<string, string>> GetAllGlobalTextsAsync(string cultureName)
         {
             return await _memoryCache.GetOrCreateAsync(_cacheKey + cultureName, async (entry) =>
             {
-#if DEBUG
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1);
-#else
+                //#if DEBUG
+                //                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1);
+                //#else
+                //                entry.SlidingExpiration = TimeSpan.FromHours(10);
+                //#endif
+                
                 entry.SlidingExpiration = TimeSpan.FromHours(10);
-#endif
+
                 var culture = await _context.Set<MultilingualCulture>()
-                .SingleOrDefaultAsync(_ => _.Name == cultureName);
+                    .SingleOrDefaultAsync(_ => _.Name == cultureName);
 
                 if (culture == null)
                     culture = await _context.Set<MultilingualCulture>()
