@@ -4,8 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using TomLonghurst.ReadableTimeSpan;
@@ -27,7 +29,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Configuration = builder.Configuration;
             HostEnvironment = builder.Environment;
 
-            if(ApplicationUserIds.ServiceAdminId == Guid.Empty)
+            if (ApplicationUserIds.ServiceAdminId == Guid.Empty)
                 throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
 
             ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
@@ -51,6 +53,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterAllHostedService();
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
+            Services.AddScoped<IMonitoreService, MonitoreService>();
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();

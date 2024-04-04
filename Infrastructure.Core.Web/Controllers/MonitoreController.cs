@@ -2,28 +2,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 {
     public class MonitoreController : BaseApiController
     {
-        private readonly IDbContext _dbContext;
-        public MonitoreController(IDbContext dbContext)
+        private readonly IMonitoreService _monitoreService;
+
+        public MonitoreController(IMonitoreService monitoreService)
         {
-            _dbContext = dbContext;
+            _monitoreService = monitoreService;
         }
 
         [HttpGet]
         [AllowAnonymous]
-        public bool IsAlive() => true;
+        public Task<bool> IsAlive() => _monitoreService.IsAlive();
 
         [HttpGet]
         [AllowAnonymous]
-        public bool IsDBConnected()
-        {
-            _dbContext.Database.OpenConnection();
-            return true;
-        }
+        public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo();
     }
 }
