@@ -26,7 +26,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         .SetCurrentUserId(currentUserId);
 
                 serivceProviderInner.GetService<SectionManager>()
-                .CreateSectionScopes(activeSectionTypes);
+                    .CreateSectionScopes(activeSectionTypes);
             }
 
             return scopeInner;

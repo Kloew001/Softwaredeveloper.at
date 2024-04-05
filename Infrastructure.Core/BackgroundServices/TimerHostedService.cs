@@ -21,11 +21,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             if(!base.CanStart())
                 return false;
 
-            if (_hostedServicesConfiguration?.Interval.HasValue == false)
-            {
-                _logger.LogWarning($"IHostedService {Name} do not have Interval configuration");
-                return false;
-            }
+            //if (_hostedServicesConfiguration?.Interval.HasValue == false)
+            //{
+            //    _logger.LogWarning($"IHostedService {Name} do not have Interval configuration");
+            //    return false;
+            //}
 
             return true;
         }
@@ -37,6 +37,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await base.ExecuteAsync(cancellationToken);
+
+                    if (_hostedServicesConfiguration?.Interval.HasValue == false)//only one time on startup
+                        return;
 
                     await Task.Delay(_hostedServicesConfiguration.Interval.Value, cancellationToken);
                 }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using FluentValidation.Results;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -369,16 +370,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         protected async Task ValidateAndThrowInternalAsync(TEntity entity)
         {
-            if (_sectionManager.IsActive<SuppressValidationSection>())
+            var validationResult = await ValidateInternalAsync(entity);
+            
+            if (validationResult == null)
                 return;
-
-            if (_validator == null)
-                return;
-
-            var validationResult = await _validator?.ValidateAsync(entity);
 
             if (validationResult.IsValid == false)
                 throw validationResult.ToValidationException();
+        }
+
+        protected async Task<ValidationResult> ValidateInternalAsync(TEntity entity)
+        {
+            if (_sectionManager.IsActive<SuppressValidationSection>())
+                return null;
+
+            if (_validator == null)
+                return null;
+
+            var validationResult = await _validator?.ValidateAsync(entity);
+
+            return validationResult;
         }
     }
 }

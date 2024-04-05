@@ -71,6 +71,8 @@ namespace Infrastructure.Core.Web
 
             app.UseRateLimiter();
 
+            app.UseResponseCompression();
+
             //if(ShouldUseWebApiAudit)
             //    app.UseAuditMiddleware();
         }
