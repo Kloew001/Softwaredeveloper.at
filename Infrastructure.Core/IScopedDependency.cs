@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
+    public interface IAppStatupInit
+    {
+        Task Init();
+    }
+
     public interface ISelfRegisterDependency
     {
     }

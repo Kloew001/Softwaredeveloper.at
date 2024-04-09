@@ -42,6 +42,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             builder.HasData(new MultilingualCulture()
             {
                 Id = MultilingualCultureIds.De,
+                IsDefault = true,
                 IsActive = true,
                 Name = "de"
             });

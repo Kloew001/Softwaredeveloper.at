@@ -14,6 +14,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -21,8 +22,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public interface IDbContextHandler
     {
-        Task UpdateDatabaseAsync<TDbContext>(IHost host)
-            where TDbContext : DbContext;
+        Task UpdateDatabaseAsync(DbContext context);
+
         void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options);
 
         void OnModelCreating(ModelBuilder modelBuilder);
@@ -32,27 +33,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
     public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonDependency<IDbContextHandler>
     {
-        public virtual async Task UpdateDatabaseAsync<TDbContext>(IHost host)
-            where TDbContext : DbContext
+        public virtual async Task UpdateDatabaseAsync(DbContext context)
         {
-            using (var scope = host.Services.CreateScope())
+            var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+
+            if (!await databaseCreator.ExistsAsync())
             {
-                var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
+                //scope.ServiceProvider
+                //.GetService<IApplicationSettings>()
+                //.HostedServices[
+                //nameof(DataSeedHostedService)].Enabled = true;
 
-                var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
-
-                if (!await databaseCreator.ExistsAsync())
-                {
-                    scope.ServiceProvider
-                    .GetService<IApplicationSettings>()
-                    .HostedServices[
-                    nameof(DataSeedHostedService)].Enabled = true;
-
-                    await databaseCreator.CreateAsync();
-                }
-
-                await context.Database.MigrateAsync();
+                await databaseCreator.CreateAsync();
             }
+
+            await context.Database.MigrateAsync();
         }
 
         public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)

@@ -1,6 +1,4 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
@@ -16,13 +14,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         private Guid? _currentUserId = ApplicationUserIds.ServiceAdminId;
         private Guid? _previousUserId = null;
 
-        private IDbContext _context;
+        private readonly IDbContext _context;
+        private readonly ICurrentLanguageService _currentLanguageService;
 
         public bool IsAuthenticated => _currentUserId != null;
 
-        public CurrentUserService(IDbContext context)
+        public CurrentUserService(
+            IDbContext context, 
+            IServiceProvider serviceProvider)
         {
             _context = context;
+            _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
         }
 
         public void SetPreviousUser()
@@ -47,6 +49,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             _previousUserId = _currentUserId;
             _currentUserId = id;
+            _currentLanguageService.Init();
         }
 
         public void SetCurrentUserId(Guid? currentUserId)

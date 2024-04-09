@@ -34,14 +34,79 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public virtual MultilingualCulture Culture { get; set; }
     }
 
-    public class ICurrentLanguageService : IScopedDependency
+    public interface IDefaultLanguageService : IAppStatupInit, ITypedSingletonDependency<IAppStatupInit>
     {
-        MultilingualCulture Current { get; set; }
+        string CultureName { get; set; }
     }
 
-    public class CurrentLanguageService : ICurrentLanguageService
+    public class DefaultLanguageService : IDefaultLanguageService, ITypedSingletonDependency<IDefaultLanguageService>
     {
-        public MultilingualCulture Current { get; set; }
+        public string CultureName { get; set; }
+
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+
+        public DefaultLanguageService(IServiceScopeFactory serviceScopeFactory)
+        {
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        public async Task Init()
+        {
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+
+                CultureName = await context.Set<MultilingualCulture>()
+                    .Where(_ => _.IsDefault)
+                    .Select(_ => _.Name)
+                    .SingleAsync();
+            }
+        }
+    }
+
+
+    public interface ICurrentLanguageService
+    {
+        string CurrentCultureName { get; }
+
+        void Init();
+    }
+
+    public class CurrentLanguageService : ICurrentLanguageService, ITypedScopedDependency<ICurrentLanguageService>
+    {
+        public string CurrentCultureName
+        {
+            get
+            {
+                if (_currentCultureName.IsNull())
+                {
+                    Init();
+                }
+
+                return _currentCultureName;
+            }
+            private set
+            {
+                _currentCultureName = value;
+            }
+        }
+        private string _currentCultureName;
+
+        private readonly IDefaultLanguageService _defaultLanguageService;
+        private readonly ICurrentUserService _currentUserService;
+
+        public CurrentLanguageService(
+            IDefaultLanguageService defaultLanguageService,
+            IServiceProvider serviceProvider)
+        {
+            _defaultLanguageService = defaultLanguageService;
+            _currentUserService = serviceProvider.GetService<ICurrentUserService>();
+        }
+
+        public void Init()
+        {
+            CurrentCultureName = _defaultLanguageService.CultureName;
+        }
     }
 
     public class MultilingualService : IScopedDependency
@@ -49,15 +114,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         private readonly IDbContext _context;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ICurrentLanguageService _currentLanguageService;
 
-        public MultilingualService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory)
+        public MultilingualService(
+            IDbContext context,
+            IMemoryCache memoryCache,
+            IServiceScopeFactory serviceScopeFactory,
+            ICurrentLanguageService currentLanguageService)
         {
             _context = context;
             _memoryCache = memoryCache;
             _serviceScopeFactory = serviceScopeFactory;
+            _currentLanguageService = currentLanguageService;
         }
 
-        public const string _cacheKey = $"{nameof(MultilingualService)}_{nameof(GetAllGlobalTextsAsync)}_";
+        public const string _cacheKey = $"{nameof(MultilingualService)}_{nameof(GetGlobalTextsAsync)}_";
 
         public async Task ResetCache()
         {
@@ -65,13 +136,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             foreach (var cultureName in cultureNames)
             {
-                _memoryCache.Remove(_cacheKey + cultureName);
+                foreach (var protectionLevel in Enum.GetValues<MultilingualGlobalTextProtectionLevel>())
+                {
+                    _memoryCache.Remove(_cacheKey + cultureName + protectionLevel);
+                }
             }
         }
 
-        public async Task<IDictionary<string, string>> GetAllGlobalTextsAsync(string cultureName)
+        public async Task<IDictionary<string, string>> GetGlobalTextsAsync(string cultureName = null, MultilingualGlobalTextProtectionLevel multilingualGlobalTextProtectionLevel = MultilingualGlobalTextProtectionLevel.Public)
         {
-            return await _memoryCache.GetOrCreateAsync(_cacheKey + cultureName, async (entry) =>
+            if (string.IsNullOrWhiteSpace(cultureName))
+                cultureName = _currentLanguageService.CurrentCultureName;
+
+            return await _memoryCache.GetOrCreateAsync(_cacheKey + cultureName + multilingualGlobalTextProtectionLevel, async (entry) =>
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(10);
 
@@ -87,7 +164,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 var texts = await _context.Set<MultilingualGlobalText>()
                     .Where(_ => _.CultureId == culture.Id)
-                    .OrderBy(_ => _.IsInitialData)
+                    .Where(_=>_.ViewLevel == multilingualGlobalTextProtectionLevel)
+                    .OrderBy(_ => _.ViewLevel)
                     .ThenBy(_ => _.Index)
                     .ToListAsync();
 
@@ -95,6 +173,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 return result;
             });
+        }
+
+        public async Task<string> GetTextAsync(string key, string cultureName = null)
+        {
+            if (string.IsNullOrWhiteSpace(cultureName))
+                cultureName = _currentLanguageService.CurrentCultureName;
+
+            var text = await _context.Set<MultilingualGlobalText>()
+                .Where(_ => _.Key == key &&
+                            _.Culture.Name == cultureName)
+                .Select(_ => _.Text)
+                .SingleOrDefaultAsync();
+
+            return text;
         }
     }
 }

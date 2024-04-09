@@ -1,5 +1,9 @@
-﻿using FluentValidation;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
 
+using FluentValidation;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +13,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+
+using System.Reflection;
 
 using TomLonghurst.ReadableTimeSpan;
 
@@ -65,6 +71,45 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             host.UseDtoFactory();
 
             host.UseAudit();
+
+            UpdateDatabase(host);
+
+            AppStartInit(host);
+        }
+
+        protected virtual void AppStartInit(IHost host)
+        {
+            var startupInits =
+            host.Services.GetServices<IAppStatupInit>()
+                .ToList();
+
+            foreach (var item in startupInits)
+            {
+                item.Init()
+                    .GetAwaiter()
+                    .GetResult();
+            }
+        }
+
+        protected virtual void UpdateDatabase(IHost host)
+        {
+            try
+            {
+                using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
+                    var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
+
+
+                    handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
+                        .GetAwaiter()
+                        .GetResult();
+                }
+            }
+            catch
+            {
+                //ignore
+            }
         }
     }
 }

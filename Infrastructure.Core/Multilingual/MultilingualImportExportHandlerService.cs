@@ -66,7 +66,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 var texte = await _context.Set<MultilingualGlobalText>()
                     .Where(_ => _.Culture.Name == culture)
-                    .Where(_ => _.IsInitialData == false)
+                    .Where(_ => _.EditLevel == MultilingualGlobalTextProtectionLevel.Public)
                     .OrderBy(_ => _.Index)
                     .ToListAsync();
 
@@ -92,7 +92,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             {
                 var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
                 await context.Set<MultilingualGlobalText>()
-                    .Where(_ => _.IsInitialData == false)
+                    .Where(_ => _.EditLevel != MultilingualGlobalTextProtectionLevel.Private)
                     .ExecuteDeleteAsync();
             }
 
@@ -167,7 +167,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             multilingualText.Text = row.Text;
             multilingualText.Index = row.Index;
-            multilingualText.IsInitialData = false;
+            multilingualText.ViewLevel =  MultilingualGlobalTextProtectionLevel.Public;
+            multilingualText.EditLevel = MultilingualGlobalTextProtectionLevel.Public;
         }
     }
 }
