@@ -22,18 +22,5 @@ namespace SampleApp.Application
                 dbContextHandler.DBContextOptions(serviceProvider, options);
             });
         }
-
-
-        public override void ConfigureApp(IHost host)
-        {
-            base.ConfigureApp(host);
-
-            var handler = host.Services.GetRequiredService<IDbContextHandler>();
-
-            handler
-                .UpdateDatabaseAsync<SampleAppContext>(host)
-                .GetAwaiter()
-                .GetResult();
-        }
     }
 }
