@@ -2,6 +2,19 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
+    public static class ICurrentUserServiceExtensions
+    {
+        public static Guid? GetCurrentUserId<TEntity>(this EntityService<TEntity> entityService)
+            where TEntity : Entity
+        {
+            var service =
+                entityService.EntityServiceDependency.ServiceProvider
+                    .GetRequiredService<ICurrentUserService>();
+
+            return service.GetCurrentUserId();
+        }
+    }
+
     public interface ICurrentUserService
     {
         Guid? GetCurrentUserId();

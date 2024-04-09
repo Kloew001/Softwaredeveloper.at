@@ -1,12 +1,33 @@
 ﻿
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
-    public class ApplicationUserService : EntityService<ApplicationUser>
+    public static class IApplicationUserServiceExtensions
+    {
+        public static Task<bool> IsCurrentUserInRoleAsync<TEntity>(this EntityService<TEntity> entityService, params Guid[] roleIds)
+            where TEntity : Entity
+        {
+            var service =
+                entityService.EntityServiceDependency.ServiceProvider
+                    .GetRequiredService<IApplicationUserService>();
+
+            return service.IsCurrentUserInRoleAsync(roleIds);
+        }
+    }
+
+    public interface IApplicationUserService
+    {
+        Task<ApplicationUserDetailDto> GetCurrentUserAsync();
+        Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
+        Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
+    }
+
+    public class ApplicationUserService : EntityService<ApplicationUser>, IApplicationUserService
     {
         public ApplicationUserService(
             EntityServiceDependency<ApplicationUser> entityServiceDependency)
@@ -28,12 +49,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public async Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
-            var isUserIndRole = await _context
-                .Set<ApplicationUserRole>()
-                    .AnyAsync(_ => _.UserId == userId &&
-                        roleIds.Contains(_.RoleId));
+            var userRoleIds = await _scopedCache.GetOrCreateAsync(userId.ToString(), async () =>
+            {
+                return await _context
+                    .Set<ApplicationUserRole>()
+                        .Where(_ => _.UserId == userId)
+                        .Select(_ => _.RoleId)
+                        .ToListAsync();
+            });
 
-            return isUserIndRole;
+            return roleIds.Any(_ => userRoleIds.Contains(_));
         }
 
         protected override IQueryable<ApplicationUser> AppendOrderBy(IQueryable<ApplicationUser> query)

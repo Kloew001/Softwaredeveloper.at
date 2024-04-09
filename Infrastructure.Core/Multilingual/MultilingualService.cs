@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+
 using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
@@ -106,6 +108,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public void Init()
         {
             CurrentCultureName = _defaultLanguageService.CultureName;
+        }
+    }
+
+    public static class MultilingualServiceExtensions
+    {
+        public static Task<string> GetTextAsync<TEntity>(this EntityService<TEntity> service, string key, string cultureName = null)
+            where TEntity : Entity
+        {
+            var multilingualService = 
+            service.EntityServiceDependency.ServiceProvider
+                .GetRequiredService<MultilingualService>();
+
+            return multilingualService.GetTextAsync(key, cultureName);
         }
     }
 

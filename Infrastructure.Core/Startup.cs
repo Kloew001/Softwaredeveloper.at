@@ -15,6 +15,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using System.Reflection;
+using System.Security.Cryptography;
 
 using TomLonghurst.ReadableTimeSpan;
 
@@ -60,6 +61,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
             Services.AddScoped<IMonitorService, MonitorService>();
+            Services.AddScoped<IApplicationUserService>((sp) => sp.GetRequiredService<ApplicationUserService>());
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -93,8 +95,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         protected virtual void UpdateDatabase(IHost host)
         {
-            try
-            {
+            //try
+            //{
                 using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
@@ -105,11 +107,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                         .GetAwaiter()
                         .GetResult();
                 }
-            }
-            catch
-            {
-                //ignore
-            }
+            //}
+            //catch(Exception ex)
+            //{
+            //    //ignore
+            //}
         }
     }
 }

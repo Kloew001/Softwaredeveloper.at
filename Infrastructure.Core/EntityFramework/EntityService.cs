@@ -9,6 +9,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -30,6 +31,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public EntityQueryService<TEntity> EntityQueryService { get; private set; }
         public EntityValidator<TEntity> Validator { get; private set; }
         public IMemoryCache MemoryCache { get; private set; }
+        public ScopedCache ScopedCache { get; private set; }
+
         public ICurrentUserService CurrentUserService { get; private set; }
 
         public EntityServiceDependency(
@@ -40,6 +43,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             SectionManager sectionManager,
             EntityQueryService<TEntity> entityQueryService,
             IMemoryCache memoryCache,
+            ScopedCache scopedCache,
             ICurrentUserService currentUserService)
         {
             ServiceProvider = serviceProvider;
@@ -51,6 +55,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             EntityQueryService = entityQueryService;
             CurrentUserService = currentUserService;
             MemoryCache = memoryCache;
+            ScopedCache = scopedCache;
 
             Validator = GetService<EntityValidator<TEntity>>();
         }
@@ -73,6 +78,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly EntityValidator<TEntity> _validator;
 
         protected readonly IMemoryCache _memoryCache;
+        protected readonly ScopedCache _scopedCache;
 
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -87,6 +93,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _entityQueryService = entityServiceDependency.EntityQueryService;
             _currentUserService = entityServiceDependency.CurrentUserService;
             _memoryCache = entityServiceDependency.MemoryCache;
+            _scopedCache = entityServiceDependency.ScopedCache;
+
             _validator = entityServiceDependency.Validator;
         }
 
