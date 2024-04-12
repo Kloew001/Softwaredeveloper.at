@@ -25,10 +25,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        [Route("/api/multilingual/{culture}")]
+        [Route("/api/multilingual/{culture}.json")]
         public Task<IDictionary<string, string>> GetAllGlobalText(
             [FromRoute(Name = "culture")] string cultureName = "de")
-            => _service.GetGlobalTextsAsync(cultureName, MultilingualGlobalTextProtectionLevel.Public);
+            => _service.GetTextsAsync(cultureName, MultilingualGlobalTextProtectionLevel.Public);
 
 
         [AllowAnonymous]

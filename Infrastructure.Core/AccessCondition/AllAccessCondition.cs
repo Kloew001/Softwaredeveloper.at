@@ -3,7 +3,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public abstract class AllAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedDependency
+    public class AllAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
         public override Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(true);

@@ -143,7 +143,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             _currentLanguageService = currentLanguageService;
         }
 
-        public const string _cacheKey = $"{nameof(MultilingualService)}_{nameof(GetGlobalTextsAsync)}_";
+        public const string _cacheKey = $"{nameof(MultilingualService)}_{nameof(GetTextsAsync)}_";
 
         public async Task ResetCache()
         {
@@ -158,7 +158,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             }
         }
 
-        public async Task<IDictionary<string, string>> GetGlobalTextsAsync(string cultureName = null, MultilingualGlobalTextProtectionLevel multilingualGlobalTextProtectionLevel = MultilingualGlobalTextProtectionLevel.Public)
+        public async Task<IDictionary<string, string>> GetTextsAsync(string cultureName = null, MultilingualGlobalTextProtectionLevel multilingualGlobalTextProtectionLevel = MultilingualGlobalTextProtectionLevel.Public)
         {
             if (string.IsNullOrWhiteSpace(cultureName))
                 cultureName = _currentLanguageService.CurrentCultureName;

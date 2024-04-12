@@ -10,7 +10,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
 
-            if (!(await service.EntityServiceDependency.AccessService.CanDeleteAsync(entity)))
+            var accessService = service.EntityServiceDependency.AccessService;
+            var accessConditionInfo = accessService.ResolveAccessConditionInfo(entity);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            if (!(await accessCondition.CanDeleteAsync(accessConditionInfo.SecurityEntity)))
                 throw new UnauthorizedAccessException();
 
             entity.IsDeleted = true;

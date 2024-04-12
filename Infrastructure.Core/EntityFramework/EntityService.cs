@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
+using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -132,7 +133,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (entity == null)
                 return null;
 
-            if (await _accessService.CanReadAsync(entity) == false)
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            if (await accessCondition.CanReadAsync(accessConditionInfo.SecurityEntity) == false)
                 throw new UnauthorizedAccessException();
 
             return entity;
@@ -225,7 +229,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await OnCreateInternalAsync(entity);
 
-            if (await _accessService.CanCreateAsync(entity) == false)
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            if (await accessCondition.CanCreateAsync(accessConditionInfo.SecurityEntity) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
@@ -300,13 +307,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             await OnUpdateInternalAsync(entity);
 
-            if (await _accessService.CanUpdateAsync(entity) == false)
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            if (await accessCondition.CanUpdateAsync(accessConditionInfo.SecurityEntity) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
                 await ValidateAndThrowInternalAsync(entity);
 
             return entity;
+        }
+
+        public AccessConditionInfo ResolveAccessConditionInfo(TEntity entity)
+        {
+            return _accessService.ResolveAccessConditionInfo(entity);
         }
 
         protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)
@@ -333,7 +348,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
             {
-                if (await _accessService.CanSaveAsync(entity) == false)
+                var accessConditionInfo = ResolveAccessConditionInfo(entity);
+                var accessCondition = accessConditionInfo.AccessCondition;
+
+                if (await accessCondition.CanSaveAsync(accessConditionInfo.SecurityEntity) == false)
                     throw new UnauthorizedAccessException();
 
                 await OnSaveInternalAsync(entity);
@@ -353,7 +371,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await OnDeleteInternalAsync(entity);
 
-            if (await _accessService.CanDeleteAsync(entity) == false)
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            if (await accessCondition.CanDeleteAsync(accessConditionInfo.SecurityEntity) == false)
                 throw new UnauthorizedAccessException();
         }
 

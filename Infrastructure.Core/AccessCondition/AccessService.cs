@@ -1,6 +1,5 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
+
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
@@ -16,121 +15,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         private readonly SectionManager _sectionManager;
 
         public AccessService(
-            IServiceProvider serviceProvider, 
-            IMemoryCache memoryCache, 
+            IServiceProvider serviceProvider,
+            IMemoryCache memoryCache,
             SectionManager sectionManager)
         {
             _serviceProvider = serviceProvider;
             _memoryCache = memoryCache;
             _sectionManager = sectionManager;
-        }
-
-        public Task<bool> CanReadAsync(Entity entity)
-        {
-            if (entity == null)
-                return Task.FromResult(true);
-
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
-
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-            if(accessConditionInfo == null)
-                return Task.FromResult(true);
-
-            return accessConditionInfo.AccessCondition
-                .CanReadAsync(accessConditionInfo.SecurityEntity);
-        }
-
-        public IQueryable<Entity> CanReadQuery(IQueryable<Entity> query)
-        {
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return query;
-
-            //var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-
-            //var query = _context.Set<Meldungseintrag>()
-            //    .Where(_ => EF.Property<string>(
-            //                EF.Property<Organisation>(
-            //                EF.Property<Meldung>(_, "Meldung"),
-            //                "Organisation"), "Name") != null);
-
-
-            //IQueryable<IEntity> securityParentQuery = null;
-
-            //securityParentQuery = accessConditionInfo.AccessCondition
-            //    .CanReadQuery(securityParentQuery);
-
-            return query;//TODO
-        }
-
-        public Task<bool> CanCreateAsync(Entity entity)
-        {
-            if (entity == null)
-                return Task.FromResult(true);
-
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
-
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-            if (accessConditionInfo == null)
-                return Task.FromResult(true);
-
-            return accessConditionInfo.AccessCondition
-                .CanCreateAsync(accessConditionInfo.SecurityEntity);
-        }
-
-        public Task<bool> CanUpdateAsync(Entity entity)
-        {
-            if (entity == null)
-                return Task.FromResult(true);
-
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
-
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-            if (accessConditionInfo == null)
-                return Task.FromResult(true);
-
-            return accessConditionInfo.AccessCondition
-                .CanUpdateAsync(accessConditionInfo.SecurityEntity);
-        }
-
-        public Task<bool> CanDeleteAsync(Entity entity)
-        {
-            if (entity == null)
-                return Task.FromResult(true);
-
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
-
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-            if (accessConditionInfo == null)
-                return Task.FromResult(true);
-
-            return accessConditionInfo.AccessCondition
-                .CanDeleteAsync(accessConditionInfo.SecurityEntity);
-        }
-
-        public Task<bool> CanSaveAsync(Entity entity)
-        {
-            if (entity == null)
-                return Task.FromResult(true);
-
-            if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
-
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-
-            if (accessConditionInfo == null)
-                return Task.FromResult(true);
-
-            return accessConditionInfo.AccessCondition
-                .CanSaveAsync(accessConditionInfo.SecurityEntity);
         }
 
         public class SecurityParentInfo
@@ -153,37 +44,58 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             public IAccessCondition AccessCondition { get; set; }
         }
 
-        private AccessConditionInfo ResolveAccessConditionInfo(Entity entity)
+        public AccessConditionInfo ResolveAccessConditionInfo(Entity entity, AccessConditionInfo accessConditionInfo = null)
         {
-            var accessConditionInfo = new AccessConditionInfo
+            if (entity == null)
+                return null;
+
+            if (accessConditionInfo == null)
             {
-                Entity = entity
-            };
+                accessConditionInfo = new AccessConditionInfo
+                {
+                    Entity = entity,
+                    SecurityEntity = entity
+                };
+            }
 
             var securityInfo = ResolveSecurityParentInfo(entity.GetType());
 
             if (securityInfo.AccessConditionType != null)
             {
-                var accessCondition = _serviceProvider.GetService(securityInfo.AccessConditionType) as IAccessCondition;
+                if (_sectionManager.IsActive<SecurityFreeSection>())
+                {
+                    accessConditionInfo.AccessCondition = GetAllAccessCondition(entity);
+                }
+                else
+                {
+                    accessConditionInfo.AccessCondition = _serviceProvider.GetService(securityInfo.AccessConditionType) as IAccessCondition;
+                }
 
-                accessConditionInfo.AccessCondition = accessCondition;
                 accessConditionInfo.SecurityEntity = entity;
-
-                return accessConditionInfo;
             }
 
-            if (securityInfo.SecurityProperty != null)
+            else if (securityInfo.SecurityProperty != null)
             {
                 var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as Entity;
 
                 if (securityParent == null)
                     throw new InvalidOperationException($"securityparent is null '{securityInfo.EntityType.Name}' '{entity.Id}'");
 
-                return ResolveAccessConditionInfo(securityParent);
+                return ResolveAccessConditionInfo(securityParent, accessConditionInfo);
+            }
+            else
+            {
+                accessConditionInfo.AccessCondition = GetAllAccessCondition(entity); //wenn keine Security definiert, Zugriff erlaubt
             }
 
-            return null;
+            return accessConditionInfo;
             //throw new InvalidOperationException($"no accessDefinition found for '{securityInfo.EntityType.Name}'");
+        }
+
+        private IAccessCondition GetAllAccessCondition(Entity entity)
+        {
+            var allAccessConditionType = typeof(AllAccessCondition<>).MakeGenericType(entity.GetType());
+            return _serviceProvider.GetService(allAccessConditionType) as IAccessCondition;
         }
 
         private SecurityParentInfo ResolveSecurityParentInfo(Type entityType)

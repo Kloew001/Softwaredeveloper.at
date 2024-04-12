@@ -47,6 +47,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return IsInRoleAsync(_currentUserService.GetCurrentUserId().Value, roleIds);
         }
 
+        public async Task<IEnumerable<Guid>> GetRoleIdsAsync(Guid userId)
+        {
+            var userRoleIds = await _context
+                .Set<ApplicationUserRole>()
+                    .Where(_ => _.UserId == userId)
+                    .Select(_ => _.RoleId)
+                    .OrderBy(_ => _)
+                    .ToListAsync();
+
+            return userRoleIds;
+        }
+
         public async Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
             var userRoleIds = await _scopedCache.GetOrCreateAsync(userId.ToString(), async () =>
