@@ -67,7 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
     }
 
-    public class EntityService<TEntity> : IScopedDependency//, ITypedScopedDependency<EntityService<TEntity>>
+    public class EntityService<TEntity> : IScopedDependency
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;

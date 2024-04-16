@@ -1,10 +1,7 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -19,19 +16,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
         //TODO Should Update DeepLevel References
         public static TDto ConvertToDto<TDto>(this IEntity entitiy, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TDto : IDto, new()
+            where TDto : IDto
         {
             return _factory.ConvertToDto<TDto>(entitiy, default, dtoFactory, serviceProvider);
         }
 
         public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TDto : IDto, new()
+            where TDto : IDto
         {
             return _factory.ConvertToDtos<TDto>(entities, dtoFactory, serviceProvider);
         }
 
         public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TEntity : IEntity
+            where TEntity : class, IEntity
         {
             return _factory.ConvertToEntity<TEntity>(dto, entity, dtoFactory, serviceProvider);
         }
@@ -202,24 +199,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TDto : IDto, new()
+            where TDto : IDto
         {
             if (entities == null)
                 return null;
 
             return entities
-                .Select(_ => ConvertToDto(_, new TDto(), dtoFactory, serviceProvider))
+                .Select(_ => ConvertToDto(_, (TDto)Activator.CreateInstance(typeof(TDto)), dtoFactory, serviceProvider))
                 .ToList();
         }
 
         public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TDto : IDto, new()
+            where TDto : IDto
         {
             if (entity == null)
                 return default;
 
             if (dto == null)
-                dto = new TDto();
+                dto = (TDto)Activator.CreateInstance(typeof(TDto));
 
             if (dtoFactory == null)
                 dtoFactory = ResolveTyped(typeof(TDto), entity.GetType());
@@ -233,7 +230,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
         public TDto ConvertToDto<TFactory, TEntity, TDto>(TEntity entity, TDto dto, IServiceProvider serviceProvider = null)
             where TFactory : IDtoFactory<TDto, TEntity>
-            where TDto : IDto, new()
+            where TDto : IDto
             where TEntity : IEntity
         {
             var factory = _serviceProvider.GetService<TFactory>();
@@ -280,12 +277,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                             itemsCollection.Add(entity);
                     }
 
-                    //if (entity == null)
-                    //{
-                    //    entity = dbContext.Set<TEntity>().CreateProxy();
-                    //    dbContext.Add(entity);
-                    //    itemsCollection.Add(entity);
-                    //}
+                    if (entity == null)
+                    {
+                        var dbContext = serviceProvider.GetRequiredService<IDbContext>();
+                        entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
+                        entity.Id = _.dtoId;
+
+                        itemsCollection.Add(entity);
+                    }
                 });
 
             return itemsCollection;
@@ -330,10 +329,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                             itemsCollection.Add(entity);
                     }
 
-                    if (entity == null)
+                    if (_.dto.Id.HasValue && entity == null)
                     {
-                        entity = dbContext.Set<TEntity>().CreateProxy();
-                        dbContext.Add(entity);
+                        entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
+                        entity.Id = _.dto.Id.Value;
                         itemsCollection.Add(entity);
                     }
 
@@ -344,14 +343,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
         }
 
         public TEntity ConvertToEntity<TEntity>(IDto dto, TEntity entity, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-            where TEntity : IEntity
+            where TEntity : class, IEntity
         {
             if (dto == null)
-                return default(TEntity);
+                return null;
 
             if (dtoFactory == null)
             {
                 dtoFactory = ResolveTyped(dto.GetType(), typeof(TEntity));
+            }
+
+            if (entity == null)
+            {
+                var dbContext = serviceProvider.GetRequiredService<IDbContext>();
+                entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
             }
 
             var convertToEntityMethod = dtoFactory.GetType()
