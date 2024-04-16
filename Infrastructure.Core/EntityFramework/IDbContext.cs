@@ -15,16 +15,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TEntity : class;
 
         Task<TEntity> CreateEntity<TEntity>()
-            where TEntity : class, new();
+            where TEntity : class;
 
         TEntity CreateProxy<TEntity>(params object[] constructorArguments)
-                where TEntity : class;
+           where TEntity : class;
 
         EntityEntry<TEntity> Add<TEntity>(TEntity entity)
             where TEntity : class;
 
         ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default)
-                where TEntity : class;
+           where TEntity : class;
+        
         void AddRange(IEnumerable<object> entities);
         Task AddRangeAsync(IEnumerable<object> entities, CancellationToken cancellationToken = default);
 

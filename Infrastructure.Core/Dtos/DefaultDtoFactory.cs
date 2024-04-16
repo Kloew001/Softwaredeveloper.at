@@ -1,5 +1,5 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
+
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
@@ -10,6 +10,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
     {
         private IMemoryCache _memoryCache;
 
+        public bool AutoSubPropertyMapping { get; set; } = true;
+
         public DefaultDtoFactory(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
@@ -17,15 +19,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
         public TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider)
         {
-            return (TDto)SimpleNameMapping(entity, dto);
+            return (TDto)SimpleNameMapping(entity, dto, serviceProvider);
         }
 
         public TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider)
         {
-            return (TEntity)SimpleNameMapping(dto, entity);
+            return (TEntity)SimpleNameMapping(dto, entity, serviceProvider);
         }
 
-        protected virtual object SimpleNameMapping(object source, object target)
+        protected virtual object SimpleNameMapping(object source, object target, IServiceProvider serviceProvider)
         {
             if (source == null || target == null)
                 return null;
@@ -56,6 +58,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                     if (isDtoToEntity && targetProperty.Name == "Id")
                         return;
 
+                    if (targetProperty.Name == "Id" &&
+                        targetType.GetAttribute<DtoFactoryAttribute>()?.IgnoreId == true)
+                        return;
+
                     var sourceProperty = sourceType.GetProperty(targetProperty.Name);
 
                     if (sourceProperty != null)
@@ -66,7 +72,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                             SourceProperties = new[] { sourceProperty.Name }
                         });
                     }
-                    else
+
+                    if (AutoSubPropertyMapping && 
+                        sourceProperty == null && isEntityToDto)
                     {
                         //PersonName -> Person.Name
                         var sourcePropertyFirstLevel = sourceProperties
@@ -76,7 +84,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         {
                             var secondLevelPropertyName = targetProperty.Name.Substring(sourcePropertyFirstLevel.Name.Length);
 
-                            var sourcePropertySecoundLevel = sourcePropertyFirstLevel.GetType().GetProperty(secondLevelPropertyName);
+                            var sourcePropertySecoundLevel = sourcePropertyFirstLevel.PropertyType.GetProperty(secondLevelPropertyName);
 
                             propertyMaps.Add(new PropertyMap
                             {
@@ -153,7 +161,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         typeof(DtoFactoryExtensions)
                         .GetMethod(nameof(DtoFactoryExtensions.ConvertToDto))
                         .MakeGenericMethod(propertyMap.TargetProperty.PropertyType)
-                        .Invoke(null, new object[] { sourceEntity, null });
+                        .Invoke(null, new object[] { sourceEntity, null, serviceProvider });
 
                     propertyMap.TargetProperty
                         .SetValue(target, dto);
@@ -174,7 +182,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         typeof(DtoFactoryExtensions)
                         .GetMethod(nameof(DtoFactoryExtensions.ConvertToDtos))
                         .MakeGenericMethod(dtoType)
-                        .Invoke(null, new object[] { sourceEntity, null });
+                        .Invoke(null, new object[] { sourceEntity, null, serviceProvider });
 
                     propertyMap.TargetProperty
                         .SetValue(target, dtos);
@@ -195,10 +203,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                        typeof(DtoFactoryExtensions)
                        .GetMethod(nameof(DtoFactoryExtensions.ConvertToEntity))
                        .MakeGenericMethod(propertyMap.TargetProperty.PropertyType)
-                       .Invoke(null, new object[] { sourceDto, targetValue });
+                       .Invoke(null, new object[] { sourceDto, targetValue, null, serviceProvider });
 
                     propertyMap.TargetProperty
                         .SetValue(target, entity);
+
+                    if (AutoSubPropertyMapping)
+                    {
+                        var targetIdProperty = target.GetType().GetProperty(propertyMap.TargetProperty.Name + "Id");
+
+                        if (targetIdProperty != null)
+                        {
+                            var id = entity.GetType().GetProperty("Id").GetValue(entity);
+                            targetIdProperty.SetValue(target, id);
+                        }
+                    }
                 }
             }
 

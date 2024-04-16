@@ -1,5 +1,16 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
+    [AttributeUsage(AttributeTargets.Class)]
+    public class DtoFactoryAttribute : Attribute
+    {
+        public bool IgnoreId { get; set; }
+
+        public DtoFactoryAttribute()
+        {
+            IgnoreId = false;
+        }
+    }
+
     public interface IDto
     {
         Guid? Id { get; set; }

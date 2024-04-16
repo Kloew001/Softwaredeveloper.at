@@ -100,7 +100,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entity = await GetSingleByIdInternalAsync(id);
 
@@ -115,7 +115,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TDto> GetSingleAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entity = await GetSingleInternalAsync(queryExtension);
 
@@ -143,7 +143,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entities = await query.ToListAsync();
 
@@ -153,7 +153,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var query = await GetCollectionQueryInternal(queryExtension);
 
@@ -188,7 +188,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entity = await CreateInternalAsync<TDto>(dto);
 
@@ -198,7 +198,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TEntity> CreateInternalAsync<TDto>(TDto dto)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entity = await CreateInternalAsync(async (e) =>
             {
@@ -242,7 +242,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         protected virtual Task OnCreateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             return Task.CompletedTask;
         }
@@ -253,7 +253,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<Guid> QuickCreateAsync<TDto>(TDto dto)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
@@ -263,7 +263,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TDto> QuickUpdateAsync<TDto>(TDto dto)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
@@ -281,7 +281,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
 
@@ -293,7 +293,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task<TEntity> UpdateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             dto.ConvertToEntity(entity, serviceProvider: EntityServiceDependency.ServiceProvider);
             await OnUpdateInternalAsync(dto, entity);
@@ -325,7 +325,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto, new()
+            where TDto : Dto
         {
             return Task.CompletedTask;
         }
@@ -384,7 +384,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public virtual async Task ValidateAndThrowAsync<TDto>(TDto dto)
-          where TDto : Dto, new()
+          where TDto : Dto
         {
             using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
             {

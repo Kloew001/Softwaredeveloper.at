@@ -93,7 +93,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
         public async Task<TEntity> CreateEntity<TEntity>()
-            where TEntity : class, new()
+            where TEntity : class
         {
             if (UseProxy)
             {
@@ -103,7 +103,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
             else
             {
-                var entity = new TEntity();
+                //var instance = Activator.CreateInstance(typeof(TEntity));
+                var constructor = typeof(TEntity).GetConstructor(Type.EmptyTypes);
+                var entity = (TEntity)constructor.Invoke(new object[] { });
+
                 await AddAsync(entity);
                 return entity;
             }

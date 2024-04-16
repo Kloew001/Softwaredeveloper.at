@@ -25,7 +25,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        [Route("/api/multilingual/{culture}.json")]
+        [Route("/api/multilingual/{culture}")]
         public Task<IDictionary<string, string>> GetAllGlobalText(
             [FromRoute(Name = "culture")] string cultureName = "de")
             => _service.GetTextsAsync(cultureName, MultilingualGlobalTextProtectionLevel.Public);
