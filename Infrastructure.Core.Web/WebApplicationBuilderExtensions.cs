@@ -14,6 +14,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
+using Microsoft.Extensions.Hosting;
 
 namespace Infrastructure.Core.Web
 {
@@ -29,6 +30,7 @@ namespace Infrastructure.Core.Web
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddMemoryCache();
+            builder.Services.AddHttpClient();
 
             builder.Services.AddControllers(options =>
             {
@@ -59,22 +61,11 @@ namespace Infrastructure.Core.Web
                 ctx.ProblemDetails.Instance = problemCorrelationId;
             });
 
-            builder.Services.AddResponseCompression(options =>
-            {
-                options.EnableForHttps = true;
-                options.Providers.Add<BrotliCompressionProvider>();
-                options.Providers.Add<GzipCompressionProvider>();
-            });
+            builder.AddResponseCompression();
 
-            builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
-            {
-                options.Level = CompressionLevel.Fastest;
-            });
+            builder.AddCors();
 
-            builder.Services.Configure<GzipCompressionProviderOptions>(options =>
-            {
-                options.Level = CompressionLevel.SmallestSize;
-            });
+            builder.AddRateLimiter();
 
             return builder;
         }
@@ -151,12 +142,39 @@ namespace Infrastructure.Core.Web
         {
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy(name: _allowSpecificOrigins,
-                  policy =>
-                  {
-                      policy.WithOrigins("http://localhost:4200")
-                        .AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
-                  });
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.AddPolicy(name: _allowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:4200")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowAnyOrigin();
+                      });
+                }
+            });
+
+            return builder;
+        }
+
+        public static WebApplicationBuilder AddResponseCompression(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<BrotliCompressionProvider>();
+                options.Providers.Add<GzipCompressionProvider>();
+            });
+
+            builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+            {
+                options.Level = CompressionLevel.Fastest;
+            });
+
+            builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = CompressionLevel.SmallestSize;
             });
 
             return builder;

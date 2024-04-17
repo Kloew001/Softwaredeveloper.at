@@ -32,9 +32,6 @@ namespace Infrastructure.Core.Web
 
             builder.AddBearerAuthentication();
 
-            builder.AddCors();
-            builder.AddRateLimiter();
-
             builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
         }
 
@@ -67,10 +64,13 @@ namespace Infrastructure.Core.Web
 
             if (app.Environment.IsDevelopment())
                 app.UseCors(WebApplicationBuilderExtensions._allowSpecificOrigins);
-
-            app.UseRateLimiter();
+            else
+            {
+                app.UseCors();
+            }
 
             app.UseResponseCompression();
+            app.UseRateLimiter();
 
             //if(ShouldUseWebApiAudit)
             //    app.UseAuditMiddleware();
