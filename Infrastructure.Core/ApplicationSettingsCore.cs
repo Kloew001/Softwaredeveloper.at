@@ -2,6 +2,11 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public class ApplicationConfigurationAttribute : Attribute
+    {
+    }
+
     public interface IApplicationSettings
     { 
         Dictionary<string, string> ConnectionStrings { get; set; }
@@ -23,10 +28,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public MultilingualConfiguration Multilingual { get; set; }
     }
 
+    [ApplicationConfiguration]
     public class UrlConfiguration
     {
         public string BaseUrl { get; set; }
     }
+
     public class HostedServicesConfiguration
     {
         public bool Enabled { get; set; } = true;

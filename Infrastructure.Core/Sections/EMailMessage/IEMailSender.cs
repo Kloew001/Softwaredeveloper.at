@@ -19,6 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         }
     }
 
+    [ApplicationConfiguration]
     public class EMailServerConfiguration
     {
         public string FromName { get; set; }

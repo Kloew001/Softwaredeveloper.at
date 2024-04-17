@@ -1,9 +1,8 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 
 using FluentValidation;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,9 +12,6 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
-
-using System.Reflection;
-using System.Security.Cryptography;
 
 using TomLonghurst.ReadableTimeSpan;
 
@@ -43,16 +39,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             ReadableTimeSpan.EnableConfigurationBinding();
 
-            Services.Configure<TApplicationSettings>(Configuration);
-
-            Services.AddSingleton<IApplicationSettings>((sp) =>
-            {
-                var value = sp
-                .GetRequiredService<IOptionsMonitor<TApplicationSettings>>()
-                .CurrentValue;
-
-                return value;
-            });
+            ConfigureApplicationSettings();
 
             Services.AddHttpClient();
 
@@ -66,6 +53,28 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+        }
+
+        protected virtual void ConfigureApplicationSettings()
+        {
+            Services.Configure<TApplicationSettings>(Configuration);
+
+            Services.AddSingleton<IApplicationSettings>((sp) => sp.GetRequiredService<IOptionsMonitor<TApplicationSettings>>().CurrentValue);
+            Services.AddSingleton((sp) => sp.GetService<IApplicationSettings>().As<TApplicationSettings>());
+
+            typeof(TApplicationSettings)
+                .GetProperties()
+                .Where(p => p.PropertyType.GetAttribute<ApplicationConfigurationAttribute>() != null)
+                .ToList()
+            .ForEach(property =>
+            {
+                Services.AddSingleton(property.PropertyType, (sp) =>
+                {
+                    var applicationSettings = sp.GetRequiredService<IApplicationSettings>();
+
+                    return property.GetValue(applicationSettings);
+                });
+             });
         }
 
         public virtual void ConfigureApp(IHost host)
@@ -97,16 +106,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             //try
             //{
-                using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
-                    var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
+            using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
+                var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
 
 
-                    handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
-                        .GetAwaiter()
-                        .GetResult();
-                }
+                handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
+                    .GetAwaiter()
+                    .GetResult();
+            }
             //}
             //catch(Exception ex)
             //{

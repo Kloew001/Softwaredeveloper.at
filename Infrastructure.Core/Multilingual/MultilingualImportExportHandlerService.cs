@@ -13,6 +13,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         Task<Utility.FileInfo> ExportToFileAsync();
     }
 
+    [ApplicationConfiguration]
     public class MultilingualConfiguration
     {
         public bool EnabledAdministration { get; set; } = true;
