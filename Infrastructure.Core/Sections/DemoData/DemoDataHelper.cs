@@ -790,9 +790,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DemoData
             new Adresse { City = "Wien", ZipCode = "1010", Street = "Kärntner Straße 51", Country = "Österreich", ISO3 = "AUT" },
 
             // Deutschland
-            new Adresse { City = "Berlin", ZipCode = "10117", Street = "Pariser Platz", Country = "Deutschland", ISO3 = "DE" },
-            new Adresse { City = "München", ZipCode = "80337", Street = "Sendlinger Straße", Country = "Deutschland", ISO3 = "DE" },
-            new Adresse { City = "Hamburg", ZipCode = "20457", Street = "Speicherstadt", Country = "Deutschland", ISO3 = "DE" },
+            new Adresse { City = "Berlin", ZipCode = "10117", Street = "Pariser Platz", Country = "Deutschland", ISO3 = "DEU" },
+            new Adresse { City = "München", ZipCode = "80337", Street = "Sendlinger Straße", Country = "Deutschland", ISO3 = "DEU" },
+            new Adresse { City = "Hamburg", ZipCode = "20457", Street = "Speicherstadt", Country = "Deutschland", ISO3 = "DEU" },
             // Frankreich
             new Adresse { City = "Paris", ZipCode = "75004", Street = "Rue de Rivoli", Country = "Frankreich", ISO3 = "FRA" },
             new Adresse { City = "Lyon", ZipCode = "69002", Street = "Rue du Bât d'Argent", Country = "Frankreich", ISO3 = "FRA" },

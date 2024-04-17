@@ -1,20 +1,33 @@
-﻿//using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-//using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-//using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
+{
+    public class EmailMessageService : IScopedDependency
+    {
+        private readonly IDbContext _context;
+        private readonly MultilingualService _multilingualService;
 
-//namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
-//{
-//    public class EmailMessageService : IScopedDependency
-//    {
-//        public EmailMessageService(IDbContext context)
-//        {
-//        }
+        public EmailMessageService(IDbContext context, MultilingualService multilingualService)
+        {
+            _context = context;
+            _multilingualService = multilingualService;
+        }
 
-//        public Task<IEnumerable<EmailMessage>> GetCollectionAsync(Guid referenceId)
-//        {
-//            //TODO Security
-//            return GetCollectionAsync<ChronologyEntryDto>(q =>
-//                   q.Where(_ => _.ReferenceId == referenceId));
-//        }
-//    }
-//}
+        public async Task<EmailMessage> Create()
+        {
+            var email = await _context.CreateEntity<EmailMessage>();
+
+            return email;
+        }
+
+        public async Task<EmailMessage> Create(string multilingualTextKey)
+        {
+            var email = await Create();
+
+            email.Subject = await _multilingualService.GetTextAsync($"{multilingualTextKey}.Subject");
+
+            email.HtmlContent = await _multilingualService.GetTextAsync($"{multilingualTextKey}.HtmlContent");
+
+            return email;   
+        }
+
+    }
+}
