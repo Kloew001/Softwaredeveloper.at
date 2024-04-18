@@ -16,10 +16,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             var configuration = DefaultConfiguration(encoding);
 
-            if (configurationModify == null)
-            {
+            if (configurationModify != null)
                configuration = configurationModify(configuration);
-            }
 
             using (var memoryStream = new MemoryStream(content))
             using (var streamReader = new StreamReader(memoryStream, encoding))
@@ -41,10 +39,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
             var configuration = DefaultConfiguration(encoding);
 
-            if (configurationModify == null)
-            {
+            if (configurationModify != null)
                 configuration = configurationModify(configuration);
-            }
 
             using (var memoryStream = new MemoryStream())
             {

@@ -213,7 +213,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             }
         }
 
-        private const int _maxRetryCount = 3;
         private async Task HandleErrorAsync(Guid asyncTaskOperationId, Exception ex)
         {
             try
@@ -227,7 +226,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                     var asyncTaskOperation = await context.Set<AsyncTaskOperation>()
                         .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
 
-                    if (asyncTaskOperation.RetryCount <= _maxRetryCount)
+                    if (asyncTaskOperation.RetryCount < asyncTaskOperation.MaxRetryCount)
                     {
                         asyncTaskOperation.Status = AsyncTaskOperationStatus.Pending;
                         asyncTaskOperation.StartedAt = null;
@@ -359,6 +358,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay);
         }
 
+        private const int _defaultMaxRetryCount = 0;
+
         public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null)
         {
             if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
@@ -382,6 +383,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 Status = AsyncTaskOperationStatus.Pending,
                 SortIndex = sortIndex,
                 RetryCount = 0,
+                MaxRetryCount = _defaultMaxRetryCount
             };
 
             await _context.Set<AsyncTaskOperation>().AddAsync(asyncTask);

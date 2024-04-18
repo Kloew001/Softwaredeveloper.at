@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
@@ -43,16 +44,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
     {
         public decimal Priority => 1.2m;
 
-        public bool ExecuteInThread { get; set; } = false;
-
         public bool AutoExecute { get; set; } = false;
 
 
+        protected readonly IApplicationUserService _applicationUserService;
+
         protected readonly UserManager<ApplicationUser> _userManager;
 
-        public BaseApplicationUserDataSeed(UserManager<ApplicationUser> userManager)
+        public BaseApplicationUserDataSeed(
+            UserManager<ApplicationUser> userManager,
+            IApplicationUserService applicationUserService)
         {
             _userManager = userManager;
+            _applicationUserService = applicationUserService;
         }
 
         public abstract Task SeedAsync(CancellationToken cancellationToken);
@@ -63,35 +67,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             string nachname,
             string username,
             string password,
-            string roleName)
+            string[] roleNames)
         {
-            var user = await _userManager.FindByNameAsync(username);
-
-            if (user == null)
+            id = (await _applicationUserService.CreateIdentityInternalAsync(new CreateApplicationUserIdentity
             {
-                user = new ApplicationUser
-                {
-                    Id = id,
-                    UserName = username,
-                    Email = username,
-                    EmailConfirmed = true,
-                    FirstName = vorname,
-                    LastName = nachname,
-                    DateCreated = DateTime.Now
-                };
+                Id = id,
+                FirstName = vorname,
+                LastName = nachname,
+                UserName = username,
+                Email = username,
+                Password = password,
+                EmailConfirmed = true,
+                RoleNames = roleNames
+            })).Id;
 
-                var result = await _userManager.CreateAsync(user, password);
-
-                if (result.Succeeded)
-                {
-                    var role = await _userManager.AddToRoleAsync(user, roleName);
-                }
-            }
-            else
-            {
-            }
-
-            return user;
+            return await _userManager.FindByIdAsync(id.ToString());
         }
 
     }

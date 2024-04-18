@@ -27,6 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         public int SortIndex { get; set; }
         public string ErrorMessage { get; set; }
         public int RetryCount { get; set; }
+        public int MaxRetryCount { get; set; }
     }
 
     public class AsyncTaskOperationConfiguration : IEntityTypeConfiguration<AsyncTaskOperation>

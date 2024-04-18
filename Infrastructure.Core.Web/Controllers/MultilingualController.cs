@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 {
     public class MultilingualController : BaseApiController
@@ -46,12 +44,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task ImportExcel(IFormFile file)
         {
-            using (var memoryStream = new MemoryStream())
-            {
-                file.CopyTo(memoryStream);
-
-                await _excelMultilingualService.ImportAsync(memoryStream.ToArray());
-            }
+            await _excelMultilingualService.ImportAsync(file.GetContent());
         }
 
         [AllowAnonymous]
@@ -69,12 +62,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task ImportJson(IFormFile file)
         {
-            using (var memoryStream = new MemoryStream())
-            {
-                file.CopyTo(memoryStream);
-
-                await _jsonMultilingualService.ImportAsync(memoryStream.ToArray());
-            }
+            await _jsonMultilingualService.ImportAsync(file.GetContent());
         }
     }
 }

@@ -32,6 +32,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Configuration = builder.Configuration;
             HostEnvironment = builder.Environment;
 
+            ApplicationUserIds.ServiceAdminId = Guid.Parse(Configuration.GetSection("ServiceUser").GetValue<string>("Id"));
+
             if (ApplicationUserIds.ServiceAdminId == Guid.Empty)
                 throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
 
