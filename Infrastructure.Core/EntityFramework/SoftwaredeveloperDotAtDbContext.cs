@@ -6,17 +6,17 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public abstract class BaseSoftwaredeveloperDotAtDbContext : DbContext,
+    public abstract class SoftwaredeveloperDotAtDbContext : DbContext,
         IDbContext,
         ITypedScopedDependency<IDbContext>
     {
         public bool UseProxy { get; set; } = true;
 
-        protected BaseSoftwaredeveloperDotAtDbContext()
+        protected SoftwaredeveloperDotAtDbContext()
         {
         }
 
-        protected BaseSoftwaredeveloperDotAtDbContext(DbContextOptions options) : base(options)
+        protected SoftwaredeveloperDotAtDbContext(DbContextOptions options) : base(options)
         {
         }
 
@@ -54,12 +54,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual DbSet<EmailMessage> EmailMessages { get; set; }
 
         public virtual DbSet<AsyncTaskOperation> AsyncTaskOperations { get; set; }
-        
+
         public virtual DbSet<BackgroundserviceInfo> BackgroundserviceInfos { get; set; }
 
         public virtual DbSet<MultilingualCulture> MultilingualCultures { get; set; }
         public virtual DbSet<MultilingualGlobalText> MultilingualGlobalTexts { get; set; }
-        
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

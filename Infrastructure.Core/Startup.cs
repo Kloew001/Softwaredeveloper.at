@@ -96,12 +96,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             host.Services.GetServices<IAppStatupInit>()
                 .ToList();
 
+            var tasks = new List<Task>();
+
             foreach (var item in startupInits)
             {
-                item.Init()
-                    .GetAwaiter()
-                    .GetResult();
+                tasks.Add(item.Init());
             }
+
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
         }
 
         protected virtual void UpdateDatabase(IHost host)

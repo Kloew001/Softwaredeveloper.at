@@ -7,33 +7,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 {
     public class MultilingualController : BaseApiController
     {
-        private readonly MultilingualService _service;
-        private readonly ExcelMultilingualService _excelMultilingualService;
-        private readonly JsonMultilingualService _jsonMultilingualService;
-
-        public MultilingualController(
-            MultilingualService service,
-            ExcelMultilingualService excelMultilingualService,
-            JsonMultilingualService jsonMultilingualService)
-        {
-            _service = service;
-            _excelMultilingualService = excelMultilingualService;
-            _jsonMultilingualService = jsonMultilingualService;
-        }
-
         [AllowAnonymous]
         [HttpGet]
         [Route("/api/multilingual/{culture}")]
-        public Task<IDictionary<string, string>> GetAllGlobalText(
+        public IDictionary<string, string> GetAllGlobalText(
+            [FromServices] MultilingualGlobalTextCacheService cacheService,
             [FromRoute(Name = "culture")] string cultureName = "de")
-            => _service.GetTextsAsync(cultureName, MultilingualGlobalTextProtectionLevel.Public);
-
+            => cacheService.GetTexts(cultureName, MultilingualProtectionLevel.Public)
+                .ToDictionary(_=>_.Key, _=>_.Text);
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<FileContentResult> ExportExcel()
+        public async Task<FileContentResult> ExportExcel([FromServices] ExcelMultilingualService service)
         {
-            var fileInfo = await _excelMultilingualService.ExportToFileAsync();
+            var fileInfo = await service.ExportToFileAsync();
 
             return File(fileInfo.Content, fileInfo.FileContentType, fileInfo.FileName);
         }
@@ -42,16 +29,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         [HttpPost]
         [EnableRateLimiting("largeFileUpload")]
         [RequestSizeLimit(10 * 1024 * 1024)]
-        public async Task ImportExcel(IFormFile file)
+        public async Task ImportExcel(IFormFile file, [FromServices] ExcelMultilingualService service)
         {
-            await _excelMultilingualService.ImportAsync(file.GetContent());
+            await service.ImportAsync(file.GetContent());
         }
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<FileContentResult> ExportJson()
+        public async Task<FileContentResult> ExportJson([FromServices] JsonMultilingualService service)
         {
-            var fileInfo = await _jsonMultilingualService.ExportToFileAsync();
+            var fileInfo = await service.ExportToFileAsync();
 
             return File(fileInfo.Content, fileInfo.FileContentType, fileInfo.FileName);
         }
@@ -60,9 +47,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         [HttpPost]
         [EnableRateLimiting("largeFileUpload")]
         [RequestSizeLimit(10 * 1024 * 1024)]
-        public async Task ImportJson(IFormFile file)
+        public async Task ImportJson(IFormFile file, [FromServices] JsonMultilingualService service)
         {
-            await _jsonMultilingualService.ImportAsync(file.GetContent());
+            await service.ImportAsync(file.GetContent());
         }
     }
 }

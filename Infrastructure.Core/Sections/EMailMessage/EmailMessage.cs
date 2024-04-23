@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
@@ -8,7 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     }
 
     [Table(nameof(EmailMessage))]
-    public class EmailMessage
+    public class EmailMessage : IReferencedToEntityType
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -38,6 +41,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
         public string Attachment2Name { get; set; }
         public byte[] Attachment2 { get; set; }
+    }
+
+    public class EmailMessageConfiguration : IEntityTypeConfiguration<EmailMessage>
+    {
+        public void Configure(EntityTypeBuilder<EmailMessage> builder)
+        {
+            builder.HasIndex(_ => new
+            {
+                _.Status,
+                _.SendAt
+            });
+        }
     }
 
     public enum EmailMessageStatusType

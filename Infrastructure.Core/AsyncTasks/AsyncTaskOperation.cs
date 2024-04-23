@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
-    public class AsyncTaskOperation : Entity
+    public class AsyncTaskOperation : Entity, IReferencedToEntityType
     {
         public AsyncTaskOperation()
         {
@@ -14,6 +15,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         public Guid OperationHandlerId { get; set; }
         public string OperationKey { get; set; }
         public Guid? ReferenceId { get; set; }
+        public string ReferenceType { get; set; }
+
         public string ParameterSerialized { get; set; }
 
         public Guid? ExecuteById { get; set; }

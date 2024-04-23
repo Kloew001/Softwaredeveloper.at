@@ -67,7 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                 var texte = await _context.Set<MultilingualGlobalText>()
                     .Where(_ => _.Culture.Name == culture)
-                    .Where(_ => _.EditLevel == MultilingualGlobalTextProtectionLevel.Public)
+                    .Where(_ => _.EditLevel == MultilingualProtectionLevel.Public)
                     .OrderBy(_ => _.Index)
                     .ToListAsync();
 
@@ -93,7 +93,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             {
                 var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
                 await context.Set<MultilingualGlobalText>()
-                    .Where(_ => _.EditLevel != MultilingualGlobalTextProtectionLevel.Private)
+                    .Where(_ => _.EditLevel != MultilingualProtectionLevel.Private)
                     .ExecuteDeleteAsync();
             }
 
@@ -126,7 +126,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             using (var scope = _serviceScopeFactory.CreateScope())
             {
-                var multilingualService = scope.ServiceProvider.GetRequiredService<MultilingualService>();
+                var multilingualService = scope.ServiceProvider.GetRequiredService<MultilingualGlobalTextCacheService>();
                 await multilingualService.ResetCache();
             }
         }
@@ -168,8 +168,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             multilingualText.Text = row.Text;
             multilingualText.Index = row.Index;
-            multilingualText.ViewLevel =  MultilingualGlobalTextProtectionLevel.Public;
-            multilingualText.EditLevel = MultilingualGlobalTextProtectionLevel.Public;
+            multilingualText.ViewLevel =  MultilingualProtectionLevel.Public;
+            multilingualText.EditLevel = MultilingualProtectionLevel.Public;
         }
     }
 }

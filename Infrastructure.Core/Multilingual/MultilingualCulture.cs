@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
 using System.ComponentModel.DataAnnotations.Schema;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;

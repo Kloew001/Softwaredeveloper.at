@@ -1,5 +1,20 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 {
+    public static class EmailMessageServiceExtensions
+    {
+        public static Task<EmailMessage> CreateEMailMessageAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string multilingualTextKey)
+            where TEntity : Entity
+        {
+            var emailMessageService =
+            service.EntityServiceDependency.ServiceProvider
+                .GetRequiredService<EmailMessageService>();
+
+            return emailMessageService.Create(referenceEntity, multilingualTextKey);
+        }
+    }
+
     public class EmailMessageService : IScopedDependency
     {
         private readonly IDbContext _context;
@@ -11,22 +26,28 @@
             _multilingualService = multilingualService;
         }
 
-        public async Task<EmailMessage> Create()
+        public async Task<EmailMessage> Create(Entity referenceEntity)
         {
             var email = await _context.CreateEntity<EmailMessage>();
+            
+            email.Status = EmailMessageStatusType.Created;
+            email.SetReference(referenceEntity);
 
             return email;
         }
 
-        public async Task<EmailMessage> Create(string multilingualTextKey)
+        public async Task<EmailMessage> Create(Entity referenceEntity, string multilingualTextKey)
         {
-            var email = await Create();
+            var email = await Create(referenceEntity);
 
-            email.Subject = await _multilingualService.GetTextAsync($"{multilingualTextKey}.Subject");
+            if (multilingualTextKey.IsNotNullOrEmpty())
+            {
+                email.Subject = _multilingualService.GetText($"{multilingualTextKey}.Subject");
 
-            email.HtmlContent = await _multilingualService.GetTextAsync($"{multilingualTextKey}.HtmlContent");
+                email.HtmlContent = _multilingualService.GetText($"{multilingualTextKey}.HtmlContent");
+            }
 
-            return email;   
+            return email;
         }
 
     }

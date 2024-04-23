@@ -36,12 +36,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Compile Remove="Sections\NewFolder\**" />
-    <EmbeddedResource Remove="Sections\NewFolder\**" />
-    <None Remove="Sections\NewFolder\**" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)\readme.md" Pack="true" PackagePath="" />
   </ItemGroup>

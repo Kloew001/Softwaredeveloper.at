@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 
@@ -9,12 +10,14 @@ namespace Infrastructure.Core.Web
     public class WebCurrentUserService : ICurrentUserService
     {
         private IHttpContextAccessor _httpContextAccessor;
+        private readonly ICurrentLanguageService _currentLanguageService;
 
         public WebCurrentUserService(
             IHttpContextAccessor httpContextAccessor,
-            IServiceProvider provider)
+            IServiceProvider serviceProvider)
         {
             _httpContextAccessor = httpContextAccessor;
+            _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
         }
 
         public bool IsAuthenticated
@@ -56,6 +59,7 @@ namespace Infrastructure.Core.Web
         public void SetCurrentUserId(Guid? currentUserId)
         {
             _currentUserId = currentUserId;
+            _currentLanguageService.Init();
         }
     }
 }

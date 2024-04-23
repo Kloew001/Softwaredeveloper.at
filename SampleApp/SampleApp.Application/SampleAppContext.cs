@@ -4,7 +4,7 @@ using SampleApp.Application.Sections.PersonSection;
 
 namespace SampleApp.Application
 {
-    public class SampleAppContext : BaseSoftwaredeveloperDotAtDbContext
+    public class SampleAppContext : SoftwaredeveloperDotAtDbContext
     {
         public SampleAppContext()
         {

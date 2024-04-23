@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
@@ -10,14 +11,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         protected readonly UserManager<ApplicationUser> _userManager;
         protected readonly IUserStore<ApplicationUser> _userStore;
 
-        public WebApplicationUserIdentityService(
-            SignInManager<ApplicationUser> signInManager, 
-            UserManager<ApplicationUser> userManager,
-            IUserStore<ApplicationUser> userStore)
+        public WebApplicationUserIdentityService(IServiceProvider serviceProvider)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
-            _userStore = userStore;
+            _signInManager = serviceProvider.GetService<SignInManager<ApplicationUser>>();
+            _userManager = serviceProvider.GetService<UserManager<ApplicationUser>>();
+            _userStore = serviceProvider.GetService<IUserStore<ApplicationUser>>();
         }
 
         public async Task<Guid> CreateAsync(CreateApplicationUserIdentity identity, CancellationToken ct)
@@ -70,7 +68,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 
             if (user == null)
                 return;
-            
+
             var result = await _userManager.DeleteAsync(user);
 
             if (!result.Succeeded)

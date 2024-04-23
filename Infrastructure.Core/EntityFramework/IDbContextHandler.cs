@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 
@@ -90,9 +91,33 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             ApplyApplicationUser(modelBuilder);
             ApplyAuditEntity(modelBuilder);
             ApplyGlobalFilters(modelBuilder);
+            ApplyIndex(modelBuilder);
 
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseSoftwaredeveloperDotAtDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoftwaredeveloperDotAtDbContext).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        }
+
+        public virtual void ApplyIndex(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(IReferencedToEntityType).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(
+                            nameof(IReferencedToEntityType.ReferenceId),
+                            nameof(IReferencedToEntityType.ReferenceType));
+                }
+
+                if (typeof(IEntityTranslation).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(nameof(IEntityTranslation.CoreId));
+
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(nameof(IEntityTranslation.CultureId));
+                }
+            }
         }
 
         public abstract void ApplyBaseEntity(ModelBuilder modelBuilder);

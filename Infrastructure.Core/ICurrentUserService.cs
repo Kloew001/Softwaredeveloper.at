@@ -43,7 +43,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public void SetPreviousUser()
         {
             if (_previousUserId != null)
-                _currentUserId = _previousUserId.Value;
+                SetCurrentUser(_previousUserId.Value);
 
             _previousUserId = null;
         }

@@ -4,7 +4,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    public enum MultilingualGlobalTextProtectionLevel
+    public enum MultilingualProtectionLevel
     {
         Private = 0,
         Public = 2
@@ -17,7 +17,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
         public int Index { get; set; }
 
-        public MultilingualGlobalTextProtectionLevel ProtectionLevel
+        public MultilingualProtectionLevel ProtectionLevel
         {
             set
             {
@@ -26,8 +26,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             }
         }
 
-        public MultilingualGlobalTextProtectionLevel ViewLevel { get; set; } = MultilingualGlobalTextProtectionLevel.Public;
-        public MultilingualGlobalTextProtectionLevel EditLevel { get; set; } = MultilingualGlobalTextProtectionLevel.Private;
+        public MultilingualProtectionLevel ViewLevel { get; set; } = MultilingualProtectionLevel.Private;
+        public MultilingualProtectionLevel EditLevel { get; set; } = MultilingualProtectionLevel.Private;
 
         public string Key { get; set; }
 

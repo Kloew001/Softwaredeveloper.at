@@ -17,9 +17,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         Task<TEntity> CreateEntity<TEntity>()
             where TEntity : class;
 
-        TEntity CreateProxy<TEntity>(params object[] constructorArguments)
-           where TEntity : class;
-
         EntityEntry<TEntity> Add<TEntity>(TEntity entity)
             where TEntity : class;
 

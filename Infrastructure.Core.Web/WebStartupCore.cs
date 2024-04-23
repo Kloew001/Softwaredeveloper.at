@@ -62,6 +62,8 @@ namespace Infrastructure.Core.Web
                 app.UseSwaggerUI();
             }
 
+            app.UseRateLimiter();
+
             if (app.Environment.IsDevelopment())
                 app.UseCors(WebApplicationBuilderExtensions._allowSpecificOrigins);
             else
@@ -70,10 +72,6 @@ namespace Infrastructure.Core.Web
             }
 
             app.UseResponseCompression();
-            app.UseRateLimiter();
-
-            //if(ShouldUseWebApiAudit)
-            //    app.UseAuditMiddleware();
         }
     }
 }

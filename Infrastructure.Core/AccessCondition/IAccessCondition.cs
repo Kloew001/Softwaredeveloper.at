@@ -1,7 +1,4 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using System.Linq;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
     public interface IAccessCondition
     {
@@ -24,6 +21,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         Task<bool> CanUpdateAsync(TEntity entity);
         Task<bool> CanDeleteAsync(TEntity entity);
         Task<bool> CanSaveAsync(TEntity entity);
+
+        Task<bool> IAccessCondition.CanReadAsync(IEntity entity) => CanReadAsync((TEntity)entity);
+        IQueryable<IEntity> IAccessCondition.CanReadQuery(IQueryable<IEntity> query) => CanReadQuery(query);
+        Task<bool> IAccessCondition.CanCreateAsync(IEntity entity) => CanCreateAsync((TEntity)entity);
+        Task<bool> IAccessCondition.CanUpdateAsync(IEntity entity) => CanUpdateAsync((TEntity)entity);
+        Task<bool> IAccessCondition.CanDeleteAsync(IEntity entity) => CanDeleteAsync((TEntity)entity);
+        Task<bool> IAccessCondition.CanSaveAsync(IEntity entity) => CanSaveAsync((TEntity)entity);
     }
 
     public abstract class BaseAccessCondition<TEntity> : IAccessCondition<TEntity>
@@ -40,17 +44,5 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         public abstract Task<bool> CanSaveAsync(TEntity entity);
 
         public abstract IQueryable<TEntity> CanReadQuery(IQueryable<TEntity> query);
-
-        public Task<bool> CanCreateAsync(IEntity entity) => CanCreateAsync((TEntity)entity);
-
-        public Task<bool> CanDeleteAsync(IEntity entity) => CanDeleteAsync((TEntity)entity);
-
-        public Task<bool> CanReadAsync(IEntity entity) => CanReadAsync((TEntity)entity);
-
-        public IQueryable<IEntity> CanReadQuery (IQueryable<IEntity> query) => CanReadQuery(query);
-
-        public Task<bool> CanUpdateAsync(IEntity entity) => CanUpdateAsync((TEntity)entity);
-
-        public Task<bool> CanSaveAsync(IEntity entity) => CanSaveAsync((TEntity)entity);
     }
 }
