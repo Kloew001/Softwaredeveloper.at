@@ -19,12 +19,12 @@ public class WebStartup : WebStartupCore
 
         builder.AddSwaggerGenWithBearer();
 
-        builder.AddBearerAuthentication();
+        //builder.AddBearerAuthentication();
 
-        //builder.Services.AddAuthorizationBuilder()
-        //    .AddPolicy("api", policy =>
-        //        policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement())
-        //    );
+        builder.Services.AddAuthorizationBuilder()
+            .AddPolicy("api", policy =>
+                policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement())
+            );
 
         var s = new SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.PostgreSQLDbContextHandler(); // do not remove, to load Dll
 

@@ -50,7 +50,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
             Services.AddScoped<IMonitorService, MonitorService>();
-            Services.AddScoped<IApplicationUserService>((sp) => sp.GetRequiredService<ApplicationUserService>());
+            Services.AddScoped<IApplicationUserService>((sp) =>
+            {
+                return sp.GetRequiredService<ApplicationUserService>();
+            });
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -61,8 +64,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             Services.Configure<TApplicationSettings>(Configuration);
 
-            Services.AddSingleton<IApplicationSettings>((sp) => sp.GetRequiredService<IOptionsMonitor<TApplicationSettings>>().CurrentValue);
-            Services.AddSingleton((sp) => sp.GetService<IApplicationSettings>().As<TApplicationSettings>());
+            Services.AddSingleton<IApplicationSettings>((sp) =>
+            {
+                return sp.GetRequiredService<IOptionsMonitor<TApplicationSettings>>().CurrentValue;
+            });
+            Services.AddSingleton((sp) =>
+            {
+                return sp.GetService<IApplicationSettings>().As<TApplicationSettings>();
+            });
 
             typeof(TApplicationSettings)
                 .GetProperties()
@@ -76,7 +85,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
                     return property.GetValue(applicationSettings);
                 });
-             });
+            });
         }
 
         public virtual void ConfigureApp(IHost host)

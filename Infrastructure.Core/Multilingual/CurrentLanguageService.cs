@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using System;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
     public interface ICurrentLanguageService
@@ -30,20 +32,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         private MultilingualCultureDto _currentCulture;
 
         private readonly IDefaultLanguageService _defaultLanguageService;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IServiceProvider _serviceProvider;
 
         public CurrentLanguageService(
             IDefaultLanguageService defaultLanguageService,
             IServiceProvider serviceProvider)
         {
             _defaultLanguageService = defaultLanguageService;
-            _currentUserService = serviceProvider.GetService<ICurrentUserService>();
+            _serviceProvider = serviceProvider;
         }
 
         public void Init()
         {
             CurrentCulture = _defaultLanguageService.Culture;
 
+            var currentUserService = _serviceProvider.GetService<ICurrentUserService>();
             //TODO GetLanguage from _currentUserService
         }
     }

@@ -28,16 +28,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         private Guid? _previousUserId = null;
 
         private readonly IDbContext _context;
-        private readonly ICurrentLanguageService _currentLanguageService;
+        private readonly IServiceProvider _serviceProvider;
 
         public bool IsAuthenticated => _currentUserId != null;
 
-        public CurrentUserService(
-            IDbContext context, 
-            IServiceProvider serviceProvider)
+        public CurrentUserService(IDbContext context,  IServiceProvider serviceProvider)
         {
             _context = context;
-            _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
+            _serviceProvider = serviceProvider;
         }
 
         public void SetPreviousUser()
@@ -62,7 +60,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             _previousUserId = _currentUserId;
             _currentUserId = id;
-            _currentLanguageService.Init();
+            var currentUserService = _serviceProvider.GetService<ICurrentLanguageService>();
+            currentUserService.Init();
         }
 
         public void SetCurrentUserId(Guid? currentUserId)
