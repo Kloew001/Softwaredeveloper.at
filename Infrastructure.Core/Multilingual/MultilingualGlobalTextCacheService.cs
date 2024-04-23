@@ -73,7 +73,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
                     var textDtos = texts.ConvertToDtos<MultilingualGlobalTextDto>();
 
-                    _cache.Add(cultureDto.Id.Value, textDtos);
+                    cache.Add(cultureDto.Id.Value, textDtos);
                 }
             }
 
