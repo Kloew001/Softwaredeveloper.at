@@ -27,7 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, ProblemHttpResult>> Authenticate
+        public virtual async Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, ProblemHttpResult>> Authenticate
             ([FromBody] AuthenticateRequest request)
         {
             _signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
@@ -46,5 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
             return TypedResults.Empty;
         }
+
+
     }
 }

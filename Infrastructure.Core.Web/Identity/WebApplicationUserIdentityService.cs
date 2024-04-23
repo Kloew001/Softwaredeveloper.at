@@ -10,15 +10,31 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         protected readonly SignInManager<ApplicationUser> _signInManager;
         protected readonly UserManager<ApplicationUser> _userManager;
         protected readonly IUserStore<ApplicationUser> _userStore;
+        private readonly RoleManager<ApplicationRole> _roleManager;
 
         public WebApplicationUserIdentityService(IServiceProvider serviceProvider)
         {
             _signInManager = serviceProvider.GetService<SignInManager<ApplicationUser>>();
             _userManager = serviceProvider.GetService<UserManager<ApplicationUser>>();
             _userStore = serviceProvider.GetService<IUserStore<ApplicationUser>>();
+            _roleManager = serviceProvider.GetService<RoleManager<ApplicationRole>>();
         }
 
-        public async Task<Guid> CreateAsync(CreateApplicationUserIdentity identity, CancellationToken ct)
+        public async Task<Guid> CreateRoleAsync(Guid id, string roleName)
+        {
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                await _roleManager.CreateAsync(new ApplicationRole
+                {
+                    Id = id,
+                    Name = roleName,
+                });
+            }
+
+            return id;
+        }
+
+        public async Task<Guid> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct)
         {
             var user = await _userManager.FindByEmailAsync(identity.Email);
 
@@ -34,6 +50,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             user.Id = identity.Id;
             user.FirstName = identity.FirstName;
             user.LastName = identity.LastName;
+            user.IsEnabled = true;
             user.DateCreated = DateTime.Now;
 
             user.EmailConfirmed = identity.EmailConfirmed;
@@ -62,7 +79,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             throw new Exception(error);
         }
 
-        public async Task DeleteAsync(Guid userId)
+        public async Task DeleteUserAsync(Guid userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 

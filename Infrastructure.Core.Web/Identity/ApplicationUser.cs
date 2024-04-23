@@ -6,6 +6,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
     public class ApplicationUser : IdentityUser<Guid>
     {
+        public bool IsEnabled { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public DateTime DateCreated { get; set; }

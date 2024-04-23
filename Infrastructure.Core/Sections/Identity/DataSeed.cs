@@ -1,41 +1,30 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System.Threading;
-using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
+using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
     public abstract class ApplicationRoleDataSeed<TUserRoles> : IDataSeed
         where TUserRoles : struct, Enum
     {
         public decimal Priority => 1.1m;
 
-        public bool ExecuteInThread { get; set; } = false;
-
         public bool AutoExecute { get; set; } = false;
 
+        protected readonly IApplicationUserService _applicationUserService;
 
-        private readonly RoleManager<ApplicationRole> _roleManager;
-
-        public ApplicationRoleDataSeed(RoleManager<ApplicationRole> roleManager)
+        public ApplicationRoleDataSeed(IApplicationUserService applicationUserService)
         {
-            _roleManager = roleManager;
+            _applicationUserService = applicationUserService;
         }
 
         public async Task SeedAsync(CancellationToken cancellationToken)
         {
             foreach (var roleType in Enum.GetValues<TUserRoles>())
             {
-                if (!await _roleManager.RoleExistsAsync(roleType.GetName()))
-                {
-                    await _roleManager.CreateAsync(new ApplicationRole
-                    {
-                        Id = roleType.GetId(),
-                        Name = roleType.GetName(),
-                    });
-                }
+                await _applicationUserService.CreateRoleAsync(
+                    roleType.GetId(),
+                    roleType.GetName());
             }
         }
     }
@@ -49,19 +38,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 
         protected readonly IApplicationUserService _applicationUserService;
 
-        protected readonly UserManager<ApplicationUser> _userManager;
-
         public BaseApplicationUserDataSeed(
-            UserManager<ApplicationUser> userManager,
             IApplicationUserService applicationUserService)
         {
-            _userManager = userManager;
             _applicationUserService = applicationUserService;
         }
 
         public abstract Task SeedAsync(CancellationToken cancellationToken);
 
-        protected async Task<ApplicationUser> EnsureUserAsync(
+        protected async Task<Guid> EnsureUserAsync(
             Guid id,
             string vorname,
             string nachname,
@@ -81,7 +66,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
                 RoleNames = roleNames
             })).Id;
 
-            return await _userManager.FindByIdAsync(id.ToString());
+            return id;
         }
 
     }

@@ -16,6 +16,8 @@ public static class ICurrentUserServiceExtension
 
 public class ApplicationUser : Entity
 {
+    public bool IsEnabled { get; set; }
+
     public string UserName { get; set; }
 
     public string NormalizedUserName { get; set; }
@@ -33,6 +35,9 @@ public class ApplicationUser : Entity
     public string SecurityStamp { get; set; }
 
     public string ConcurrencyStamp { get; set; }
+
+    public Guid? PreferedCultureId { get; set; }
+    public virtual MultilingualCulture PreferedCulture { get; set; }
 
     public string PhoneNumber { get; set; }
 

@@ -15,6 +15,8 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using Microsoft.Extensions.Hosting;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Core.Web
 {
@@ -104,6 +106,11 @@ namespace Infrastructure.Core.Web
             return builder;
         }
 
+        public static WebApplicationBuilder AddIdentity(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
+        {
+            return builder;
+        }
+
         public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
         {
             builder.Services.AddAuthentication(options =>
@@ -176,6 +183,31 @@ namespace Infrastructure.Core.Web
             {
                 options.Level = CompressionLevel.SmallestSize;
             });
+
+            return builder;
+        }
+
+        public static WebApplicationBuilder AddIdentity<TUser, TRole, TContext>(this WebApplicationBuilder builder)
+            where TUser : ApplicationUser
+            where TRole : ApplicationRole
+            where TContext : DbContext
+        {
+            builder.Services
+                .AddIdentity<TUser, TRole>(options =>
+                {
+                    options.Password.RequireDigit = true;
+                    options.Password.RequiredLength = 10;
+                    options.Password.RequireNonAlphanumeric = true;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireLowercase = true;
+                    options.Password.RequiredUniqueChars = 1;
+
+                    options.SignIn.RequireConfirmedAccount = true;
+                })
+                .AddRoleManager<RoleManager<TRole>>()
+                .AddEntityFrameworkStores<TContext>()
+                .AddDefaultTokenProviders()
+                .AddUserConfirmation<UserConfirmation>();
 
             return builder;
         }

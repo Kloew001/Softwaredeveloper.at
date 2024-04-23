@@ -11,6 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
     public class ApplicationUserDetailDto : ApplicationUserDto
     {
+        public string PreferedCultureName { get; set; }
         public IEnumerable<ApplicationRoleDto> Roles { get; set; }
     }
 
@@ -27,6 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             dto.Email = entity.Email;
             dto.FirstName = entity.FirstName;
             dto.LastName = entity.LastName;
+            dto.PreferedCultureName = entity.PreferedCulture?.Name;
 
             dto.Roles = entity.UserRoles.Select(_ => _.Role)
                 .Select(_ => new ApplicationRoleDto

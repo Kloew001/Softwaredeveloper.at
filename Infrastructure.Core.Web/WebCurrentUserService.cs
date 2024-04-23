@@ -59,7 +59,6 @@ namespace Infrastructure.Core.Web
         public void SetCurrentUserId(Guid? currentUserId)
         {
             _currentUserId = currentUserId;
-            _currentLanguageService.Init();
         }
     }
 }

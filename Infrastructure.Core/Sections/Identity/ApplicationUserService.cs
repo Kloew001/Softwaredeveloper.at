@@ -1,13 +1,7 @@
-﻿
-
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Vml.Office;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
+using System;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
@@ -38,8 +32,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
     public interface IApplicationUserIdentityService
     {
-        Task<Guid> CreateAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
-        Task DeleteAsync(Guid userId);
+        Task<Guid> CreateRoleAsync(Guid id, string roleName);
+        Task<Guid> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
+        Task DeleteUserAsync(Guid userId);
     }
 
     public interface IApplicationUserService
@@ -48,6 +43,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
         Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
         Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
+        Task<Guid> CreateRoleAsync(Guid id, string roleName);
+        Task SetPreferedCultureAsync(string cultureName);
     }
     
     public class ApplicationUserService : EntityService<ApplicationUser>, IApplicationUserService
@@ -56,6 +53,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             EntityServiceDependency<ApplicationUser> entityServiceDependency)
             : base(entityServiceDependency)
         {
+        }
+
+        public virtual Task<ApplicationUser> GetSingleByEMailInternalAsync(string email)
+        {
+            email = email.ToUpper();
+            return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedEmail == email));
         }
 
         public Task<ApplicationUserDetailDto> GetCurrentUserAsync()
@@ -108,13 +111,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             return query.OrderBy(_ => _.Email);
         }
+        
+        public virtual async Task<Guid> CreateRoleAsync(Guid id, string roleName)
+        {
+            var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
+
+            id = await applicationUserIdentityService
+                .CreateRoleAsync(id, roleName);
+
+            return id;
+        }
 
         public virtual async Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default)
         {
             var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
             
             var applicationUserId = await applicationUserIdentityService
-                .CreateAsync(identity, ct);
+                .CreateUserAsync(identity, ct);
 
             try
             {
@@ -140,7 +153,37 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
 
             await applicationUserIdentityService
-                .DeleteAsync(id);
+                .DeleteUserAsync(id);
+        }
+
+        public async Task SetPreferedCultureAsync(string cultureName)
+        {
+            var currentUserId = _currentUserService.GetCurrentUserId().Value;
+
+            var applicationUser = await GetSingleByIdInternalAsync(currentUserId);
+
+            if(cultureName.IsNullOrEmpty())
+            {
+                applicationUser.PreferedCulture = null;
+            }
+            else
+            {
+                applicationUser.PreferedCulture =
+                    await _context.Set<MultilingualCulture>()
+                        .Where(_ => _.IsActive && 
+                                    _.Name == cultureName.ToLower())
+                        .SingleAsync();
+            }
+
+            await UpdateInternalAsync(applicationUser);
+
+            await SaveChangesAsync(applicationUser);
+
+            EntityServiceDependency
+                .ServiceProvider
+                .GetService<ICurrentLanguageService>()
+                .As<CurrentLanguageService>()
+                ?.RemoveCache(currentUserId);
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 
+using DocumentFormat.OpenXml.Spreadsheet;
+
 using System.Globalization;
 using System.Text;
 
@@ -8,7 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public class CsvUtilityService : ISingletonDependency
     {
-        public TCsvLine[] ReadCsv<TCsvLine, TMap>(byte[] content, Func<CsvConfiguration, CsvConfiguration> configurationModify = null, Encoding encoding = null)
+        public TCsvLine[] ReadCsv<TCsvLine, TMap>(byte[] content, Action<CsvConfiguration> configurationModify = null, Encoding encoding = null)
             where TMap : ClassMap
         {
             if (encoding == null)
@@ -17,7 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             var configuration = DefaultConfiguration(encoding);
 
             if (configurationModify != null)
-               configuration = configurationModify(configuration);
+               configurationModify(configuration);
 
             using (var memoryStream = new MemoryStream(content))
             using (var streamReader = new StreamReader(memoryStream, encoding))
@@ -32,7 +34,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             }
         }
 
-        public byte[] CreateCsv<TCsvLine>(IEnumerable<TCsvLine> csvLines, Func<CsvConfiguration, CsvConfiguration> configurationModify = null, Encoding encoding = null)
+        public byte[] CreateCsv<TCsvLine, TMap>(IEnumerable<TCsvLine> csvLines, Action<CsvConfiguration> configurationModify = null, Encoding encoding = null)
+             where TMap : ClassMap
         {
             if (encoding == null)
                 encoding = new UTF8Encoding(true); //.UTF8;
@@ -40,20 +43,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             var configuration = DefaultConfiguration(encoding);
 
             if (configurationModify != null)
-                configuration = configurationModify(configuration);
+                configurationModify(configuration);
 
             using (var memoryStream = new MemoryStream())
             {
                 using (var streamWritter = new StreamWriter(memoryStream, encoding))
-                using (var csv = new CsvWriter(streamWritter, configuration))
+                using (var csvWriter = new CsvWriter(streamWritter, configuration))
                 {
-                    csv.WriteHeader<TCsvLine>();
-                    csv.NextRecord();
+                    csvWriter.Context.RegisterClassMap<TMap>();
+
+                    csvWriter.WriteHeader<TCsvLine>();
+                    csvWriter.NextRecord();
 
                     foreach (var csvLine in csvLines)
                     {
-                        csv.WriteRecord(csvLine);
-                        csv.NextRecord();
+                        csvWriter.WriteRecord(csvLine);
+                        csvWriter.NextRecord();
                     }
                 }
 

@@ -60,8 +60,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             _previousUserId = _currentUserId;
             _currentUserId = id;
-            var currentUserService = _serviceProvider.GetService<ICurrentLanguageService>();
-            currentUserService.Init();
         }
 
         public void SetCurrentUserId(Guid? currentUserId)

@@ -48,7 +48,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public string GetText(string key, Guid? cultureId = null)
         {
             if (cultureId.HasValue.IsFalse())
-                cultureId = _currentLanguageService.CurrentCulture.Id.Value;
+                cultureId = _currentLanguageService.CurrentCultureId;
 
             return _multilingualGlobalTextCacheService.GetText(key, cultureId.Value);
         }
@@ -57,7 +57,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             where TTranslation : IEntityTranslation
         {
             if (cultureId.HasValue.IsFalse())
-                cultureId = _currentLanguageService.CurrentCulture.Id.Value;
+                cultureId = _currentLanguageService.CurrentCultureId;
 
             if (entity.Translations == null)
                 return default;
@@ -95,7 +95,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         where TTranslation : class, IEntityTranslation
         {
             if (cultureId.HasValue.IsFalse())
-                cultureId = _currentLanguageService.CurrentCulture.Id.Value;
+                cultureId = _currentLanguageService.CurrentCultureId;
 
             var translation = entity.Translations.SingleOrDefault(_ => _.CultureId == cultureId);
 

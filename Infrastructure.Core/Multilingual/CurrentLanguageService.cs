@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 using System;
 
@@ -6,48 +9,57 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
     public interface ICurrentLanguageService
     {
-        MultilingualCultureDto CurrentCulture { get; }
-
-        void Init();
+        Guid CurrentCultureId { get; }
     }
 
     public class CurrentLanguageService : ICurrentLanguageService, ITypedScopedDependency<ICurrentLanguageService>
     {
-        public MultilingualCultureDto CurrentCulture
-        {
-            get
-            {
-                if (_currentCulture.IsNull())
-                {
-                    Init();
-                }
-
-                return _currentCulture;
-            }
-            private set
-            {
-                _currentCulture = value;
-            }
-        }
-        private MultilingualCultureDto _currentCulture;
+        public Guid CurrentCultureId => GetCurrentCultureId();
 
         private readonly IDefaultLanguageService _defaultLanguageService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IMemoryCache _memoryCache;
 
         public CurrentLanguageService(
             IDefaultLanguageService defaultLanguageService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IMemoryCache memoryCache)
         {
             _defaultLanguageService = defaultLanguageService;
             _serviceProvider = serviceProvider;
+            _memoryCache = memoryCache;
         }
 
-        public void Init()
-        {
-            CurrentCulture = _defaultLanguageService.Culture;
 
-            var currentUserService = _serviceProvider.GetService<ICurrentUserService>();
-            //TODO GetLanguage from _currentUserService
+        public const string _getCurrentCultureIdCacheKey = $"{nameof(GetCurrentCultureId)}_";
+
+        public void RemoveCache(Guid currentUserId)
+        {
+            _memoryCache.Remove(_getCurrentCultureIdCacheKey + currentUserId);
+        }
+
+        public Guid GetCurrentCultureId()
+        {
+            var currentUserId = _serviceProvider.GetService<ICurrentUserService>()
+                .GetCurrentUserId();
+
+            return _memoryCache.GetOrCreate(_getCurrentCultureIdCacheKey + currentUserId, (entry) =>
+            {
+                var preferedCultureId = _serviceProvider.GetService<IDbContext>()
+                    .Set<ApplicationUser>()
+                    .Where(_ => _.Id == currentUserId)
+                    .Select(_ => _.PreferedCultureId)
+                    .SingleOrDefault();
+
+                if (preferedCultureId.HasValue)
+                {
+                    return preferedCultureId.Value;
+                }
+                else
+                {
+                    return _defaultLanguageService.Culture.Id.Value;
+                }
+            });
         }
     }
 }
