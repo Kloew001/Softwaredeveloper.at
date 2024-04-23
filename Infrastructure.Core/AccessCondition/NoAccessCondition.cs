@@ -1,23 +1,21 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public abstract class NoAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedDependency
+    public abstract class NoAccessCondition<TEntity> : IAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
-        public override Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(false);
+        public Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(false);
 
-        public override Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(false);
+        public Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(false);
 
-        public override Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(false);
+        public Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(false);
 
-        public override Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(false);
+        public Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(false);
 
-        public override Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(false);
+        public Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(false);
 
-        public override IQueryable<TEntity> CanReadQuery(IQueryable<TEntity> query)
+        public Task<IQueryable<TEntity>> CanReadQuery(IQueryable<TEntity> query)
         {
-            return query.Where(_ => false);
+            return Task.FromResult(query.Where(_ => false));
         }
     }
 }

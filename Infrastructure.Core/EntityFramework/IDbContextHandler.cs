@@ -101,12 +101,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
-                if (typeof(IReferencedToEntityType).IsAssignableFrom(entityType.ClrType))
+                if (typeof(IReferencedToEntity).IsAssignableFrom(entityType.ClrType))
                 {
                     modelBuilder.Entity(entityType.ClrType)
                         .HasIndex(
-                            nameof(IReferencedToEntityType.ReferenceId),
-                            nameof(IReferencedToEntityType.ReferenceType));
+                            nameof(IReferencedToEntity.ReferenceId),
+                            nameof(IReferencedToEntity.ReferenceType));
                 }
 
                 if (typeof(IEntityTranslation).IsAssignableFrom(entityType.ClrType))

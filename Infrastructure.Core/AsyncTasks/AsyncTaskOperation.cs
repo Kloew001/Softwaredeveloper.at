@@ -5,7 +5,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
-    public class AsyncTaskOperation : Entity, IReferencedToEntityType
+    public class AsyncTaskOperation : Entity, IReferencedToEntity
     {
         public AsyncTaskOperation()
         {

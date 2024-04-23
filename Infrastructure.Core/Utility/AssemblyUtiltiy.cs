@@ -25,6 +25,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 					_allLoadedTypes = AppDomain.CurrentDomain.GetAssemblies()
 						.SelectMany(assembly => assembly.AllLoadableTypes())
 						.DistinctBy(type => type.FullName)
+						.OrderBy(type => type.FullName)
 						.ToArray();
 				}
 

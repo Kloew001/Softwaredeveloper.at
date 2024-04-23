@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
+using DocumentFormat.OpenXml.Vml.Office;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -133,10 +134,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (entity == null)
                 return null;
 
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
-
-            if (await accessCondition.CanReadAsync(accessConditionInfo.SecurityEntity) == false)
+            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanReadAsync(securityEntity)) == false)
                 throw new UnauthorizedAccessException();
 
             return entity;
@@ -160,21 +159,30 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return await GetCollectionAsync<TDto>(query);
         }
 
-        public virtual Task<IQueryable<TEntity>> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<IQueryable<TEntity>> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = _context
                 .Set<TEntity>()
-                //.Where(_=> _accessService.CanReadQuery(_))
                 .AsQueryable();
 
             query = IncludeAutoQueryProperties(query);
+
+            var accessConditionInfo = _accessService.ResolveAccessConditionInfo<TEntity>();
+            var accessCondition = accessConditionInfo.AccessCondition as IAccessCondition<TEntity>;
+
+            if (accessCondition != null)
+                query = await accessCondition.CanReadQuery(query);
+            else
+            {
+
+            }
 
             if (queryExtension != null)
                 query = queryExtension(query);
 
             query = AppendOrderBy(query);
 
-            return Task.FromResult(query);
+            return query;
         }
 
         protected virtual IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)
@@ -229,10 +237,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await OnCreateInternalAsync(entity);
 
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
-
-            if (await accessCondition.CanCreateAsync(accessConditionInfo.SecurityEntity) == false)
+            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanCreateAsync(securityEntity)) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
@@ -307,21 +313,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             await OnUpdateInternalAsync(entity);
 
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
-
-            if (await accessCondition.CanUpdateAsync(accessConditionInfo.SecurityEntity) == false)
+            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanUpdateAsync(securityEntity)) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
                 await ValidateAndThrowInternalAsync(entity);
 
             return entity;
-        }
-
-        public AccessConditionInfo ResolveAccessConditionInfo(TEntity entity)
-        {
-            return _accessService.ResolveAccessConditionInfo(entity);
         }
 
         protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)
@@ -348,10 +347,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
             {
-                var accessConditionInfo = ResolveAccessConditionInfo(entity);
-                var accessCondition = accessConditionInfo.AccessCondition;
-
-                if (await accessCondition.CanSaveAsync(accessConditionInfo.SecurityEntity) == false)
+                if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanSaveAsync(securityEntity)) == false)
                     throw new UnauthorizedAccessException();
 
                 await OnSaveInternalAsync(entity);
@@ -371,10 +368,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await OnDeleteInternalAsync(entity);
 
-            var accessConditionInfo = ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
-
-            if (await accessCondition.CanDeleteAsync(accessConditionInfo.SecurityEntity) == false)
+            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanDeleteAsync(securityEntity)) == false)
                 throw new UnauthorizedAccessException();
         }
 
@@ -400,7 +395,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected async Task ValidateAndThrowInternalAsync(TEntity entity)
         {
             var validationResult = await ValidateInternalAsync(entity);
-            
+
             if (validationResult == null)
                 return;
 

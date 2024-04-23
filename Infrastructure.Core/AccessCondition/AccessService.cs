@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
@@ -24,13 +26,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             _sectionManager = sectionManager;
         }
 
-        public class SecurityParentInfo
+        private class SecurityTypeInfo
         {
             public Type EntityType { get; set; }
             public PropertyInfo SecurityProperty { get; set; }
+
             public Type AccessConditionType { get; set; }
 
-            public SecurityParentInfo(Type entityType)
+            public SecurityTypeInfo(Type entityType)
             {
                 EntityType = entityType;
             }
@@ -38,105 +41,167 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
         public class AccessConditionInfo
         {
-            public Entity Entity { get; set; }
+            public Type EntityType { get; set; }
 
-            public Entity SecurityEntity { get; set; }
-            public IAccessCondition AccessCondition { get; set; }
+            public AccessConditionInfo ParentAccessConditionInfo { get; set; }
+            public PropertyInfo ParentSecurityProperty { get; set; }
+            public AccessConditionInfo RootAccessConditionInfo => ParentAccessConditionInfo?.RootAccessConditionInfo ?? this;
+
+            //public IEntity Entity { get; set; }
+
+            //public IEntity SecurityEntity { get; set; }
+
+            public IAccessCondition AccessCondition
+            {
+                get
+                {
+                    if (_accessCondition != null)
+                        return _accessCondition;
+
+                    return RootAccessConditionInfo._accessCondition;
+                }
+                set { _accessCondition = value; }
+            }
+            private IAccessCondition _accessCondition;
         }
 
-        public AccessConditionInfo ResolveAccessConditionInfo(Entity entity, AccessConditionInfo accessConditionInfo = null)
+        public Task<bool> EvaluateAsync<TAccessCondition>(IEntity entity, Func<TAccessCondition, IEntity, Task<bool>> canAsync)
+                where TAccessCondition : IAccessCondition
         {
-            if (entity == null)
+            return EvaluateAsync(entity, (ac, se) =>
+            {
+                return canAsync((TAccessCondition)ac, se);
+            });
+        }
+
+        public Task<bool> EvaluateAsync(IEntity entity, Func<IAccessCondition, IEntity, Task<bool>> canAsync)
+        {
+            var accessConditionInfo = ResolveAccessConditionInfo(entity);
+            var securityEntity = GetSecurityEntityInternal(entity, accessConditionInfo);
+            var accessCondition = accessConditionInfo.AccessCondition;
+
+            return canAsync(accessCondition, securityEntity);
+        }
+
+        private IEntity GetSecurityEntity(IEntity entity)
+        {
+            var accessConditionInfo = ResolveAccessConditionInfo(entity.GetType());
+
+            return GetSecurityEntityInternal(entity, accessConditionInfo);
+        }
+
+        private IEntity GetSecurityEntityInternal(IEntity entity, AccessConditionInfo accessConditionInfo = null)
+        {
+            if (accessConditionInfo?.ParentSecurityProperty == null)
+                return entity;
+
+            var parentSecurityEntity = accessConditionInfo.ParentSecurityProperty.GetValue(entity).As<IEntity>();
+
+            return GetSecurityEntityInternal(parentSecurityEntity);
+        }
+
+        public AccessConditionInfo ResolveAccessConditionInfo<TEntity>()
+        {
+            return ResolveAccessConditionInfo(typeof(TEntity));
+        }
+
+        public AccessConditionInfo ResolveAccessConditionInfo(IEntity entity)
+        {
+            return ResolveAccessConditionInfo(entity.GetType());
+        }
+
+        private AccessConditionInfo ResolveAccessConditionInfo(Type entityType)
+        {
+            if (entityType == null)
                 return null;
 
-            if (accessConditionInfo == null)
+            var accessConditionInfo = new AccessConditionInfo
             {
-                accessConditionInfo = new AccessConditionInfo
-                {
-                    Entity = entity,
-                    SecurityEntity = entity
-                };
-            }
+                EntityType = entityType,
+            };
 
-            var securityInfo = ResolveSecurityParentInfo(entity.GetType());
+            var securityInfo = ResolveSecurityTypeInfo(entityType);
 
             if (securityInfo.AccessConditionType != null)
             {
                 if (_sectionManager.IsActive<SecurityFreeSection>())
                 {
-                    accessConditionInfo.AccessCondition = GetAllAccessCondition(entity);
+                    accessConditionInfo.AccessCondition = GetAllAccessCondition(entityType);
                 }
                 else
                 {
                     accessConditionInfo.AccessCondition = _serviceProvider.GetService(securityInfo.AccessConditionType) as IAccessCondition;
                 }
-
-                accessConditionInfo.SecurityEntity = entity;
             }
-
             else if (securityInfo.SecurityProperty != null)
             {
-                var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as Entity;
+                //var securityParent = securityInfo.SecurityProperty.GetValue(entity, null) as IEntity;
 
-                if (securityParent == null)
-                    throw new InvalidOperationException($"securityparent is null '{securityInfo.EntityType.Name}' '{entity.Id}'");
+                //if (securityParent == null)
+                //    throw new InvalidOperationException($"securityparent is null '{securityInfo.EntityType.Name}' '{entity.Id}'");
 
-                return ResolveAccessConditionInfo(securityParent, accessConditionInfo);
+                accessConditionInfo.ParentSecurityProperty = securityInfo.SecurityProperty;
+
+                accessConditionInfo.ParentAccessConditionInfo =
+                    ResolveAccessConditionInfo(accessConditionInfo.ParentSecurityProperty.PropertyType);
             }
             else
             {
-                accessConditionInfo.AccessCondition = GetAllAccessCondition(entity); //wenn keine Security definiert, Zugriff erlaubt
+                accessConditionInfo.AccessCondition = GetAllAccessCondition(entityType); //wenn keine Security definiert, Zugriff erlaubt
             }
 
             return accessConditionInfo;
             //throw new InvalidOperationException($"no accessDefinition found for '{securityInfo.EntityType.Name}'");
         }
 
-        private IAccessCondition GetAllAccessCondition(Entity entity)
-        {
-            var allAccessConditionType = typeof(AllAccessCondition<>).MakeGenericType(entity.GetType());
-            return _serviceProvider.GetService(allAccessConditionType) as IAccessCondition;
-        }
-
-        private SecurityParentInfo ResolveSecurityParentInfo(Type entityType)
+        private SecurityTypeInfo ResolveSecurityTypeInfo(Type entityType)
         {
             entityType = entityType.UnProxy();
 
-            var cacheKey = $"{nameof(AccessService)}_{nameof(ResolveSecurityParentInfo)}_{entityType.FullName}";
+            var cacheKey = $"{nameof(AccessService)}_{nameof(ResolveSecurityTypeInfo)}_{entityType.FullName}";
 
-            if (!_memoryCache.TryGetValue(cacheKey, out SecurityParentInfo securityInfo))
+            if (!_memoryCache.TryGetValue(cacheKey, out SecurityTypeInfo securityInfo))
             {
-                securityInfo = new SecurityParentInfo(entityType);
-
-                var accessConditionType = typeof(IAccessCondition<>).MakeGenericType(securityInfo.EntityType);
-                var accessCondition = _serviceProvider.GetService(accessConditionType) as IAccessCondition;
-
-                if (accessCondition != null)
-                {
-                    securityInfo.AccessConditionType = accessConditionType;
-                }
-                else
-                {
-                    var accessConditionFromInterface = securityInfo.EntityType.GetInterfaces()
-                        .Select(ResolveAccessCondition)
-                        .FirstOrDefault(i => i != null);
-
-                    if (accessConditionFromInterface != null)
-                    {
-                        securityInfo.AccessConditionType = accessConditionFromInterface.GetType();
-                    }
-                }
+                securityInfo = new SecurityTypeInfo(entityType);
 
                 var securityParentAttribute = securityInfo.EntityType.GetAttribute<SecurityParentAttribute>();
                 if (securityParentAttribute != null)
                 {
                     securityInfo.SecurityProperty = securityInfo.EntityType.GetProperty(securityParentAttribute.PropertyName);
                 }
+                else
+                {
+                    var accessConditionType = typeof(IAccessCondition<>).MakeGenericType(securityInfo.EntityType);
+                    var accessCondition = _serviceProvider.GetService(accessConditionType) as IAccessCondition;
+
+                    if (accessCondition != null)
+                    {
+                        securityInfo.AccessConditionType = accessConditionType;
+                    }
+                    //else
+                    //{
+                    //    var accessConditionFromInterface = securityInfo.EntityType.GetInterfaces()
+                    //Where interfacde is IEntity
+                    //        .Select(ResolveAccessCondition)
+                    //        .FirstOrDefault(i => i != null);
+
+                    //    if (accessConditionFromInterface != null)
+                    //    {
+                    //        securityInfo.AccessConditionType = accessConditionFromInterface.GetType();
+                    //    }
+                    //}
+                }
 
                 _memoryCache.Set(cacheKey, securityInfo);
             }
 
             return securityInfo;
+        }
+
+        private IAccessCondition GetAllAccessCondition(Type entityType)
+        {
+            var allAccessConditionType = typeof(AllAccessCondition<>).MakeGenericType(entityType);
+            return _serviceProvider.GetService(allAccessConditionType) as IAccessCondition;
         }
 
         private IAccessCondition ResolveAccessCondition(Type entityType)

@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
 {
@@ -44,11 +42,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
 
-            var accessConditionInfo = service.ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
+            return await CanUpdateAsync(service, entity);
+        }
 
-            return await accessCondition
-                .CanUpdateAsync(accessConditionInfo.SecurityEntity);
+        public static Task<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+            where TEntity : Entity, ISoftDelete
+        {
+            return service.EntityServiceDependency.AccessService
+                .EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                    accessCondition.CanUpdateAsync(securityEntity));
         }
 
         public static async Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
@@ -56,10 +58,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
 
-            var accessConditionInfo = service.ResolveAccessConditionInfo(entity);
-            var accessCondition = accessConditionInfo.AccessCondition;
+            return await CanDeleteAsync(service, entity);
+        }
 
-            return await accessCondition.CanDeleteAsync(accessConditionInfo.SecurityEntity);
+        public static Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+            where TEntity : Entity, ISoftDelete
+        {
+            return service.EntityServiceDependency.AccessService
+                .EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                    accessCondition.CanDeleteAsync(securityEntity));
         }
 
         //public IQueryable<Entity> CanReadQuery(IQueryable<Entity> query)

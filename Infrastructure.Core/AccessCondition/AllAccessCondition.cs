@@ -1,21 +1,18 @@
-﻿using SixLabors.Fonts.Tables.TrueType;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public class AllAccessCondition<TEntity> : BaseAccessCondition<TEntity>, IScopedDependency
+    public class AllAccessCondition<TEntity> : IAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
-        public override Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(true);
+        public Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(true);
 
-        public override Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(true);
+        public Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(true);
 
-        public override Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(true);
+        public Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(true);
 
-        public override Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(true);
+        public Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(true);
 
-        public override Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(true);
+        public Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(true);
 
-        public override IQueryable<TEntity> CanReadQuery(IQueryable<TEntity> query) => query;
+        public Task<IQueryable<TEntity>> CanReadQuery(IQueryable<TEntity> query) => Task.FromResult(query);
     }
 }

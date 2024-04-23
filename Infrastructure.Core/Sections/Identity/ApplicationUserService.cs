@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 using System;
 
@@ -46,7 +50,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task<Guid> CreateRoleAsync(Guid id, string roleName);
         Task SetPreferedCultureAsync(string cultureName);
     }
-    
+
     public class ApplicationUserService : EntityService<ApplicationUser>, IApplicationUserService
     {
         public ApplicationUserService(
@@ -70,7 +74,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public Task<bool> IsEMailAlreadyInUse(string email)
         {
-            return  _context
+            return _context
                 .Set<ApplicationUser>()
                     .Where(_ => _.NormalizedEmail == email.ToUpper())
                     .AnyAsync();
@@ -81,28 +85,31 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return IsInRoleAsync(_currentUserService.GetCurrentUserId().Value, roleIds);
         }
 
+        public const string _getRoleIdsCacheKey = $"{nameof(ApplicationUserService)}_{nameof(GetRoleIdsAsync)}_";
+
+        public void RemoveRoleCache()
+        {
+            _memoryCache.RemoveStartsWith(_getRoleIdsCacheKey);
+        }
+
         public async Task<IEnumerable<Guid>> GetRoleIdsAsync(Guid userId)
         {
-            var userRoleIds = await _context
-                .Set<ApplicationUserRole>()
-                    .Where(_ => _.UserId == userId)
-                    .Select(_ => _.RoleId)
-                    .OrderBy(_ => _)
-                    .ToListAsync();
+            var userRoleIds = await _memoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
+            {
+                return await _context
+                    .Set<ApplicationUserRole>()
+                        .Where(_ => _.UserId == userId)
+                        .Select(_ => _.RoleId)
+                        .OrderBy(_ => _)
+                        .ToListAsync();
+            });
 
             return userRoleIds;
         }
 
         public async Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
-            var userRoleIds = await _scopedCache.GetOrCreateAsync(userId.ToString(), async () =>
-            {
-                return await _context
-                    .Set<ApplicationUserRole>()
-                        .Where(_ => _.UserId == userId)
-                        .Select(_ => _.RoleId)
-                        .ToListAsync();
-            });
+            var userRoleIds = await GetRoleIdsAsync(userId);
 
             return roleIds.Any(_ => userRoleIds.Contains(_));
         }
@@ -111,7 +118,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             return query.OrderBy(_ => _.Email);
         }
-        
+
         public virtual async Task<Guid> CreateRoleAsync(Guid id, string roleName)
         {
             var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
@@ -125,7 +132,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         public virtual async Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default)
         {
             var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
-            
+
             var applicationUserId = await applicationUserIdentityService
                 .CreateUserAsync(identity, ct);
 
@@ -133,10 +140,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             {
                 var applicationUser = await GetSingleByIdInternalAsync(applicationUserId);
 
-                var accessConditionInfo = ResolveAccessConditionInfo(applicationUser);
-                var accessCondition = accessConditionInfo.AccessCondition;
-
-                if (await accessCondition.CanCreateAsync(accessConditionInfo.SecurityEntity) == false)
+                if (await _accessService.EvaluateAsync(applicationUser, (accessCondition, securityEntity) =>
+                            accessCondition.CanCreateAsync(securityEntity)) == false)
                     throw new UnauthorizedAccessException();
 
                 return applicationUser;
@@ -162,7 +167,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
             var applicationUser = await GetSingleByIdInternalAsync(currentUserId);
 
-            if(cultureName.IsNullOrEmpty())
+            if (cultureName.IsNullOrEmpty())
             {
                 applicationUser.PreferedCulture = null;
             }
@@ -170,7 +175,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             {
                 applicationUser.PreferedCulture =
                     await _context.Set<MultilingualCulture>()
-                        .Where(_ => _.IsActive && 
+                        .Where(_ => _.IsActive &&
                                     _.Name == cultureName.ToLower())
                         .SingleAsync();
             }

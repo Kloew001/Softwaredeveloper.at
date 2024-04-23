@@ -11,7 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     }
 
     [Table(nameof(EmailMessage))]
-    public class EmailMessage : IReferencedToEntityType
+    public class EmailMessage : IReferencedToEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

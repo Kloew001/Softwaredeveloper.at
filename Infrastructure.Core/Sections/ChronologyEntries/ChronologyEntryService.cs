@@ -5,7 +5,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
     public static class ChronologyEntryServiceExtensions
     {
-        public static Task<ChronologyEntry> CreateChronologyEntryAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string multilingualKey, params string[] textArgs)
+        public static Task<ChronologyEntry> CreateChronologyEntryInternalAsync<TEntity>(this EntityService<TEntity> service, Entity referenceEntity, string multilingualKey, params string[] textArgs)
             where TEntity : Entity
         {
             var chronologyEntryService =
