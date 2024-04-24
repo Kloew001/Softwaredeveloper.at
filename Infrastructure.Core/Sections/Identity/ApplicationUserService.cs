@@ -53,15 +53,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
     public class ApplicationUserService : EntityService<ApplicationUser>, IApplicationUserService
     {
-        public ApplicationUserService(
-            EntityServiceDependency<ApplicationUser> entityServiceDependency)
+        public ApplicationUserService(EntityServiceDependency<ApplicationUser> entityServiceDependency)
             : base(entityServiceDependency)
         {
         }
 
         public virtual Task<ApplicationUser> GetSingleByEMailInternalAsync(string email)
         {
-            email = email.ToUpper();
+            email = email.ToUpper().Trim();
             return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedEmail == email));
         }
 
@@ -76,7 +75,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             return _context
                 .Set<ApplicationUser>()
-                    .Where(_ => _.NormalizedEmail == email.ToUpper())
+                    .Where(_ => _.NormalizedEmail == email.ToUpper().Trim())
                     .AnyAsync();
         }
 

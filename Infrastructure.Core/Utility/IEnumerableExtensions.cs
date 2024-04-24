@@ -85,6 +85,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return source.OrderByRandom().FirstOrDefault();
         }
 
+        public static IEnumerable<string> WhereNotNullOrEmpty(this IEnumerable<string> source)
+        {
+            return source.Where(_ => _.IsNotNullOrEmpty());
+        }
+
+        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source)
+        {
+            return source.Where(_ => _.IsNotNull());
+        }
+
         public static int GetRandom(this Random random, int min = 0, int max = 100)
         {
             return random.Next(min, max);
