@@ -210,7 +210,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             var entity = await CreateInternalAsync(async (e) =>
             {
-                dto.ConvertToEntity(e, serviceProvider: EntityServiceDependency.ServiceProvider);
+                if(dto != null)
+                    dto.ConvertToEntity(e, serviceProvider: EntityServiceDependency.ServiceProvider);
 
                 await OnCreateInternalAsync(dto, e);
             });

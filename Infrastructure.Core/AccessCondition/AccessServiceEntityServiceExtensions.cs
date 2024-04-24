@@ -1,17 +1,22 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
     public static class AccessServiceEntityServiceExtensions
     {
-        public static async Task<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
-            where TEntity : Entity, ISoftDelete
+        public static async Task<bool> CanCreateAsync<TEntity, TDto>(this EntityService<TEntity> service, TDto dto)
+            where TEntity : Entity
+            where TDto : Dto
         {
             try
             {
                 using (var tran = await service.EntityServiceDependency.DbContext.Database.BeginTransactionAsync())
                 {
-                    await service.QuickCreateInternalAsync();
+                    using (service.EntityServiceDependency.SectionManager
+                            .CreateSectionScope<SuppressSaveChangesSection>())
+                    {
+                        await service.QuickCreateAsync(dto);
+                    }
                     await tran.RollbackAsync();
                 }
 
@@ -23,8 +28,28 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
             }
         }
 
+        public static Task<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
+            where TEntity : Entity
+        {
+            return CanCreateAsync(service, (Dto)null);
+            //try
+            //{
+            //    using (var tran = await service.EntityServiceDependency.DbContext.Database.BeginTransactionAsync())
+            //    {
+            //        await service.QuickCreateInternalAsync();
+            //        await tran.RollbackAsync();
+            //    }
+
+            //    return true;
+            //}
+            //catch (UnauthorizedAccessException)
+            //{
+            //    return false;
+            //}
+        }
+
         public static async Task<bool> CanReadAsync<TEntity>(this EntityService<TEntity> service, Guid id)
-            where TEntity : Entity, ISoftDelete
+            where TEntity : Entity
         {
             try
             {
@@ -38,7 +63,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         }
 
         public static async Task<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, Guid id)
-            where TEntity : Entity, ISoftDelete
+            where TEntity : Entity
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
 
@@ -46,7 +71,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         }
 
         public static Task<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
-            where TEntity : Entity, ISoftDelete
+            where TEntity : Entity
         {
             return service.EntityServiceDependency.AccessService
                 .EvaluateAsync(entity, (accessCondition, securityEntity) =>
@@ -54,7 +79,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         }
 
         public static async Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
-            where TEntity : Entity, ISoftDelete
+            where TEntity : Entity
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
 
@@ -62,7 +87,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
         }
 
         public static Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
-            where TEntity : Entity, ISoftDelete
+            where TEntity : Entity
         {
             return service.EntityServiceDependency.AccessService
                 .EvaluateAsync(entity, (accessCondition, securityEntity) =>
