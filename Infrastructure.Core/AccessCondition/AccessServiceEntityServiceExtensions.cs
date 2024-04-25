@@ -4,6 +4,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
     public static class AccessServiceEntityServiceExtensions
     {
+        public static Task<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
+            where TEntity : Entity
+        {
+            return CanCreateAsync(service, (Dto)null);
+        }
+
         public static async Task<bool> CanCreateAsync<TEntity, TDto>(this EntityService<TEntity> service, TDto dto)
             where TEntity : Entity
             where TDto : Dto
@@ -26,26 +32,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             {
                 return false;
             }
-        }
-
-        public static Task<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
-            where TEntity : Entity
-        {
-            return CanCreateAsync(service, (Dto)null);
-            //try
-            //{
-            //    using (var tran = await service.EntityServiceDependency.DbContext.Database.BeginTransactionAsync())
-            //    {
-            //        await service.QuickCreateInternalAsync();
-            //        await tran.RollbackAsync();
-            //    }
-
-            //    return true;
-            //}
-            //catch (UnauthorizedAccessException)
-            //{
-            //    return false;
-            //}
         }
 
         public static async Task<bool> CanReadAsync<TEntity>(this EntityService<TEntity> service, Guid id)
