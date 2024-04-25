@@ -141,6 +141,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return entity;
         }
 
+        public virtual async Task<TEntity> GetFirstInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        {
+            var query = await GetCollectionQueryInternal(queryExtension);
+
+            var entity = await query.FirstOrDefaultAsync();
+
+            if (entity == null)
+                return null;
+
+            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                        accessCondition.CanReadAsync(securityEntity)) == false)
+                throw new UnauthorizedAccessException();
+
+            return entity;
+        }
+
         public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
             where TDto : Dto
         {
