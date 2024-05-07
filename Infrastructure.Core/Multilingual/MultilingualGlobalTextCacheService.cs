@@ -27,7 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public string Text { get; set; }
     }
 
-    public class MultilingualGlobalTextCacheService : ISingletonDependency, IAppStatupInit
+    public class MultilingualGlobalTextCacheService : ISingletonDependency, IAppStatupInit, ITypedSingletonDependency<IAppStatupInit>
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
