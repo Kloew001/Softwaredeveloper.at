@@ -37,8 +37,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent
         {
             binaryContent.Name = fileInfo.FileName;
             binaryContent.MimeType = fileInfo.FileContentType;
-            binaryContent.Content = fileInfo.Content;
-            binaryContent.ContentSize = fileInfo.Content.Length;
+
+            Fill(binaryContent, fileInfo.Content);
+        }
+
+        public static void Fill(this BinaryContent binaryContent, byte[] content)
+        {
+            binaryContent.Content = content;
+            binaryContent.ContentSize = content.Length;
         }
     }
 

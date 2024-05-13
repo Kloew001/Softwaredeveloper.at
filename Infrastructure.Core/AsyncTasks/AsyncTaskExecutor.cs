@@ -360,7 +360,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
         private const int _defaultMaxRetryCount = 0;
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null, int? retryCount = null)
         {
             if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
                 return await GetAsyncTaskIdsInQueueAsync(asyncTaskOperationHandler);
@@ -383,7 +383,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 Status = AsyncTaskOperationStatus.Pending,
                 SortIndex = sortIndex,
                 RetryCount = 0,
-                MaxRetryCount = _defaultMaxRetryCount
+                MaxRetryCount = retryCount ?? _defaultMaxRetryCount
             };
 
             await _context.Set<AsyncTaskOperation>().AddAsync(asyncTask);

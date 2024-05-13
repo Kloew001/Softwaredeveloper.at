@@ -15,6 +15,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 
 using System.Linq.Expressions;
 using System.Reflection;
@@ -136,6 +137,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                     modelBuilder.Entity(entityType.ClrType)
                         .HasIndex(nameof(IEntityTranslation.CultureId));
+                }
+
+                if (typeof(ISupportDefault).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(nameof(ISupportDefault.IsDefault))
+                        .IsUnique();
                 }
             }
         }
