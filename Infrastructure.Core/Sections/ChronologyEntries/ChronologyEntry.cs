@@ -12,6 +12,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
     {
         public string Description { get; set; }
         public Guid? ReferenceId { get; set; }
+        
+        [NotMapped]
+        public virtual Entity Reference { get; set; }
+        
         public string ReferenceType { get; set; }
         
         public virtual ICollection<ChronologyEntryTranslation> Translations { get; set; }

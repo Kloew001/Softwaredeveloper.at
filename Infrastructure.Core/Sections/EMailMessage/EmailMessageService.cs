@@ -4,14 +4,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 {
     public static class EmailMessageServiceExtensions
     {
-        public static Task<EmailMessage> CreateEMailMessageAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string multilingualTextKey)
+        public static Task<EmailMessage> CreateEMailMessageAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string multilingualTextKey, Guid? cultureId = null)
             where TEntity : Entity
         {
             var emailMessageService =
             service.EntityServiceDependency.ServiceProvider
                 .GetRequiredService<EmailMessageService>();
 
-            return emailMessageService.Create(referenceEntity, multilingualTextKey);
+            return emailMessageService.Create(referenceEntity, multilingualTextKey, cultureId);
         }
     }
 
@@ -36,15 +36,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
             return email;
         }
 
-        public async Task<EmailMessage> Create(Entity referenceEntity, string multilingualTextKey)
+        public async Task<EmailMessage> Create(Entity referenceEntity, string multilingualTextKey, Guid? cultureId = null)
         {
             var email = await Create(referenceEntity);
 
             if (multilingualTextKey.IsNotNullOrEmpty())
             {
-                email.Subject = _multilingualService.GetText($"{multilingualTextKey}.Subject");
+                email.Subject = _multilingualService.GetText($"{multilingualTextKey}.Subject", cultureId);
 
-                email.HtmlContent = _multilingualService.GetText($"{multilingualTextKey}.HtmlContent");
+                email.HtmlContent = _multilingualService.GetText($"{multilingualTextKey}.HtmlContent", cultureId);
             }
 
             return email;

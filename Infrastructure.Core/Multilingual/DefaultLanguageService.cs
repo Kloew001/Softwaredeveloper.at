@@ -9,6 +9,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
     public interface IDefaultLanguageService : IAppStatupInit, ITypedSingletonDependency<IAppStatupInit>
     {
+        Guid CultureId => Culture.Id.Value;
         MultilingualCultureDto Culture { get; }
     }
 

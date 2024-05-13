@@ -92,9 +92,29 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             ApplyAuditEntity(modelBuilder);
             ApplyGlobalFilters(modelBuilder);
             ApplyIndex(modelBuilder);
+            ApplyRemoveForeignKeyAttribute(modelBuilder);
+
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoftwaredeveloperDotAtDbContext).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        }
+
+        private void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var foreignKey in entityType.GetForeignKeys().ToList())
+                {
+                    var principalType = foreignKey.PrincipalEntityType.ClrType;
+                    var declaringType = foreignKey.DeclaringEntityType.ClrType;
+
+                    if (declaringType.GetCustomAttribute<VirtualRelationAttribute>() != null ||
+                        principalType.GetCustomAttribute<VirtualRelationAttribute>() != null)
+                    {
+                        entityType.RemoveForeignKey(foreignKey);
+                    }
+                }
+            }
         }
 
         public virtual void ApplyIndex(ModelBuilder modelBuilder)
@@ -333,5 +353,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     .HasQueryFilter(t => !t.Event.IsDeleted);*/
             return null;
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class VirtualRelationAttribute : Attribute
+    {
     }
 }

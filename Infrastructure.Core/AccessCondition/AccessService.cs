@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Caching.Memory;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
-
 using System.Reflection;
+
+using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
@@ -70,8 +72,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         {
             return EvaluateAsync(entity, (ac, se) =>
             {
-                return canAsync((TAccessCondition)ac, se);
+                return EvaluateInternalAsync(canAsync, ac, se);
             });
+        }
+
+        private Task<bool> EvaluateInternalAsync<TAccessCondition>(Func<TAccessCondition, IEntity, Task<bool>> canAsync, IAccessCondition accessCondition, IEntity securityEntity) 
+            where TAccessCondition : IAccessCondition
+        {
+            if (_sectionManager.IsActive<SecurityFreeSection>())
+                return Task.FromResult(true);
+
+            var result = canAsync((TAccessCondition)accessCondition, securityEntity);
+            return result;
         }
 
         public Task<bool> EvaluateAsync(IEntity entity, Func<IAccessCondition, IEntity, Task<bool>> canAsync)
