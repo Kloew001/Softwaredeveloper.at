@@ -1,9 +1,11 @@
 ﻿using ClosedXML.Excel;
 
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 
 using System.Data;
 using System.Globalization;
+using System.IO;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
@@ -100,6 +102,57 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             workBook.SaveAs(memoryStream);
 
             return memoryStream.ToArray();
+        }
+    }
+
+    public static class OpenXmlExcelUtility
+    {
+        public static MemoryStream LoadFromTemplateAndSaveToMemory(string templatePath)
+        {
+            var memoryStream = new MemoryStream();
+
+            using (FileStream templateStream = new FileStream(templatePath, FileMode.Open, FileAccess.Read))
+            {
+                templateStream.CopyTo(memoryStream);
+            }
+
+            memoryStream.Position = 0;
+
+            return memoryStream;
+        }
+
+        public static SpreadsheetDocument OpenSpreadsheet(this Stream stream, bool iseditable = true)
+        {
+            return SpreadsheetDocument.Open(stream, iseditable);
+        }
+
+        public static Worksheet GetWorkSheet(this SpreadsheetDocument spreadSheet, string sheetName)
+        {
+            var workbookPart = spreadSheet.WorkbookPart;
+            var sheet = workbookPart.Workbook.Descendants<Sheet>()
+                .FirstOrDefault(s => s.Name == sheetName);
+
+            var workSheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
+            var workSheet = workSheetPart.Worksheet;
+
+            return workSheet;
+        }
+
+        public static Cell Cell(this Worksheet worksheet, string cellName)
+        {
+            return worksheet.Descendants<Cell>()
+                .FirstOrDefault(c => string.Compare(c.CellReference.Value, cellName, true) == 0);
+        }
+
+        public static Cell Cell(this Worksheet worksheet, int row, string letter)
+        {
+            return Cell(worksheet, $"{letter}{row}");
+        }
+
+        public static void SetValue(this Cell cell, string value)
+        {
+            cell.CellValue = new CellValue(value);
+            cell.DataType = new DocumentFormat.OpenXml.EnumValue<CellValues>(CellValues.String);
         }
 
     }
