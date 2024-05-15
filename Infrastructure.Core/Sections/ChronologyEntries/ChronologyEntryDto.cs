@@ -7,9 +7,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
     public class ChronologyEntryDto : Dto
     {
         public string Description { get; set; }
+        public string Text { get; set; }
         public DateTime DateCreated { get; set; }
         public string CreatedByDisplayName { get; set; }
-
     }
 
     public class ChronologyEntryDtoFactory : IDtoFactory<ChronologyEntryDto, ChronologyEntry>
@@ -24,6 +24,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
             dto.Description = multilingualService
                 .GetText(entity, _ => _.Description) ?? entity.Description;
 
+            dto.Text = entity.Text;
             dto.DateCreated = entity.DateCreated;
             dto.CreatedByDisplayName = entity.CreatedBy.UserName;
 

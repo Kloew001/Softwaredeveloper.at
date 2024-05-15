@@ -11,6 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
     public class ChronologyEntry : ChangeTrackedEntity, IMultiLingualEntity<ChronologyEntryTranslation>, IReferencedToEntity
     {
         public string Description { get; set; }
+        public string Text { get; set; }
         public Guid? ReferenceId { get; set; }
         
         [NotMapped]
