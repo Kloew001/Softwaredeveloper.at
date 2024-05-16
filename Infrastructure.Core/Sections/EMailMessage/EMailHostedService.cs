@@ -54,7 +54,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                     }
                     catch (Exception ex)
                     {
-                        mailMessage.ErrorMessage = ex.Message;
+                        mailMessage.ErrorMessage = ex.ToString();
                         mailMessage.Status = EmailMessageStatusType.Error;
 
                         _logger.LogError(ex, ex.Message);
