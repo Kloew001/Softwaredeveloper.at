@@ -21,10 +21,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 
             dto.Id = entity.Id;
 
-            dto.Description = multilingualService
-                .GetText(entity, _ => _.Description) ?? entity.Description;
+            dto.Description = multilingualService.GetText(entity, _ => _.Description);
+            dto.Text = multilingualService.GetText(entity, _ => _.Text);
 
-            dto.Text = entity.Text;
             dto.DateCreated = entity.DateCreated;
             dto.CreatedByDisplayName = entity.CreatedBy.UserName;
 

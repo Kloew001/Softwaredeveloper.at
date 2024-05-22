@@ -1,4 +1,7 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
+﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
     public interface IMultiLingualEntity : IEntity
     {

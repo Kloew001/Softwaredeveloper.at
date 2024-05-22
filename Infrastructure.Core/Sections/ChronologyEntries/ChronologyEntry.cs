@@ -3,15 +3,12 @@ using Microsoft.EntityFrameworkCore;
 
 using System.ComponentModel.DataAnnotations.Schema;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
-using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 {
     [Table(nameof(ChronologyEntry))]
     public class ChronologyEntry : ChangeTrackedEntity, IMultiLingualEntity<ChronologyEntryTranslation>, IReferencedToEntity
     {
-        public string Description { get; set; }
-        public string Text { get; set; }
         public Guid? ReferenceId { get; set; }
         
         [NotMapped]
@@ -33,6 +30,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
     public class ChronologyEntryTranslation : EntityTranslation<ChronologyEntry>
     {
         public string Description { get; set; }
+        public string Text { get; set; }
     }
-
 }

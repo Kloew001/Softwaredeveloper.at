@@ -27,6 +27,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             return multilingualService.InitMultilingualProperty(entity, property, multilingualKey, textArgs);
         }
+        public static Task InitMultilingualProperty<TEntity, TTranslation>(this EntityService<TEntity> service, IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, string text)
+            where TEntity : Entity
+            where TTranslation : class, IEntityTranslation
+        {
+            var multilingualService =
+                service.EntityServiceDependency.ServiceProvider
+                    .GetRequiredService<MultilingualService>();
+
+            return multilingualService.InitMultilingualProperty(entity, property, text);
+        }
+        public static Task SetMultilingualProperty<TEntity, TTranslation>(this EntityService<TEntity> service, IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, string text, Guid? cultureId = null)
+            where TEntity : Entity
+            where TTranslation : class, IEntityTranslation
+        {
+            var multilingualService =
+                service.EntityServiceDependency.ServiceProvider
+                    .GetRequiredService<MultilingualService>();
+
+            return multilingualService.SetMultilingualProperty(entity, property, text, cultureId);
+        }
     }
 
     public class MultilingualService : IScopedDependency
@@ -80,7 +100,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         public async Task InitMultilingualProperty<TTranslation>(IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, string multilingualKey, params string[] textargs)
             where TTranslation : class, IEntityTranslation
         {
-            var culturesIds = _multilingualGlobalTextCacheService.Cultures.Select(_ => _.Id.Value);
+            var culturesIds = GetAllCultureIds();
 
             foreach (var culturesId in culturesIds)
             {
@@ -90,6 +110,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             }
         }
 
+        public async Task InitMultilingualProperty<TTranslation>(IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, string text)
+            where TTranslation : class, IEntityTranslation
+        {
+            var culturesIds = GetAllCultureIds();
+
+            foreach (var culturesId in culturesIds)
+            {
+                await SetMultilingualProperty(entity, property, text, culturesId);
+            }
+        }
+
+        private IEnumerable<Guid> GetAllCultureIds()
+        {
+            return _multilingualGlobalTextCacheService.Cultures.Select(_ => _.Id.Value);
+        }
 
         public async Task SetMultilingualProperty<TTranslation>(IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, string text, Guid? cultureId = null)
         where TTranslation : class, IEntityTranslation
@@ -104,6 +139,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                 translation = await _context.CreateEntity<TTranslation>();
                 translation.CoreId = entity.Id;
                 translation.Core = entity;
+                entity.Translations.Add(translation);
                 translation.CultureId = cultureId.Value;
             }
 

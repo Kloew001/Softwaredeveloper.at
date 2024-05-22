@@ -133,10 +133,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 if (typeof(IEntityTranslation).IsAssignableFrom(entityType.ClrType))
                 {
                     modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(IEntityTranslation.CoreId));
-
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(IEntityTranslation.CultureId));
+                        .HasIndex(nameof(IEntityTranslation.CoreId), nameof(IEntityTranslation.CultureId))
+                        .IsUnique();
                 }
 
                 if (typeof(ISupportDefault).IsAssignableFrom(entityType.ClrType))
