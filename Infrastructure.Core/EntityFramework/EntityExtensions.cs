@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.InkML;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -6,6 +9,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -154,6 +158,66 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return context.Entry(entity).Property(propertyExpression);
         }
 
+        public static void Reload<TEntity>(
+            this TEntity entity)
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+            context.Entry(entity).Reload();
+        }
+
+        public static void LoadReference<TEntity, TElement>(
+            this TEntity entity,
+            Expression<Func<TEntity, TElement>> navigationProperty)
+            where TElement : class
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+            context.Entry(entity)
+                .Reference(navigationProperty)
+                .Load();
+        }
+
+        public static void LoadCollection<TEntity, TElement>(
+            this TEntity entity,
+            Expression<Func<TEntity, IEnumerable<TElement>>> navigationProperty) 
+            where TEntity : Entity
+            where TElement : class
+        {
+            var context = entity.ResolveDbContext();
+            var collection = context.Entry(entity)
+                .Collection(navigationProperty);
+
+            if (collection.IsLoaded)
+                collection.Reload();
+            else
+                collection.Load();
+        }
+
+        public static void ReloadCollection<TEntity, TElement>(
+            this TEntity entity,
+            Expression<Func<TEntity, IEnumerable<TElement>>> navigationProperty)
+            where TEntity : Entity
+            where TElement : class
+        {
+            var context = entity.ResolveDbContext();
+            var collection = context.Entry(entity)
+                .Collection(navigationProperty);
+
+            if (collection.IsLoaded)
+                collection.Reload();
+            else
+                collection.Load();
+        }
+
+        public static void Reload(this CollectionEntry source)
+        {
+            var query = source.Query();
+            foreach (var item in query)
+            {
+                continue;//Trigger IQueryable
+            }
+        }
     }
 
     //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedDependency

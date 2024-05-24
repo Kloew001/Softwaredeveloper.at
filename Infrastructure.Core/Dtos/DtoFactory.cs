@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Microsoft.Extensions.Hosting;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {
@@ -204,9 +205,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (entities == null)
                 return null;
 
-            return entities
+            var dtos = entities
                 .Select(_ => ConvertToDto(_, (TDto)Activator.CreateInstance(typeof(TDto)), dtoFactory, serviceProvider))
                 .ToList();
+
+            return dtos;
         }
 
         public TDto ConvertToDto<TDto>(IEntity entity, TDto dto = default, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
