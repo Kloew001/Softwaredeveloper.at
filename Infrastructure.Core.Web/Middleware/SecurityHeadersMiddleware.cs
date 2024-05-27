@@ -14,7 +14,7 @@ namespace Infrastructure.Core.Web.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            context.Response.Headers.Append("Content-Security-Policy", new StringValues("default-src 'self'"));
+            //context.Response.Headers.Append("Content-Security-Policy", new StringValues("default-src 'self'"));
             context.Response.Headers.Append("X-Content-Type-Options", new StringValues("nosniff"));
             context.Response.Headers.Append("X-Frame-Options", new StringValues("SAMEORIGIN"));
             //context.Response.Headers.Append("X-XSS-Protection", new StringValues("1; mode=block"));//Deprecaded

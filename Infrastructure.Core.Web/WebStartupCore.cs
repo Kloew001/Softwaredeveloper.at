@@ -23,10 +23,10 @@ namespace Infrastructure.Core.Web
 
         public virtual void ConfigureServices(WebApplicationBuilder builder)
         {
-            builder.Services.Configure<IISServerOptions>(options =>
-            {
-                options.MaxRequestBodySize = 5 * 1024 * 1024;
-            });
+            //builder.Services.Configure<IISServerOptions>(options =>
+            //{
+            //    options.MaxRequestBodySize = 5 * 1024 * 1024;
+            //});
 
             builder.AddDefaultServices();
 
@@ -47,8 +47,6 @@ namespace Infrastructure.Core.Web
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-
-            app.UseHttpsRedirection();
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -74,6 +72,8 @@ namespace Infrastructure.Core.Web
             app.UseHsts();
 
             app.UseMiddleware<SecurityHeadersMiddleware>();
+
+            app.UseHttpsRedirection();
         }
     }
 }
