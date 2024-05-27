@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Infrastructure.Core.Web.Middleware;
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 
@@ -12,7 +15,6 @@ namespace Infrastructure.Core.Web
     public class WebStartupCore
     {
         public IConfigurationRoot Configuration { get; }
-        //public bool ShouldUseWebApiAudit { get; set; } = true;
 
         public WebStartupCore(IConfigurationRoot configuration)
         {
@@ -39,6 +41,7 @@ namespace Infrastructure.Core.Web
         {
             app.Use(async (context, next) => {
                 context.Request.EnableBuffering();
+
                 await next();
             });
 
@@ -64,14 +67,13 @@ namespace Infrastructure.Core.Web
 
             app.UseRateLimiter();
 
-            if (app.Environment.IsDevelopment())
-                app.UseCors(WebApplicationBuilderExtensions._allowSpecificOrigins);
-            else
-            {
-                app.UseCors();
-            }
+            app.UseCors();
 
             app.UseResponseCompression();
+        
+            app.UseHsts();
+
+            app.UseMiddleware<SecurityHeadersMiddleware>();
         }
     }
 }

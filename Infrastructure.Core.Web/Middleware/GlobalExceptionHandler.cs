@@ -1,16 +1,11 @@
-﻿using DocumentFormat.OpenXml.InkML;
-
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-using MimeKit.Cryptography;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using System.Diagnostics;
-using System.Net;
 
 namespace Infrastructure.Core.Web.Middleware
 {

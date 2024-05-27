@@ -10,13 +10,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
-using Newtonsoft.Json;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using Microsoft.Extensions.Hosting;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Core.Web
 {
@@ -68,6 +67,8 @@ namespace Infrastructure.Core.Web
             builder.AddCors();
 
             builder.AddRateLimiter();
+
+            builder.AddDefaultHsts();
 
             return builder;
         }
@@ -143,24 +144,22 @@ namespace Infrastructure.Core.Web
             return builder;
         }
 
-        public const string _allowSpecificOrigins = "allowSpecificOrigins";
-
         public static WebApplicationBuilder AddCors(this WebApplicationBuilder builder)
         {
-            builder.Services.AddCors(options =>
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+            
+            if (allowedOrigins != null && allowedOrigins.Any())
             {
-                if (builder.Environment.IsDevelopment())
+                builder.Services.AddCors(options =>
                 {
-                    options.AddPolicy(name: _allowSpecificOrigins,
-                      policy =>
+                    options.AddDefaultPolicy(policy =>
                       {
-                          policy.WithOrigins("http://localhost:4200")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowAnyOrigin();
+                          policy.WithOrigins(allowedOrigins)
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
                       });
-                }
-            });
+                });
+            }
 
             return builder;
         }
@@ -208,6 +207,18 @@ namespace Infrastructure.Core.Web
                 .AddEntityFrameworkStores<TContext>()
                 .AddDefaultTokenProviders()
                 .AddUserConfirmation<UserConfirmation>();
+
+            return builder;
+        }
+
+        public static WebApplicationBuilder AddDefaultHsts(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddHsts(options =>
+            {
+                options.Preload = false;
+                options.IncludeSubDomains = true;
+                options.MaxAge = TimeSpan.FromDays(60);
+            });
 
             return builder;
         }
