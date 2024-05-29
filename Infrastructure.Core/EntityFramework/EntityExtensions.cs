@@ -180,7 +180,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public static void LoadCollection<TEntity, TElement>(
             this TEntity entity,
-            Expression<Func<TEntity, IEnumerable<TElement>>> navigationProperty) 
+            Expression<Func<TEntity, IEnumerable<TElement>>> navigationProperty)
             where TEntity : Entity
             where TElement : class
         {
@@ -212,34 +212,60 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public static void Reload(this CollectionEntry source)
         {
-            var query = source.Query();
-            foreach (var item in query)
+            if (source.CurrentValue != null)
             {
-                continue;//Trigger IQueryable
+                foreach (var item in source.CurrentValue)
+                    source.EntityEntry.Context.Entry(item).State = EntityState.Detached;
+                source.CurrentValue = null;
             }
+            source.IsLoaded = false;
+            source.Load();
         }
+
+        public static void Reload(this ReferenceEntry source)
+        {
+            if (source.CurrentValue != null)
+            {
+                var entry = source.EntityEntry.Context.Entry(source.CurrentValue);
+                if (entry.State == EntityState.Unchanged)
+                {
+                    entry.Reload();
+                    return;
+                }
+                else if (entry.State == EntityState.Detached)
+                {
+                    source.CurrentValue = null;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            source.IsLoaded = false;
+            source.Load();
+        }
+
+        //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedDependency
+        //{
+        //    private readonly ICurrentUserService _currentUserService;
+        //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)
+        //    {
+        //        _currentUserService = currentUserService;
+        //    }
+
+        //    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        //        DbContextEventData eventData,
+        //        InterceptionResult<int> result,
+        //        CancellationToken cancellationToken = default)
+        //    {
+        //        if (eventData.Context is not null)
+        //        {
+        //            UpdateChangeTrackedEntity(eventData.Context);
+        //        }
+
+        //        return base.SavingChangesAsync(eventData, result, cancellationToken);
+        //    }
+
+        //}
     }
-
-    //public class ChangeTrackedEntitySaveChangesInterceptor : SaveChangesInterceptor, IScopedDependency
-    //{
-    //    private readonly ICurrentUserService _currentUserService;
-    //    public ChangeTrackedEntitySaveChangesInterceptor(ICurrentUserService currentUserService)
-    //    {
-    //        _currentUserService = currentUserService;
-    //    }
-
-    //    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
-    //        DbContextEventData eventData,
-    //        InterceptionResult<int> result,
-    //        CancellationToken cancellationToken = default)
-    //    {
-    //        if (eventData.Context is not null)
-    //        {
-    //            UpdateChangeTrackedEntity(eventData.Context);
-    //        }
-
-    //        return base.SavingChangesAsync(eventData, result, cancellationToken);
-    //    }
-
-    //}
 }

@@ -469,10 +469,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
         public Task WaitUntilReferencedAsyncTasksFinished(params Guid[] referenceIds)
         {
-            return WaitUntilReferencedAsyncTasksFinished(null, referenceIds);
+            return WaitUntilReferencedAsyncTasksFinished(referenceIds, null, default);
         }
 
-        public async Task WaitUntilReferencedAsyncTasksFinished(int? timeoutInSeconds = null, params Guid[] referenceIds)
+        public async Task WaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             var watch = Stopwatch.StartNew();
 
@@ -483,10 +483,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             while (watch.ElapsedMilliseconds < timeout)
             {
-                var watch2 = Stopwatch.StartNew();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var anyNotFinishedAsyncTasks = await AnyNotFinishedAsyncTasksAsync(referenceIds);
-                var howon = watch2.ElapsedMilliseconds;
 
                 if (!anyNotFinishedAsyncTasks)
                     return;

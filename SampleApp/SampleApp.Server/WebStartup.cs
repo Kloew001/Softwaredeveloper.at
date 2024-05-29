@@ -15,6 +15,8 @@ public class WebStartup : WebStartupCore
 
     public override void ConfigureServices(WebApplicationBuilder builder)
     {
+        MaxRequestBody(builder);
+
         builder.AddDefaultServices();
 
         builder.AddSwaggerGenWithBearer();
