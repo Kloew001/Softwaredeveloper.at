@@ -73,9 +73,31 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public Task<bool> IsEMailAlreadyInUse(string email)
         {
+            var normalizedEmail = email.ToUpper().Trim();
             return _context
                 .Set<ApplicationUser>()
-                    .Where(_ => _.NormalizedEmail == email.ToUpper().Trim())
+                    .Where(_ => _.NormalizedEmail == normalizedEmail)
+                    .AnyAsync();
+        }
+
+        public Task<bool> IsUserNameAlreadyInUse(string username)
+        {
+            var normalizedUserName = username.ToUpper().Trim();
+            return _context
+                .Set<ApplicationUser>()
+                    .Where(_ => _.NormalizedUserName == normalizedUserName)
+                    .AnyAsync();
+        }
+
+        public Task<bool> IsAnyUserNameAlreadyInUse(IEnumerable<string> usernames)
+        {
+            var normalizedUserNames = usernames
+                .Select(_ => _.ToUpper().Trim())
+                .ToList();
+
+            return _context
+                .Set<ApplicationUser>()
+                    .Where(_ => normalizedUserNames.Contains(_.NormalizedUserName))
                     .AnyAsync();
         }
 

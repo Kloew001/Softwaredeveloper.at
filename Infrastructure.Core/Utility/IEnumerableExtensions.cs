@@ -99,5 +99,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         {
             return random.Next(min, max);
         }
+
+        public static string[] Combine(this string str, IEnumerable<string> strs)
+        {
+            var combinedStrs = new List<string>();
+
+            if(str.IsNotNullOrEmpty())
+                combinedStrs.Add(str);
+
+            if (strs != null)
+            {
+                foreach (var s in strs)
+                {
+                    if (s.IsNotNullOrEmpty())
+                        combinedStrs.Add(s);
+                }   
+            }
+
+            combinedStrs = combinedStrs.Distinct().ToList();
+
+            return combinedStrs.ToArray();
+        }
     }
 }
