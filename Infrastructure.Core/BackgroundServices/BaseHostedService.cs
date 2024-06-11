@@ -18,7 +18,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         Error = 4,
     }
 
-    [Table(nameof(BackgroundserviceInfo))]
+    [Table(nameof(BackgroundserviceInfo), Schema = "core")]
     public class BackgroundserviceInfo
     {
         [Key]

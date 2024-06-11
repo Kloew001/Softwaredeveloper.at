@@ -31,19 +31,18 @@ namespace SampleApp.Application.Sections.ApplicationUserSection
 
         public override async Task SeedAsync(CancellationToken cancellationToken)
         {
-            var user = await _applicationUserService.GetUserInternalById(ApplicationUserIds.ServiceAdminId);
-            if (user != null)
-                return;
-
-            var pw = _configuration.GetSection("ServiceUser").GetValue<string>("Password");
-
             using (_serviceProvider.GetService<SectionManager>().CreateSectionScope<SecurityFreeSection>())
             {
+                var user = await _applicationUserService.GetUserInternalById(ApplicationUserIds.ServiceAdminId);
+                if (user != null)
+                    return;
+
+                var email = _configuration.GetSection("ServiceUser").GetValue<string>("EMail");
+                var pw = _configuration.GetSection("ServiceUser").GetValue<string>("Password");
+
                 await EnsureUserAsync(ApplicationUserIds.ServiceAdminId,
-                                   "ServiceAdmin V",
-                                    "ServiceAdmin N",
-                                 _configuration.GetSection("ServiceUser").GetValue<string>("EMail"),
-                                 pw,
+                                   "ServiceAdmin V", "ServiceAdmin N",
+                                 email, pw,
                                 [UserRoleType.Admin.GetName()]);
             }
         }

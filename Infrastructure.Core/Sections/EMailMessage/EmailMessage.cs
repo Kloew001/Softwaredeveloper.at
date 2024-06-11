@@ -10,7 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     {
     }
 
-    [Table(nameof(EmailMessage))]
+    [Table(nameof(EmailMessage), Schema = "core")]
     public class EmailMessage : IReferencedToEntity
     {
         [Key]

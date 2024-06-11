@@ -7,7 +7,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    [Table(nameof(MultilingualCulture))]
+    [Table(nameof(MultilingualCulture), Schema = "core")]
     public class MultilingualCulture : Entity, ISupportDefault, IActivateable
     {
         public bool IsDefault { get; set; }

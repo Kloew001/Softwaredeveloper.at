@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
@@ -10,6 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         Public = 2
     }
 
+    [Table(nameof(MultilingualGlobalText), Schema = "core")]
     public class MultilingualGlobalText : Entity, ISupportIndex
     {
         public Guid CultureId { get; set; }

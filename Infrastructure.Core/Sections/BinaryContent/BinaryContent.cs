@@ -5,8 +5,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent
 {
-
-    [Table(nameof(BinaryContent))]
+    [Table(nameof(BinaryContent), Schema = "core")]
     public class BinaryContent : ChangeTrackedEntity
     {
         public string Name { get; set; }

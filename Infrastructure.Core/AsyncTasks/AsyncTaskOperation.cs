@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
+    [Table(nameof(AsyncTaskOperation), Schema = "core")]
     public class AsyncTaskOperation : Entity, IReferencedToEntity
     {
         public AsyncTaskOperation()
