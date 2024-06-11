@@ -2,7 +2,7 @@
 {
     public static class MappingUtility
     {
-        public static void CopyProperties(this object source, object destination)
+        public static void CopyPropertiesTo(this object source, object destination)
         {
             var sourceProperties = source.GetType().GetProperties();
             var destinationProperties = destination.GetType().GetProperties();

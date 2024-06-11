@@ -28,7 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 
         public async Task<EmailMessage> Create(Entity referenceEntity)
         {
-            var email = await _context.CreateEntity<EmailMessage>();
+            var email = await _context.CreateEntityAync<EmailMessage>();
             
             email.Status = EmailMessageStatusType.Created;
             email.SetReference(referenceEntity);

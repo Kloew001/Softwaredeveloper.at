@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SampleApp.Application.Sections.PersonSection;
 
 namespace SampleApp.Application
@@ -10,7 +9,8 @@ namespace SampleApp.Application
         {
         }
 
-        public SampleAppContext(DbContextOptions options) : base(options)
+        public SampleAppContext(DbContextOptions<SampleAppContext> options)
+            : base(options)
         {
         }
 
@@ -26,6 +26,6 @@ namespace SampleApp.Application
         }
 
         public virtual DbSet<Person> Persons { get; set; }
-        
+
     }
 }

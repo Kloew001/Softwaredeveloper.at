@@ -160,7 +160,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             if (multilingualText == null)
             {
-                multilingualText = await _context.CreateEntity<MultilingualGlobalText>();
+                multilingualText = await _context.CreateEntityAync<MultilingualGlobalText>();
 
                 multilingualText.CultureId = cultureId;
                 multilingualText.Key = textKey;

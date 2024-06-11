@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
@@ -31,7 +34,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
     public abstract class BaseApplicationUserDataSeed : IDataSeed
     {
-        public decimal Priority => 1.2m;
+        public virtual decimal Priority => 1.2m;
 
         public bool AutoExecute { get; set; } = false;
 

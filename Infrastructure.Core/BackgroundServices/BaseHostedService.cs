@@ -237,7 +237,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
                 if (backgroundServiceInfo == null)
                 {
-                    backgroundServiceInfo = await context.CreateEntity<BackgroundserviceInfo>();
+                    backgroundServiceInfo = await context.CreateEntityAync<BackgroundserviceInfo>();
                     backgroundServiceInfo.Name = Name;
                 }
 

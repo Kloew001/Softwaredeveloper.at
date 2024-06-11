@@ -41,7 +41,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Audit.EntityFramework.Core" Version="25.0.4" />
     <PackageReference Include="FluentValidation" Version="11.9.1" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
@@ -52,6 +51,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

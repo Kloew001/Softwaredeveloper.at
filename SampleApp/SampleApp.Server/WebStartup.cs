@@ -1,8 +1,13 @@
 ﻿using Infrastructure.Core.Web;
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 using SampleApp.Application;
+using SampleApp.Application.Sections.ApplicationUserSection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
 public class WebStartup : WebStartupCore
 {
@@ -15,25 +20,38 @@ public class WebStartup : WebStartupCore
 
     public override void ConfigureServices(WebApplicationBuilder builder)
     {
-        MaxRequestBody(builder);
-
         builder.AddDefaultServices();
 
-        builder.AddSwaggerGenWithBearer();
-
-        //builder.AddBearerAuthentication();
-
-        builder.Services.AddAuthorizationBuilder()
-            .AddPolicy("api", policy =>
-                policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement())
-            );
-
-        var s = new SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.PostgreSQLDbContextHandler(); // do not remove, to load Dll
+        // do not remove, to load Dll
+        var dbContextHandler =
+            new SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.PostgreSQLDbContextHandler();
 
         DomainStartup.ConfigureServices(builder);
 
-        builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+        builder.Services.AddDbContext<SampleAppIdentityDbContext>(options =>
+        {
+            var connectionString = builder.Configuration.GetConnectionString("DbContextConnection");
+            options.UseNpgsql(connectionString);
+        });
+
+        builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
+
+        builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
         //builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+
+        builder.AddSwaggerGenWithBearer();
+
+        builder.AddBearerAuthentication(authorizationBuilder =>
+        {
+            authorizationBuilder
+                .AddPolicy("api", policy =>
+                {
+                    policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement());
+
+                    //policy.RequireAuthenticatedUser();
+                    //policy.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
+                });
+        });
     }
 
     public override void ConfigureApp(WebApplication app)

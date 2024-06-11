@@ -46,6 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task<ApplicationUserDetailDto> GetCurrentUserAsync();
         Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
         Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
+        Task<ApplicationUser> GetUserInternalById(Guid id);
         Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
         Task<Guid> CreateRoleAsync(Guid id, string roleName);
         Task SetPreferedCultureAsync(string cultureName);
@@ -58,7 +59,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
         }
 
-        public virtual Task<ApplicationUser> GetSingleByEMailInternalAsync(string email)
+        public virtual Task<ApplicationUser> GetUserInternalById(Guid id)
+        {
+            return GetSingleInternalAsync((query) => query.Where(_ => _.Id == id));
+        }
+
+        public virtual Task<ApplicationUser> GetEMailInternalAsync(string email)
         {
             email = email.ToUpper().Trim();
             return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedEmail == email));

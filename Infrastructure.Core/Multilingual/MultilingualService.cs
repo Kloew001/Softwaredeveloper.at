@@ -136,7 +136,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
             if (translation == null)
             {
-                translation = await _context.CreateEntity<TTranslation>();
+                translation = await _context.CreateEntityAync<TTranslation>();
                 translation.CoreId = entity.Id;
                 translation.Core = entity;
                 entity.Translations.Add(translation);

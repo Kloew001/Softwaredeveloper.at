@@ -22,6 +22,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         bool IsAuthenticated { get; }
     }
 
+    public class AlwaysServiceUserCurrentUserService : ICurrentUserService
+    {
+        public bool IsAuthenticated => true;
+
+        public Guid? GetCurrentUserId() => ApplicationUserIds.ServiceAdminId;
+
+        public void SetCurrentUserId(Guid? currentUserId) { }
+    }
+
     public class CurrentUserService : ICurrentUserService
     {
         private Guid? _currentUserId = ApplicationUserIds.ServiceAdminId;

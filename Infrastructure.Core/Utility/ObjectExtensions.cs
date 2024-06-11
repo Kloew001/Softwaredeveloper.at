@@ -14,9 +14,14 @@
         public static T As<T>(this object obj)
             where T : class
         {
+            return obj as T;
+        }
+        public static T To<T>(this object obj)
+            where T : class
+        {
             return (T)obj;
         }
-        
+
         public static bool IsFalse(this bool boolean)
         {
             return boolean == false;

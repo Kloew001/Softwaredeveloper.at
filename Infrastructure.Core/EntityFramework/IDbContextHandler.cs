@@ -1,6 +1,4 @@
-﻿using Audit.EntityFramework;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -30,7 +28,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         void OnModelCreating(ModelBuilder modelBuilder);
 
-        void UpdateChangeTrackedEntity(DbContext context);
+        void HandleChangeTrackedEntity(DbContext context);
+        Task HandleEntityAudit(DbContext context);
     }
 
     public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonDependency<IDbContextHandler>
@@ -54,8 +53,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
         {
-            options.AddInterceptors(new AuditSaveChangesInterceptor());
-
             /* 
              * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
             */
@@ -136,6 +133,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                         .HasIndex(nameof(IEntityTranslation.CoreId), nameof(IEntityTranslation.CultureId))
                         .IsUnique();
                 }
+                if (typeof(IEntityAudit).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(nameof(IEntityAudit.AuditId));
+
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasIndex(nameof(IEntityAudit.TransactionId));
+                }
 
                 if (typeof(ISupportDefault).IsAssignableFrom(entityType.ClrType))
                 {
@@ -152,13 +157,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
         {
+            const string auditPostfix = "Audit";
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(IAudit).IsAssignableFrom(e.ClrType)))
+                .Where(e => typeof(IEntityAudit).IsAssignableFrom(e.ClrType)))
             {
                 var tableName = entityType.GetTableName() ?? entityType.Name;
-                if (!entityType.Name.EndsWith(AuditExtensions.auditPostfix))
-                    tableName = tableName + AuditExtensions.auditPostfix;
+
+                if (!entityType.Name.EndsWith(auditPostfix))
+                    tableName = tableName + auditPostfix;
 
                 entityType.SetTableName(tableName);
                 entityType.SetSchema("audit");
@@ -212,25 +219,73 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return null;
         }
 
-        public void UpdateChangeTrackedEntity(DbContext context)
+
+        public async Task HandleEntityAudit(DbContext context)
+        {
+            var entityEntries = context.ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is IAuditableEntity)
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified ||
+                            e.State == EntityState.Deleted)
+                .ToList();
+
+            if (!entityEntries.Any())
+                return;
+
+            var now = DateTime.Now;
+            var transactionId = Guid.NewGuid();
+
+            foreach (var entityEntry in entityEntries)
+            {
+                var entity = entityEntry.Entity;
+                var auditableEntity = entity.To<IAuditableEntity>();
+
+                if (auditableEntity == null)
+                    continue;
+
+                var entityAuditType = auditableEntity.GetEntityAuditType();
+
+                var entityAudit = context.As<IDbContext>()
+                        .GetType()
+                        .GetMethod(nameof(IDbContext.CreateEntity))
+                        .MakeGenericMethod(entityAuditType)
+                        .Invoke(context, null)
+                        .As<IEntityAudit>();
+
+                auditableEntity.CopyPropertiesTo(entityAudit);
+
+                entityAudit.Id = Guid.NewGuid();
+
+                entityAudit.AuditId = auditableEntity.Id;
+                entityAudit.Audit = auditableEntity;
+
+                entityAudit.AuditDate = now;
+                entityAudit.AuditAction = entityEntry.State.ToString();
+
+                //var entityFrameworkEvent = auditEvent?.GetEntityFrameworkEvent();
+                entityAudit.TransactionId = transactionId.ToString();
+
+                //entityAudit.CallingMethod = auditEvent.Environment?.CallingMethodName;
+                //entityAudit.MachineName = auditEvent.Environment?.MachineName;
+            }
+        }
+
+        public void HandleChangeTrackedEntity(DbContext context)
         {
             var currentUserService = context.GetService<ICurrentUserService>();
 
-            //var currentUserService = ServiceProvider.GetService<ICurrentUserService>();
-
-            DateTime utcNow = DateTime.UtcNow;
-
             var changedEntries = context.ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is ChangeTrackedEntity && (
-                    e.State == EntityState.Added ||
-                    e.State == EntityState.Modified))
+                .Where(e => e.Entity is ChangeTrackedEntity)
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified)
                 .ToList();
 
-            var deletedEntries = context.ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
-                .ToList();
+            //var deletedEntries = context.ChangeTracker
+            //    .Entries()
+            //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
+            //    .ToList();
 
             var now = DateTime.Now;
 

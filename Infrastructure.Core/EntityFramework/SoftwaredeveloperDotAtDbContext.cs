@@ -70,29 +70,36 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public override int SaveChanges()
         {
-            BeforeSaveChanges();
+            BeforeSaveChanges().GetAwaiter().GetResult();
 
             return base.SaveChanges();
         }
 
-        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            BeforeSaveChanges();
+            await BeforeSaveChanges();
 
-            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
-        private void BeforeSaveChanges()
+        private async Task BeforeSaveChanges()
         {
             var dbContextHandler = this.GetService<IDbContextHandler>();
 
             if (dbContextHandler == null)
                 throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
 
-            dbContextHandler.UpdateChangeTrackedEntity(this);
+            await dbContextHandler.HandleEntityAudit(this);
+            dbContextHandler.HandleChangeTrackedEntity(this);
         }
 
-        public async Task<TEntity> CreateEntity<TEntity>()
+        public TEntity CreateEntity<TEntity>()
+            where TEntity : class
+        {
+           return CreateEntityAync<TEntity>().GetAwaiter().GetResult();
+        }
+
+        public async Task<TEntity> CreateEntityAync<TEntity>()
             where TEntity : class
         {
             if (UseProxy)

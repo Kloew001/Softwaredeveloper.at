@@ -37,6 +37,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         }
     }
 
+    [Index(nameof(CoreId))]
+    [Index(nameof(CultureId))]
     public abstract class EntityTranslation<TEntity> : Entity, IEntityTranslation<TEntity>
         where TEntity : Entity
     {

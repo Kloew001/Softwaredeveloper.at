@@ -3,31 +3,46 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 using Microsoft.EntityFrameworkCore;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
 {
-
-    public interface IAuditAttribute
+    public static class AuditExtensions
     {
-        public Type AuditType { get; set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class AuditAttribute<TAuditEntity> : Attribute, IAuditAttribute
-        where TAuditEntity : IAudit
-    {
-        public Type AuditType { get; set; }
-
-        public AuditAttribute()
+        public static Type GetEntityAuditType(this IAuditableEntity entity)
         {
-            AuditType = typeof(TAuditEntity);
+            var interfac = entity
+                .GetType()
+                .GetInterfaces()
+                .FirstOrDefault(i => 
+                    i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IAuditableEntity<>));
+
+            var entityAuditType = interfac.GenericTypeArguments.Single();
+
+            return entityAuditType;
         }
     }
 
-    public interface IAudit
+    public interface IAuditableEntity : IEntity
+    {
+        IEnumerable<IEntityAudit> Audits { get; }
+    }
+
+    public interface IAuditableEntity<TEntityAudit> : IAuditableEntity
+        where TEntityAudit : IEntityAudit
+    {
+        new ICollection<TEntityAudit> Audits { get; set; }
+
+        IEnumerable<IEntityAudit> IAuditableEntity.Audits => Audits.OfType<IEntityAudit>();
+    }
+
+    public interface IEntityAudit
     {
         public Guid Id { get; set; }
 
         public Guid AuditId { get; set; }
+        IEntity Audit { get; set; }
 
         string TransactionId { get; set; }
         DateTime AuditDate { get; set; }
@@ -37,18 +52,35 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
         string MachineName { get; set; }
     }
 
+    public interface IEntityAudit<TEntity> : IEntityAudit
+        where TEntity : IEntity
+    {
+        new TEntity Audit { get; set; }
+
+        IEntity IEntityAudit.Audit
+        {
+            get => Audit;
+            set => Audit = (TEntity)value;
+        }
+    }
+
+
     [Index(nameof(AuditId))]
     [Index(nameof(TransactionId))]
-    public abstract class BaseAudit : IAudit
+    public abstract class EntityAudit<TEntity> : ChangeTrackedEntity, IEntityAudit<TEntity>
+         where TEntity : Entity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Required]
         public Guid Id { get; set; }
+
         public Guid AuditId { get; set; }
+        public virtual TEntity Audit { get; set; }
+
         public string TransactionId { get; set; }
         public DateTime AuditDate { get; set; }
-        public Guid ModifiedById { get; set; }
+
         public string AuditAction { get; set; }
         public string CallingMethod { get; set; }
         public string MachineName { get; set; }

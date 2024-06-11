@@ -14,7 +14,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
             where TEntity : class;
 
-        Task<TEntity> CreateEntity<TEntity>()
+        TEntity CreateEntity<TEntity>()
+            where TEntity : class;
+        Task<TEntity> CreateEntityAync<TEntity>()
             where TEntity : class;
 
         EntityEntry<TEntity> Add<TEntity>(TEntity entity)

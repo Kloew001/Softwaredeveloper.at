@@ -92,8 +92,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             host.UseDtoFactory();
 
-            host.UseAudit();
-
             UpdateDatabase(host);
 
             AppStartInit(host);

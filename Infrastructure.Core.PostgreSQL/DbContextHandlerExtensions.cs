@@ -1,7 +1,4 @@
-﻿using Audit.EntityFramework;
-using Audit.EntityFramework.Interceptors;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

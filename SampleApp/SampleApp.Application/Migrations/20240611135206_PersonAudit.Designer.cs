@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SampleApp.Application;
@@ -11,9 +12,11 @@ using SampleApp.Application;
 namespace SampleApp.Application.Migrations
 {
     [DbContext(typeof(SampleAppContext))]
-    partial class SampleAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240611135206_PersonAudit")]
+    partial class PersonAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,7 +45,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Person", (string)null);
+                    b.ToTable("Person");
 
                     b.HasData(
                         new
@@ -181,7 +184,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasIndex("ReferenceId", "Status");
 
-                    b.ToTable("AsyncTaskOperations", (string)null);
+                    b.ToTable("AsyncTaskOperations");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices.BackgroundserviceInfo", b =>
@@ -222,7 +225,7 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("BackgroundserviceInfo", (string)null);
+                    b.ToTable("BackgroundserviceInfo");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual.MultilingualCulture", b =>
@@ -248,7 +251,7 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("MultilingualCulture", (string)null);
+                    b.ToTable("MultilingualCulture");
 
                     b.HasData(
                         new
@@ -296,7 +299,7 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("CultureId", "Key")
                         .IsUnique();
 
-                    b.ToTable("MultilingualGlobalTexts", (string)null);
+                    b.ToTable("MultilingualGlobalTexts");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent.BinaryContent", b =>
@@ -352,7 +355,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasIndex("ReferenceId", "ReferenceType");
 
-                    b.ToTable("BinaryContent", (string)null);
+                    b.ToTable("BinaryContent");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntry", b =>
@@ -393,7 +396,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasIndex("ReferenceId", "ReferenceType");
 
-                    b.ToTable("ChronologyEntry", (string)null);
+                    b.ToTable("ChronologyEntry");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntryTranslation", b =>
@@ -423,7 +426,7 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("CoreId", "CultureId")
                         .IsUnique();
 
-                    b.ToTable("ChronologyEntryTranslation", (string)null);
+                    b.ToTable("ChronologyEntryTranslation");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EmailMessage", b =>
@@ -486,7 +489,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasIndex("Status", "SendAt");
 
-                    b.ToTable("EmailMessage", (string)null);
+                    b.ToTable("EmailMessage");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity.ApplicationRole", b =>

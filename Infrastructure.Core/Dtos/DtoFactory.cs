@@ -283,7 +283,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                     if (entity == null)
                     {
                         var dbContext = serviceProvider.GetRequiredService<IDbContext>();
-                        entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
+                        entity = dbContext.CreateEntityAync<TEntity>().GetAwaiter().GetResult();
                         entity.Id = _.dtoId;
 
                         itemsCollection.Add(entity);
@@ -334,7 +334,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
                     if (_.dto.Id.HasValue && entity == null)
                     {
-                        entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
+                        entity = dbContext.CreateEntityAync<TEntity>().GetAwaiter().GetResult();
                         entity.Id = _.dto.Id.Value;
                         itemsCollection.Add(entity);
                     }
@@ -359,7 +359,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             if (entity == null)
             {
                 var dbContext = serviceProvider.GetRequiredService<IDbContext>();
-                entity = dbContext.CreateEntity<TEntity>().GetAwaiter().GetResult();
+                entity = dbContext.CreateEntityAync<TEntity>().GetAwaiter().GetResult();
             }
 
             var convertToEntityMethod = dtoFactory.GetType()
