@@ -1,4 +1,6 @@
 ﻿
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 public static class ApplicationUserIds
@@ -14,7 +16,8 @@ public static class ICurrentUserServiceExtension
     }
 }
 
-public class ApplicationUser : Entity
+
+public class ApplicationUser : Entity, IAuditableEntity<ApplicationUserAudit>
 {
     public bool IsEnabled { get; set; }
 
@@ -60,6 +63,17 @@ public class ApplicationUser : Entity
     public virtual ICollection<ApplicationUserToken> ApplicationUserTokens { get; set; } = new List<ApplicationUserToken>();
 
     public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+
+    public virtual ICollection<ApplicationUserAudit> Audits { get; set; }
+}
+
+public class ApplicationUserAudit : EntityAudit<ApplicationUser>
+{
+    public bool IsEnabled { get; set; }
+    public string UserName { get; set; }
+    public string Email { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
 }
 
 public class ApplicationUserClaim : Entity

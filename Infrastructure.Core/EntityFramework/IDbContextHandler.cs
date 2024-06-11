@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Vml.Office;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -29,7 +31,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         void OnModelCreating(ModelBuilder modelBuilder);
 
         void HandleChangeTrackedEntity(DbContext context);
-        Task HandleEntityAudit(DbContext context);
+        void HandleEntityAudit(DbContext context);
     }
 
     public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonDependency<IDbContextHandler>
@@ -220,7 +222,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
 
-        public async Task HandleEntityAudit(DbContext context)
+        public void HandleEntityAudit(DbContext context)
         {
             var entityEntries = context.ChangeTracker
                 .Entries()
@@ -243,6 +245,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 if (auditableEntity == null)
                     continue;
+
+                if(entityEntry.State == EntityState.Modified)
+                {
+                    var changes = new List<string>();
+                    foreach (var property in entityEntry.OriginalValues.Properties)
+                    {
+                        var original = entityEntry.OriginalValues[property];
+                        var current = entityEntry.CurrentValues[property];
+
+                        if (!object.Equals(original, current))
+                        {
+                            changes.Add($"Property: {property}, Original value: {original}, New value: {current}");
+                        }
+                    }
+                }
 
                 var entityAuditType = auditableEntity.GetEntityAuditType();
 

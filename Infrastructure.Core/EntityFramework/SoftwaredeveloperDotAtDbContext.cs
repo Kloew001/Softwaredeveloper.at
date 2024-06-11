@@ -70,26 +70,26 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public override int SaveChanges()
         {
-            BeforeSaveChanges().GetAwaiter().GetResult();
+            BeforeSaveChanges();
 
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            await BeforeSaveChanges();
+            BeforeSaveChanges();
 
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
-        private async Task BeforeSaveChanges()
+        private void BeforeSaveChanges()
         {
             var dbContextHandler = this.GetService<IDbContextHandler>();
 
             if (dbContextHandler == null)
                 throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
 
-            await dbContextHandler.HandleEntityAudit(this);
+            dbContextHandler.HandleEntityAudit(this);
             dbContextHandler.HandleChangeTrackedEntity(this);
         }
 
