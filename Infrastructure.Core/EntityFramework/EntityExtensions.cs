@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -160,7 +159,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TEntity : Entity
         {
             var context = entity.ResolveDbContext();
-            context.Entry(entity).Reload();
+            var entityEntry = context.Entry(entity);
+
+            entityEntry.Reload();
+
+            foreach (var navigation in entityEntry.Navigations)
+            {
+                if (navigation is CollectionEntry collectionEntry && collectionEntry.IsLoaded)
+                {
+                    collectionEntry.Reload();
+                }
+                else if (navigation is ReferenceEntry referenceEntry && referenceEntry.IsLoaded)
+                {
+                    referenceEntry.Reload();
+                }
+            }
         }
 
         public static void LoadReference<TEntity, TElement>(
@@ -170,9 +183,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TEntity : Entity
         {
             var context = entity.ResolveDbContext();
-            context.Entry(entity)
-                .Reference(navigationProperty)
-                .Load();
+            var reference = context.Entry(entity).Reference(navigationProperty);
+
+            if (!reference.IsLoaded)
+                reference.Load();
+        }
+
+        public static void ReloadReference<TEntity, TElement>(
+            this TEntity entity,
+            Expression<Func<TEntity, TElement>> navigationProperty)
+            where TElement : class
+            where TEntity : Entity
+        {
+            var context = entity.ResolveDbContext();
+            var reference = context.Entry(entity).Reference(navigationProperty);
+
+            if (reference.IsLoaded)
+                reference.Reload();
+            else
+                reference.Load();
         }
 
         public static void LoadCollection<TEntity, TElement>(
@@ -182,12 +211,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TElement : class
         {
             var context = entity.ResolveDbContext();
-            var collection = context.Entry(entity)
-                .Collection(navigationProperty);
+            var collection = context.Entry(entity).Collection(navigationProperty);
 
-            if (collection.IsLoaded)
-                collection.Reload();
-            else
+            if (!collection.IsLoaded)
                 collection.Load();
         }
 
@@ -198,8 +224,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             where TElement : class
         {
             var context = entity.ResolveDbContext();
-            var collection = context.Entry(entity)
-                .Collection(navigationProperty);
+            var collection = context.Entry(entity).Collection(navigationProperty);
 
             if (collection.IsLoaded)
                 collection.Reload();
@@ -235,7 +260,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 }
                 else
                 {
-                    return;
+                    //return;
                 }
             }
             source.IsLoaded = false;
