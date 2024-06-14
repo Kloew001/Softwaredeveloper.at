@@ -10,6 +10,15 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
+    public static class SqlServerDbContextHandlerExtensions
+    {
+        public static void UseSqlServerDbContextHandler(this IHostApplicationBuilder builder)
+        {
+            builder.Services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
+            builder.UseDistributedCache();
+        }
+    }
+
     public class SqlServerDbContextHandler : BaseDbContextHandler
     {
         public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)

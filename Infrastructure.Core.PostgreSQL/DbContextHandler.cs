@@ -3,12 +3,22 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
+    public static class PostgreSQLDbContextHandlerExtensions
+    {
+        public static void UsePostgreSQLDbContextHandler(this IHostApplicationBuilder builder)
+        {
+            builder.Services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
+            builder.UseDistributedCache();
+        }
+    }
+
     public class PostgreSQLDbContextHandler : BaseDbContextHandler
     {
         public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)

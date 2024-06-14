@@ -14,20 +14,9 @@ namespace SampleApp.Application
 
             base.ConfigureServices(builder);
 
-            builder.Services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
+            builder.UsePostgreSQLDbContextHandler();
+
             services.RegisterDBContext<SampleAppContext>();
-
-            services.AddDistributedPostgreSqlCache((serviceProvider, setup) =>
-            {
-                var connectionString = serviceProvider.GetService<IApplicationSettings>()
-                    .ConnectionStrings["DbContextConnection"];
-
-                setup.ConnectionString = connectionString;
-                setup.SchemaName = "core";
-                setup.TableName = "Cache";
-
-                setup.CreateInfrastructure = true;
-            });
         }
     }
 }
