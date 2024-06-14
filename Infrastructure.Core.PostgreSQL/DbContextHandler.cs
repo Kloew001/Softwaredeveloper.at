@@ -18,9 +18,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             options.UseNpgsql(connectionString, options =>
             {
-
-            })
-            .UseCamelCaseNamingConvention();
+            });
+            //.UseCamelCaseNamingConvention();
 
             base.DBContextOptions(serviceProvider, options);
         }

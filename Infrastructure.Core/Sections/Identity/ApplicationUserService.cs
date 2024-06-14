@@ -116,12 +116,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public void RemoveRoleCache()
         {
-            _memoryCache.RemoveStartsWith(_getRoleIdsCacheKey);
+            _cacheService.MemoryCache.RemoveStartsWith(_getRoleIdsCacheKey);
         }
 
         public async ValueTask<IEnumerable<Guid>> GetRoleIdsAsync(Guid userId)
         {
-            var userRoleIds = await _memoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
+            var userRoleIds = await _cacheService.MemoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
             {
                 return await _context
                     .Set<ApplicationUserRole>()

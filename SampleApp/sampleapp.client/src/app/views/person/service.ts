@@ -20,6 +20,15 @@ export class PersonService {
         })));
   }
 
+  getAll(): Observable<PersonDto[]> {
+    return this.http.get<PersonDto[]>('/api/person/getAll')
+      .pipe(
+        (map((data) => {
+          var result = plainToInstance(PersonDto, data);
+          console.log(result);
+          return result;
+        })));
+  }
   quickCreate(): Observable<PersonDto> {
     return this.http.post<PersonDto>('/api/person/quickCreate', {})
       .pipe(

@@ -15,8 +15,8 @@ namespace RWA.Server.Controllers
         }
 
         [HttpGet]
-        public Task<IEnumerable<PersonDto>> GetCollectionAsync()
-            => _service.GetCollectionAsync<PersonDto>();
+        public Task<IEnumerable<PersonDto>> GetAll()
+            => _service.GetAllAsync();
 
         [HttpGet]
         public Task<PersonDto> GetSingleById(Guid id)

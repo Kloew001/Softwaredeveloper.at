@@ -53,6 +53,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterSelfRegisterDependencies();
             Services.RegisterAllHostedService();
 
+            Services.AddSingleton<ICacheService, CacheService>();
+
             Services.AddScoped<IEMailSender, NoEmailSender>();
 
             Services.AddScoped<IMonitorService, MonitorService>();
