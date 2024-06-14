@@ -12,10 +12,10 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
-using Microsoft.Extensions.Hosting;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Infrastructure.Core.Web
 {
@@ -23,6 +23,8 @@ namespace Infrastructure.Core.Web
     {
         public static WebApplicationBuilder AddDefaultServices(this WebApplicationBuilder builder)
         {
+            builder.AddMaxRequestBody();
+
             builder.Services.AddLogging(options =>
             {
             });
@@ -69,6 +71,28 @@ namespace Infrastructure.Core.Web
             builder.AddRateLimiter();
 
             builder.AddDefaultHsts();
+
+            return builder;
+        }
+
+        private const int _defaultMxRequestBodySizeInMB = 5;
+
+        public static WebApplicationBuilder AddMaxRequestBody(this WebApplicationBuilder builder)
+        {
+            var maxRequestBodySizeInMB = builder.Configuration.GetSection("MaxRequestBodySizeInMB").Get<int>();
+
+            if (maxRequestBodySizeInMB == 0)
+                maxRequestBodySizeInMB = _defaultMxRequestBodySizeInMB;
+
+            builder.Services.Configure(delegate (IISServerOptions options)
+            {
+                options.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
+            });
+
+            builder.WebHost.ConfigureKestrel(serverOptions =>
+            {
+                serverOptions.Limits.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
+            });
 
             return builder;
         }
@@ -333,20 +357,6 @@ namespace Infrastructure.Core.Web
             });
 
             return builder;
-        }
-
-        public static void UseAuditMiddleware(this IApplicationBuilder app)
-        {
-            //app.UseAuditMiddleware(_ => _
-            //    .FilterByRequest(rq => !rq.Path.Value.EndsWith("favicon.ico"))
-            //    .WithEventType("{verb}:{url}")
-            //    .IncludeHeaders()
-            //    .IncludeResponseHeaders()
-            //    .IncludeRequestBody()
-            //    .IncludeResponseBody());
-
-            //app.ApplicationServices.GetService<IAuditHandler>()
-            //    .RegisterProvider();
         }
     }
 }

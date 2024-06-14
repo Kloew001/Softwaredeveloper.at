@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
@@ -19,8 +18,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             options.UseNpgsql(connectionString, options =>
             {
-            });
-            //.UseCamelCaseNamingConvention();
+
+            })
+            .UseCamelCaseNamingConvention();
 
             base.DBContextOptions(serviceProvider, options);
         }

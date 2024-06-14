@@ -48,7 +48,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             }   
         }
 
-        public static async Task<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, Guid id)
+        public static async ValueTask<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, Guid id)
             where TEntity : Entity
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
@@ -56,15 +56,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             return await CanUpdateAsync(service, entity);
         }
 
-        public static Task<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+        public static async ValueTask<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
             where TEntity : Entity
         {
-            return service.EntityServiceDependency.AccessService
+            return await service.EntityServiceDependency.AccessService
                 .EvaluateAsync(entity, (accessCondition, securityEntity) =>
                     accessCondition.CanUpdateAsync(securityEntity));
         }
 
-        public static async Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
+        public static async ValueTask<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
             where TEntity : Entity
         {
             var entity = await service.GetSingleByIdInternalAsync(id);
@@ -72,7 +72,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             return await CanDeleteAsync(service, entity);
         }
 
-        public static Task<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+        public static ValueTask<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
             where TEntity : Entity
         {
             return service.EntityServiceDependency.AccessService

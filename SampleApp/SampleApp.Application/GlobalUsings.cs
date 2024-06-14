@@ -15,7 +15,6 @@ global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDat
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 
 global using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-global using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 

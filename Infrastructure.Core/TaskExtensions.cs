@@ -31,5 +31,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             return scopeInner;
         }
+
+        public static Task<T> AsTaskResult<T>(this T result)
+        {
+            return Task.FromResult(result);
+        }
     }
 }

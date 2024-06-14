@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Microsoft.Extensions.Hosting;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 {

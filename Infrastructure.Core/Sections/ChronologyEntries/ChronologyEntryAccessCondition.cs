@@ -8,19 +8,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
         {
         }
 
-        public override Task<bool> CanCreateAsync(ChronologyEntry entity)
+        public override ValueTask<bool> CanCreateAsync(ChronologyEntry entity)
         {
-            return Task.FromResult(true);
+            return ValueTask.FromResult(true);
         }
 
-        public override Task<bool> CanUpdateAsync(ChronologyEntry entity)
+        public override ValueTask<bool> CanUpdateAsync(ChronologyEntry entity)
         {
-            return Task.FromResult(false);
+            return ValueTask.FromResult(false);
         }
 
-        public override Task<bool> CanDeleteAsync(ChronologyEntry entity)
+        public override ValueTask<bool> CanDeleteAsync(ChronologyEntry entity)
         {
-            return Task.FromResult(false);
+            return ValueTask.FromResult(false);
         }
     }
 }

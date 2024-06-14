@@ -17,14 +17,18 @@ using TomLonghurst.ReadableTimeSpan;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
-    public class StartupCore<TApplicationSettings>
+    public interface IDomainStartupCore
+    {
+        void ConfigureServices(IHostApplicationBuilder builder);
+        void ConfigureApp(IHost host);
+    }
+
+    public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
         where TApplicationSettings : class, IApplicationSettings, new()
     {
         protected IConfiguration Configuration { get; set; }
         protected IHostEnvironment HostEnvironment { get; set; }
         protected IServiceCollection Services { get; set; }
-
-        public bool ShouldUseDbAudit { get; set; } = false;
 
         public virtual void ConfigureServices(IHostApplicationBuilder builder)
         {
@@ -38,6 +42,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
 
             ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
+            ValidatorOptions.Global.LanguageManager.Enabled = false;
 
             ReadableTimeSpan.EnableConfigurationBinding();
 
@@ -49,7 +54,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterAllHostedService();
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
+
             Services.AddScoped<IMonitorService, MonitorService>();
+
             Services.AddScoped<IApplicationUserService>((sp) =>
             {
                 return sp.GetRequiredService<ApplicationUserService>();

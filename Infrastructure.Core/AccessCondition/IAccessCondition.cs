@@ -2,31 +2,31 @@
 {
     public interface IAccessCondition
     {
-        Task<bool> CanReadAsync(IEntity entity);
-        Task<IQueryable<IEntity>> CanReadQuery(IQueryable<IEntity> query);
+        ValueTask<bool> CanReadAsync(IEntity entity);
+        ValueTask<IQueryable<IEntity>> CanReadQueryAsync(IQueryable<IEntity> query);
 
-        Task<bool> CanCreateAsync(IEntity entity);
-        Task<bool> CanUpdateAsync(IEntity entity);
-        Task<bool> CanDeleteAsync(IEntity entity);
-        Task<bool> CanSaveAsync(IEntity entity);
+        ValueTask<bool> CanCreateAsync(IEntity entity);
+        ValueTask<bool> CanUpdateAsync(IEntity entity);
+        ValueTask<bool> CanDeleteAsync(IEntity entity);
+        ValueTask<bool> CanSaveAsync(IEntity entity);
     }
 
     public interface IAccessCondition<TEntity> : IAccessCondition, ITypedScopedDependency<IAccessCondition<TEntity>>
         where TEntity : IEntity
     {
-        Task<bool> CanReadAsync(TEntity entity);
-        Task<IQueryable<TEntity>> CanReadQuery(IQueryable<TEntity> query);
+        ValueTask<bool> CanReadAsync(TEntity entity);
+        ValueTask<IQueryable<TEntity>> CanReadQueryAsync(IQueryable<TEntity> query);
 
-        Task<bool> CanCreateAsync(TEntity entity);
-        Task<bool> CanUpdateAsync(TEntity entity);
-        Task<bool> CanDeleteAsync(TEntity entity);
-        Task<bool> CanSaveAsync(TEntity entity);
+        ValueTask<bool> CanCreateAsync(TEntity entity);
+        ValueTask<bool> CanUpdateAsync(TEntity entity);
+        ValueTask<bool> CanDeleteAsync(TEntity entity);
+        ValueTask<bool> CanSaveAsync(TEntity entity);
 
-        Task<bool> IAccessCondition.CanReadAsync(IEntity entity) => CanReadAsync((TEntity)entity);
-        Task<IQueryable<IEntity>> IAccessCondition.CanReadQuery(IQueryable<IEntity> query) => CanReadQuery(query);
-        Task<bool> IAccessCondition.CanCreateAsync(IEntity entity) => CanCreateAsync((TEntity)entity);
-        Task<bool> IAccessCondition.CanUpdateAsync(IEntity entity) => CanUpdateAsync((TEntity)entity);
-        Task<bool> IAccessCondition.CanDeleteAsync(IEntity entity) => CanDeleteAsync((TEntity)entity);
-        Task<bool> IAccessCondition.CanSaveAsync(IEntity entity) => CanSaveAsync((TEntity)entity);
+        ValueTask<bool> IAccessCondition.CanReadAsync(IEntity entity) => CanReadAsync((TEntity)entity);
+        ValueTask<IQueryable<IEntity>> IAccessCondition.CanReadQueryAsync(IQueryable<IEntity> query) => CanReadQueryAsync(query);
+        ValueTask<bool> IAccessCondition.CanCreateAsync(IEntity entity) => CanCreateAsync((TEntity)entity);
+        ValueTask<bool> IAccessCondition.CanUpdateAsync(IEntity entity) => CanUpdateAsync((TEntity)entity);
+        ValueTask<bool> IAccessCondition.CanDeleteAsync(IEntity entity) => CanDeleteAsync((TEntity)entity);
+        ValueTask<bool> IAccessCondition.CanSaveAsync(IEntity entity) => CanSaveAsync((TEntity)entity);
     }
 }

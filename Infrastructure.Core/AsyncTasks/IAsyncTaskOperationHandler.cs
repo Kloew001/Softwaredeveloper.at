@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
 
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
     public enum AsyncTaskOperationStatus

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity

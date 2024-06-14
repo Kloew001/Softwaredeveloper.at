@@ -3,19 +3,19 @@
     public abstract class NoAccessCondition<TEntity> : IAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
-        public Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(false);
+        public ValueTask<bool> CanReadAsync(TEntity entity) => ValueTask.FromResult(false);
 
-        public Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(false);
+        public ValueTask<bool> CanCreateAsync(TEntity entity) => ValueTask.FromResult(false);
 
-        public Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(false);
+        public ValueTask<bool> CanDeleteAsync(TEntity entity) => ValueTask.FromResult(false);
 
-        public Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(false);
+        public ValueTask<bool> CanUpdateAsync(TEntity entity) => ValueTask.FromResult(false);
 
-        public Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(false);
+        public ValueTask<bool> CanSaveAsync(TEntity entity) => ValueTask.FromResult(false);
 
-        public Task<IQueryable<TEntity>> CanReadQuery(IQueryable<TEntity> query)
+        public ValueTask<IQueryable<TEntity>> CanReadQueryAsync(IQueryable<TEntity> query)
         {
-            return Task.FromResult(query.Where(_ => false));
+            return ValueTask.FromResult(query.Where(_ => false));
         }
     }
 }

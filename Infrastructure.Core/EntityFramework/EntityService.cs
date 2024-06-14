@@ -5,7 +5,6 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
@@ -187,7 +186,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             var accessCondition = accessConditionInfo.AccessCondition as IAccessCondition<TEntity>;
 
             if (accessCondition != null)
-                query = await accessCondition.CanReadQuery(query);
+                query = await accessCondition.CanReadQueryAsync(query);
             else
             {
 

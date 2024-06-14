@@ -3,16 +3,16 @@
     public class AllAccessCondition<TEntity> : IAccessCondition<TEntity>, IScopedDependency
         where TEntity : Entity
     {
-        public Task<bool> CanReadAsync(TEntity entity) => Task.FromResult(true);
+        public ValueTask<bool> CanReadAsync(TEntity entity) => ValueTask.FromResult(true);
 
-        public Task<bool> CanCreateAsync(TEntity entity) => Task.FromResult(true);
+        public ValueTask<bool> CanCreateAsync(TEntity entity) => ValueTask.FromResult(true);
 
-        public Task<bool> CanUpdateAsync(TEntity entity) => Task.FromResult(true);
+        public ValueTask<bool> CanUpdateAsync(TEntity entity) => ValueTask.FromResult(true);
 
-        public Task<bool> CanDeleteAsync(TEntity entity) => Task.FromResult(true);
+        public ValueTask<bool> CanDeleteAsync(TEntity entity) => ValueTask.FromResult(true);
 
-        public Task<bool> CanSaveAsync(TEntity entity) => Task.FromResult(true);
+        public ValueTask<bool> CanSaveAsync(TEntity entity) => ValueTask.FromResult(true);
 
-        public Task<IQueryable<TEntity>> CanReadQuery(IQueryable<TEntity> query) => Task.FromResult(query);
+        public ValueTask<IQueryable<TEntity>> CanReadQueryAsync(IQueryable<TEntity> query) => ValueTask.FromResult(query);
     }
 }

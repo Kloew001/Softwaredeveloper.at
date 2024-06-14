@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 using System.Data;

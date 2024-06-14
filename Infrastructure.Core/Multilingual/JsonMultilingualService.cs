@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Newtonsoft.Json;
-
 using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual

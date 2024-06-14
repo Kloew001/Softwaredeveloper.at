@@ -14,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
             _dbContext = dbContext;
         }
 
-        public virtual async Task<bool> CanCreateAsync(TReferencedToEntityType entity)
+        public virtual async ValueTask<bool> CanCreateAsync(TReferencedToEntityType entity)
         {
             var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
             
@@ -24,7 +24,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
             return result;
         }
 
-        public virtual async Task<bool> CanDeleteAsync(TReferencedToEntityType entity)
+        public virtual async ValueTask<bool> CanDeleteAsync(TReferencedToEntityType entity)
         {
             var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
 
@@ -34,7 +34,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
             return result;
         }
 
-        public virtual async Task<bool> CanReadAsync(TReferencedToEntityType entity)
+        public virtual async ValueTask<bool> CanReadAsync(TReferencedToEntityType entity)
         {
             var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
 
@@ -44,12 +44,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
             return result;
         }
 
-        public Task<IQueryable<TReferencedToEntityType>> CanReadQuery(IQueryable<TReferencedToEntityType> query)
+        public ValueTask<IQueryable<TReferencedToEntityType>> CanReadQueryAsync(IQueryable<TReferencedToEntityType> query)
         {
-            return Task.FromResult(query);
+            return ValueTask.FromResult(query);
         }
 
-        public virtual async Task<bool> CanSaveAsync(TReferencedToEntityType entity)
+        public virtual async ValueTask<bool> CanSaveAsync(TReferencedToEntityType entity)
         {
             var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
 
@@ -59,7 +59,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
             return result;
         }
 
-        public virtual async Task<bool> CanUpdateAsync(TReferencedToEntityType entity)
+        public virtual async ValueTask<bool> CanUpdateAsync(TReferencedToEntityType entity)
         {
             var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
 

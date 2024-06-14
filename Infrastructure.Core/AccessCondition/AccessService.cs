@@ -1,10 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using System.Reflection;
-
-using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
@@ -67,7 +63,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             private IAccessCondition _accessCondition;
         }
 
-        public Task<bool> EvaluateAsync<TAccessCondition>(IEntity entity, Func<TAccessCondition, IEntity, Task<bool>> canAsync)
+        public ValueTask<bool> EvaluateAsync<TAccessCondition>(IEntity entity, Func<TAccessCondition, IEntity, ValueTask<bool>> canAsync)
                 where TAccessCondition : IAccessCondition
         {
             return EvaluateAsync(entity, (ac, se) =>
@@ -76,17 +72,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             });
         }
 
-        private Task<bool> EvaluateInternalAsync<TAccessCondition>(Func<TAccessCondition, IEntity, Task<bool>> canAsync, IAccessCondition accessCondition, IEntity securityEntity) 
+        private async ValueTask<bool> EvaluateInternalAsync<TAccessCondition>(Func<TAccessCondition, IEntity, ValueTask<bool>> canAsync, IAccessCondition accessCondition, IEntity securityEntity) 
             where TAccessCondition : IAccessCondition
         {
             if (_sectionManager.IsActive<SecurityFreeSection>())
-                return Task.FromResult(true);
+                return true;
 
-            var result = canAsync((TAccessCondition)accessCondition, securityEntity);
+            var result = await canAsync((TAccessCondition)accessCondition, securityEntity);
             return result;
         }
 
-        public Task<bool> EvaluateAsync(IEntity entity, Func<IAccessCondition, IEntity, Task<bool>> canAsync)
+        public ValueTask<bool> EvaluateAsync(IEntity entity, Func<IAccessCondition, IEntity, ValueTask<bool>> canAsync)
         {
             var accessConditionInfo = ResolveAccessConditionInfo(entity);
             var securityEntity = GetSecurityEntityInternal(entity, accessConditionInfo);

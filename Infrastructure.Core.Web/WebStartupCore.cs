@@ -12,19 +12,22 @@ using SoftwaredeveloperDotAt.Infrastructure.Core;
 
 namespace Infrastructure.Core.Web
 {
-    public class WebStartupCore
+    public class WebStartupCore<TDomainStartup>
+        where TDomainStartup : IDomainStartupCore, new()
     {
-
         public IConfigurationRoot Configuration { get; }
+
+        public TDomainStartup DomainStartup { get; set; }
 
         public WebStartupCore(IConfigurationRoot configuration)
         {
             Configuration = configuration;
+            DomainStartup = new TDomainStartup();
         }
 
         public virtual void ConfigureServices(WebApplicationBuilder builder)
         {
-            MaxRequestBody(builder);
+            DomainStartup.ConfigureServices(builder);
 
             builder.AddDefaultServices();
 
@@ -35,28 +38,10 @@ namespace Infrastructure.Core.Web
             builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
         }
 
-        private const int DefaultMxRequestBodySizeInMB = 5;
-
-        protected virtual void MaxRequestBody(WebApplicationBuilder builder)
-        {
-            var maxRequestBodySizeInMB = builder.Configuration.GetSection("MaxRequestBodySizeInMB").Get<int>();
-
-            if (maxRequestBodySizeInMB == 0)
-                maxRequestBodySizeInMB = DefaultMxRequestBodySizeInMB;
-
-            builder.Services.Configure(delegate (IISServerOptions options)
-            {
-                options.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
-            });
-
-            builder.WebHost.ConfigureKestrel(serverOptions =>
-            {
-                serverOptions.Limits.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
-            });
-        }
-
         public virtual void ConfigureApp(WebApplication app)
         {
+            DomainStartup.ConfigureApp(app);
+
             app.Use(async (context, next) => {
                 context.Request.EnableBuffering();
 

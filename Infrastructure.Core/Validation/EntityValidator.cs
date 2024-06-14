@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 
 using Microsoft.Extensions.DependencyInjection;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation

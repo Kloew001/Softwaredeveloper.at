@@ -22,6 +22,19 @@ using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
+    public static class ServiceCollectionExtensions
+    {
+        public static void RegisterDBContext<TDBContext>(this IServiceCollection services)
+            where TDBContext : DbContext
+        {
+            services.AddDbContext<TDBContext>((serviceProvider, options) =>
+            {
+                var dbContextHandler = serviceProvider.GetRequiredService<IDbContextHandler>();
+                dbContextHandler.DBContextOptions(serviceProvider, options);
+            });
+        }
+    }
+
     public interface IDbContextHandler
     {
         Task UpdateDatabaseAsync(DbContext context);
@@ -34,7 +47,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         void HandleEntityAudit(DbContext context);
     }
 
-    public abstract class BaseDbContextHandler : IDbContextHandler, ITypedSingletonDependency<IDbContextHandler>
+    public abstract class BaseDbContextHandler : IDbContextHandler
     {
         public virtual async Task UpdateDatabaseAsync(DbContext context)
         {

@@ -11,7 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
     public static class IApplicationUserServiceExtensions
     {
-        public static Task<bool> IsCurrentUserInRoleAsync<TEntity>(this EntityService<TEntity> entityService, params Guid[] roleIds)
+        public static ValueTask<bool> IsCurrentUserInRoleAsync<TEntity>(this EntityService<TEntity> entityService, params Guid[] roleIds)
             where TEntity : Entity
         {
             var service =
@@ -44,8 +44,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
     public interface IApplicationUserService
     {
         Task<ApplicationUserDetailDto> GetCurrentUserAsync();
-        Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
-        Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
+        ValueTask<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
+        ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
         Task<ApplicationUser> GetUserInternalById(Guid id);
         Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
         Task<Guid> CreateRoleAsync(Guid id, string roleName);
@@ -107,7 +107,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
                     .AnyAsync();
         }
 
-        public Task<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds)
+        public ValueTask<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds)
         {
             return IsInRoleAsync(_currentUserService.GetCurrentUserId().Value, roleIds);
         }
@@ -119,7 +119,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             _memoryCache.RemoveStartsWith(_getRoleIdsCacheKey);
         }
 
-        public async Task<IEnumerable<Guid>> GetRoleIdsAsync(Guid userId)
+        public async ValueTask<IEnumerable<Guid>> GetRoleIdsAsync(Guid userId)
         {
             var userRoleIds = await _memoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
             {
@@ -134,7 +134,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return userRoleIds;
         }
 
-        public async Task<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
+        public async ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
             var userRoleIds = await GetRoleIdsAsync(userId);
 
