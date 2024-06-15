@@ -6,13 +6,17 @@ using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    public interface IDefaultLanguageService : IAppStatupInit, ITypedSingletonDependency<IAppStatupInit>
+    public interface IDefaultLanguageService
     {
         Guid CultureId => Culture.Id.Value;
         MultilingualCultureDto Culture { get; }
     }
 
-    public class DefaultLanguageService : IDefaultLanguageService, ITypedSingletonDependency<IDefaultLanguageService>
+    public class DefaultLanguageService : 
+        IDefaultLanguageService, 
+        ITypedSingletonDependency<IDefaultLanguageService>, 
+        IAppStatupInit, 
+        ITypedSingletonDependency<IAppStatupInit>
     {
         public MultilingualCultureDto Culture { get; private set; }
 

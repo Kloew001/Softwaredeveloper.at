@@ -3,7 +3,7 @@
     public interface IDataSeed : ITypedScopedDependency<IDataSeed>
     {
         decimal Priority { get; }
-        bool AutoExecute { get; set; }
+        bool AutoExecute { get; }
 
         Task SeedAsync(CancellationToken cancellationToken);
     }

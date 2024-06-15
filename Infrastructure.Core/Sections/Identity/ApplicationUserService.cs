@@ -2,11 +2,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
-
-using System;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
     public static class IApplicationUserServiceExtensions

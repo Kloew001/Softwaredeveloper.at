@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
 {
     public interface ICacheService
     {
         public IMemoryCache MemoryCache { get; }
-        public ScopedCache ScopedCache { get; }
+        public ScopedCache ScopedCache(IServiceProvider serviceProvider);
         public IDistributedCache DistributedCache { get; }
     }
 
@@ -16,16 +17,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
     public class CacheService : ICacheService
     {
         public IMemoryCache MemoryCache { get; set; }
-        public ScopedCache ScopedCache { get; set; }
+        public ScopedCache ScopedCache (IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ScopedCache>();
         public IDistributedCache DistributedCache { get; set; }
         
         public CacheService(
             IMemoryCache memoryCache, 
-            ScopedCache scopedCache,
             IDistributedCache distributedCache)
         {
             MemoryCache = memoryCache;
-            ScopedCache = scopedCache;
             DistributedCache = distributedCache;
         }
     }
