@@ -9,14 +9,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 {
     public static class EmailMessageServiceExtensions
     {
-        public static Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string templateName, Guid? cultureId = null)
+        public static Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string templateName, Guid? cultureId = null, Func<EmailMessage, Task> modifyEmailMessage = null)
             where TEntity : Entity
         {
             var emailMessageService =
             service.EntityServiceDependency.ServiceProvider
                 .GetRequiredService<EmailMessageService>();
 
-            return emailMessageService.CreateByTemplateAsync(referenceEntity, templateName, cultureId);
+            return emailMessageService.CreateByTemplateAsync(referenceEntity, templateName, cultureId, modifyEmailMessage);
         }
     }
 
@@ -53,7 +53,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
             return email;
         }
 
-        public async Task<EmailMessage> CreateByTemplateAsync(Entity referenceEntity, string templateName , Guid? cultureId = null)
+        public async Task<EmailMessage> CreateByTemplateAsync(Entity referenceEntity, string templateName, Guid? cultureId = null, Func<EmailMessage, Task> modifyEmailMessage = null)
         {
             var email = await CreateEmptyAsync(referenceEntity);
 
@@ -70,6 +70,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
             if (template == null)
                 throw new InvalidOperationException($"Template {templateName} not found");
 
+            email.Template = template;
+
             var templateTranslation = template.GetCultureTranslationOrDefault(email.CultureId);
 
             if (templateTranslation == null)
@@ -77,6 +79,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
 
             email.Subject = templateTranslation.Subject;
             email.HtmlContent = GetBaseHtmlContent(email, template, templateTranslation);
+
+            if (modifyEmailMessage != null)
+                await modifyEmailMessage(email);
 
             _emailMessageBookmarkReplacer.ReplaceAllBookmarks(email, referenceEntity);
 

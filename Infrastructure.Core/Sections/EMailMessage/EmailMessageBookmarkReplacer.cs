@@ -46,17 +46,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
         public const string STYLE = "$$STYLE$$";
         public const string SIGNATURE = "$$SIGNATURE$$";
         public const string BODY = "$$BODY$$";
+        public const string BaseUrl = "{{BaseUrl}}";
+        public const string CurrentYear = "{{CurrentYear}}";
 
-        private readonly ILogger<EmailMessageGlobalBookmark> _logger;
+        protected readonly ILogger<EmailMessageGlobalBookmark> _logger;
+        protected readonly IApplicationSettings _applicationSettings;
 
         public List<IEmailMessageBookmark> Bookmarks { get; set; } = [];
 
-        public EmailMessageGlobalBookmark(ILogger<EmailMessageGlobalBookmark> logger)
+        public EmailMessageGlobalBookmark(ILogger<EmailMessageGlobalBookmark> logger, IApplicationSettings applicationSettings)
         {
             _logger = logger;
+            _applicationSettings = applicationSettings;
 
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(STYLE, GetStyle));
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(SIGNATURE, GetSignature));
+            Bookmarks.Add(new EmailMessageBookmark<IEntity>(BaseUrl, (e, o) => _applicationSettings.Url.BaseUrl));
+            Bookmarks.Add(new EmailMessageBookmark<IEntity>(CurrentYear, (e, o) => DateTime.Now.Year.ToString()));
         }
 
         protected virtual string GetStyle(EmailMessage email, IEntity referenceEntity)
