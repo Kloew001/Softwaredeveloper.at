@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DemoData;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 namespace SampleApp.Application.Sections.PersonSection
 {

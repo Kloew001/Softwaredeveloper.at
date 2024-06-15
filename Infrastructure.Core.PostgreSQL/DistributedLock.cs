@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using System.Data;
 using System.Threading;
 

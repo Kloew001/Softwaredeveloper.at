@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices

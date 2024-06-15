@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
@@ -34,39 +34,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
                 .Where(_ => _.StartsWith(key))
                 .ToList()
                 .ForEach(_ => memoryCache.Remove(_));
-    }
-
-    public class ScopedCache : IScopedDependency
-    {
-        //https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Caching.Memory/src/MemoryCache.cs
-        private readonly ConcurrentDictionary<string, object> _cache;
-
-        public ScopedCache()
-        {
-            _cache = new ConcurrentDictionary<string, object>();
-        }
-
-        public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
-        {
-            if (!_cache.TryGetValue(key, out object result))
-            {
-                result = await factory().ConfigureAwait(false);
-                _cache.TryAdd(key, result);
-            }
-
-            return (T)result;
-        }
-
-        public T GetOrCreate<T>(string key, Func<T> factory)
-        {
-            if (!_cache.TryGetValue(key, out object result))
-            {
-                result = factory();
-                _cache.TryAdd(key, result);
-            }
-
-            return (T)result;
-        }
     }
 
 }

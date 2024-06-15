@@ -1,7 +1,6 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +32,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public EntityQueryService<TEntity> EntityQueryService { get; private set; }
         public EntityValidator<TEntity> Validator { get; private set; }
         public ICacheService CacheService { get; private set; }
-        public ScopedCache ScopedCache { get; private set; }
 
         public ICurrentUserService CurrentUserService { get; private set; }
 
@@ -45,8 +43,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             SectionManager sectionManager,
             EntityQueryService<TEntity> entityQueryService,
             ICacheService cacheService,
-            IMemoryCache memoryCache,
-            ScopedCache scopedCache,
             ICurrentUserService currentUserService)
         {
             ServiceProvider = serviceProvider;
@@ -58,7 +54,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             EntityQueryService = entityQueryService;
             CurrentUserService = currentUserService;
             CacheService = cacheService;
-            ScopedCache = scopedCache;
 
             Validator = GetService<EntityValidator<TEntity>>();
         }
@@ -79,9 +74,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly EntityQueryService<TEntity> _entityQueryService;
         protected readonly ICurrentUserService _currentUserService;
         protected readonly EntityValidator<TEntity> _validator;
-
         protected readonly ICacheService _cacheService;
-        protected readonly ScopedCache _scopedCache;
 
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -96,7 +89,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _entityQueryService = entityServiceDependency.EntityQueryService;
             _currentUserService = entityServiceDependency.CurrentUserService;
             _cacheService = entityServiceDependency.CacheService;
-            _scopedCache = entityServiceDependency.ScopedCache;
 
             _validator = entityServiceDependency.Validator;
         }
@@ -375,13 +367,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task DeleteInternalAsync(TEntity entity)
         {
-            _context.Remove(entity);
-
-            await OnDeleteInternalAsync(entity);
-
             if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
                         accessCondition.CanDeleteAsync(securityEntity)) == false)
                 throw new UnauthorizedAccessException();
+
+            await OnDeleteInternalAsync(entity);
+
+            _context.Remove(entity);
         }
 
         protected virtual Task OnDeleteInternalAsync(TEntity entity)

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
     public class EmailMessageBookmarkSection : Section
     {

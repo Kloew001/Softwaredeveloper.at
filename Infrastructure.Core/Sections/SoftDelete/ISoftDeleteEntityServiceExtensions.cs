@@ -1,7 +1,4 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
 {
     public static class ISoftDeleteEntityServiceExtensions
     {
@@ -19,6 +16,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete
             entity.IsDeleted = true;
 
             await service.SaveChangesAsync(entity);
+        }
+
+        public static async Task HardDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
+            where TEntity : Entity, ISoftDelete
+        {
+            await service.DeleteAsync(id);
         }
     }
 }

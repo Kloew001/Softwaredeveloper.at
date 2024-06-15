@@ -1,34 +1,11 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Text;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
 {
-    public interface ICacheService
-    {
-        public IMemoryCache MemoryCache { get; }
-        public IDistributedCache DistributedCache { get; }
-    }
-
-    /// <summary>
-    /// https://medium.com/@dayanandthombare/caching-strategies-in-net-core-5c6daf9dff2e
-    /// </summary>
-    public class CacheService : ICacheService
-    {
-        public IDistributedCache DistributedCache { get; set; }
-        public IMemoryCache MemoryCache { get; set; }
-
-        public CacheService(IMemoryCache memoryCache, IDistributedCache distributedCache)
-        {
-            MemoryCache = memoryCache;
-            DistributedCache = distributedCache;
-        }
-    }
-
     public static class DistributedCacheExtensions
     {
         public static async Task<T> GetOrCreateAsync<T>(this IDistributedCache distributedCache, string key, Func<DistributedCacheEntryOptions, Task<T>> factory)
@@ -49,7 +26,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public static Task SetAsync<T>(this IDistributedCache cache, string key, T value)
         {
-            return SetAsync(cache, key, value, new DistributedCacheEntryOptions());
+            return cache.SetAsync(key, value, new DistributedCacheEntryOptions());
         }
 
         public static Task SetAsync<T>(this IDistributedCache cache, string key, T value, DistributedCacheEntryOptions options)

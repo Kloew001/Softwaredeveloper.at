@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class TaskExtension
     {
@@ -35,6 +35,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         public static Task<T> AsTaskResult<T>(this T result)
         {
             return Task.FromResult(result);
+        }
+
+        public static ValueTask<T> AsValueTaskResult<T>(this T result)
+        {
+            return ValueTask.FromResult(result);
         }
     }
 }

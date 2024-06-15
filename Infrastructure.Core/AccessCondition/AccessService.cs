@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
-
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition

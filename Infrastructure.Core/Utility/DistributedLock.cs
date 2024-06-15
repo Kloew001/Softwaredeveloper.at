@@ -1,4 +1,4 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public interface IDistributedLock : IDisposable
     {

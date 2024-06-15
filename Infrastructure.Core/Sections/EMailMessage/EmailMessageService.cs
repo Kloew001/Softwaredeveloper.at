@@ -5,7 +5,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
 
 using System.Net.Mail;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
     public static class EmailMessageServiceExtensions
     {

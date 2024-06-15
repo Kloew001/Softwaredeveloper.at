@@ -1,6 +1,4 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ApplicationConfigurationAttribute : Attribute

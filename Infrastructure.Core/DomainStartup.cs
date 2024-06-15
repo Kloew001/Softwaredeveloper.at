@@ -1,18 +1,10 @@
-﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
-
-using FluentValidation;
+﻿using FluentValidation;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 using TomLonghurst.ReadableTimeSpan;
 
