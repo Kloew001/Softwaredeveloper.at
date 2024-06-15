@@ -105,6 +105,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             ApplyAuditEntity(modelBuilder);
             ApplyGlobalFilters(modelBuilder);
             ApplyIndex(modelBuilder);
+            ApplyAutoInclude(modelBuilder);
             ApplyRemoveForeignKeyAttribute(modelBuilder);
 
 
@@ -126,6 +127,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     {
                         entityType.RemoveForeignKey(foreignKey);
                     }
+                }
+            }
+        }
+
+        public virtual void ApplyAutoInclude(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(IMultiLingualEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Navigation(nameof(IMultiLingualEntity.Translations)).AutoInclude();
                 }
             }
         }

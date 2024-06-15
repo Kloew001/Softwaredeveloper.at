@@ -36,13 +36,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
             });
         }
 
-        protected override IQueryable<ChronologyEntry> IncludeAutoQueryProperties(IQueryable<ChronologyEntry> query)
-        {
-            return query
-                .Include(_ => _.Translations)
-                .Include(_ => _.CreatedBy);
-        }
-
         public async Task<IEnumerable<ChronologyEntryDto>> GetCollectionAsync(Guid referenceId)
         {
             var query = await GetCollectionQueryInternal(q =>

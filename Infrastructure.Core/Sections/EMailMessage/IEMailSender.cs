@@ -20,7 +20,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     }
 
     [ApplicationConfiguration]
-    public class EMailServerConfiguration
+    public class SmtpServerConfiguration
     {
         public string FromName { get; set; }
         public string FromEmail { get; set; }
@@ -32,11 +32,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
     public class SmtpEMailSender : IEMailSender
     {
-        private EMailServerConfiguration _config { get; set; }
+        private SmtpServerConfiguration _config { get; set; }
 
         public SmtpEMailSender(IApplicationSettings applicationSettings)
         {
-            _config = applicationSettings.EMailServer;
+            _config = applicationSettings.SmtpServer;
         }
 
 
@@ -72,19 +72,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                     var builder = new BodyBuilder();
                     builder.HtmlBody = message.HtmlContent;
 
-
-                    if (message.Attachment1 != null)
+                    foreach (var attachment in message.Attachments)
                     {
-                        builder.Attachments.Add(
-                       Path.GetFileName(message.Attachment1Name),
-                       message.Attachment1);
-                    }
-                    if (message.Attachment2 != null)
-                    {
-                        builder.Attachments.Add(
-                           Path.GetFileName(message.Attachment2Name),
-                           message.Attachment2);
-                    }
+                        builder.Attachments.Add(Path.GetFileName(attachment.BinaryContent.Name), attachment.BinaryContent.Content);
+                    }   
 
                     mailMessage.Body = builder.ToMessageBody();
 

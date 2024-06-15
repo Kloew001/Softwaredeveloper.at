@@ -8,7 +8,7 @@ global using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
-global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent;
+global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;

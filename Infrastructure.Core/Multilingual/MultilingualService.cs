@@ -1,4 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Castle.Core.Logging;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -52,15 +56,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
     {
         private readonly MultilingualGlobalTextCacheService _multilingualGlobalTextCacheService;
         private readonly ICurrentLanguageService _currentLanguageService;
+        private readonly IDefaultLanguageService _defaultLanguageService;
+        private readonly ILogger<MultilingualService> _logger;
+
         private readonly IDbContext _context;
 
         public MultilingualService(
             MultilingualGlobalTextCacheService multilingualGlobalTextCacheService,
             ICurrentLanguageService currentLanguageService,
+            IDefaultLanguageService defaultLanguageService,
+            ILogger<MultilingualService> logger,
             IDbContext context)
         {
             _multilingualGlobalTextCacheService = multilingualGlobalTextCacheService;
             _currentLanguageService = currentLanguageService;
+            _defaultLanguageService = defaultLanguageService;
+            _logger = logger;
             _context = context;
         }
 
@@ -69,7 +80,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
             if (cultureId.HasValue.IsFalse())
                 cultureId = _currentLanguageService.CurrentCultureId;
 
-            return _multilingualGlobalTextCacheService.GetText(key, cultureId.Value);
+            var text = _multilingualGlobalTextCacheService.GetText(key, cultureId.Value);
+
+            if (text == null &&
+               cultureId.Value != _defaultLanguageService.CultureId)
+            {
+                text = _multilingualGlobalTextCacheService.GetText(key, _defaultLanguageService.CultureId);
+            }
+
+            if (text == null)
+                _logger.LogWarning("Translation not found for key {0} and culture {1}", key, cultureId);
+
+            return text;
         }
 
         public string GetText<TTranslation>(IMultiLingualEntity<TTranslation> entity, Expression<Func<TTranslation, string>> property, Guid? cultureId = null)
@@ -79,12 +101,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                 cultureId = _currentLanguageService.CurrentCultureId;
 
             if (entity.Translations == null)
-                return default;
+                return null;
 
             var translation = entity.Translations.SingleOrDefault(_ => _.CultureId == cultureId);
 
+            if (translation == null &&
+                cultureId.Value != _defaultLanguageService.CultureId)
+            {
+                translation = entity.Translations.SingleOrDefault(_ => _.CultureId == _defaultLanguageService.CultureId);
+            }
+
             if (translation == null)
-                return default;
+            {
+                _logger.LogWarning("Translation not found for entity {0} and culture {1}", entity.Id, cultureId);
+                return null;
+            }
 
             var propertyInfo = (property.Body as MemberExpression).Member as PropertyInfo;
 

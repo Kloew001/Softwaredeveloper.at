@@ -1,8 +1,4 @@
-﻿
-using Community.Microsoft.Extensions.Caching.PostgreSql;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 namespace SampleApp.Application
 {

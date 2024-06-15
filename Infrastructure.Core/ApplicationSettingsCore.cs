@@ -14,7 +14,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
         UrlConfiguration Url { get; set; }
 
-        EMailServerConfiguration EMailServer { get; set; }
+        SmtpServerConfiguration SmtpServer { get; set; }
         MultilingualConfiguration Multilingual { get; set; }
     }
 
@@ -24,7 +24,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
         public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
         public UrlConfiguration Url { get; set; }
-        public EMailServerConfiguration EMailServer { get; set; }
+        public SmtpServerConfiguration SmtpServer { get; set; }
         public MultilingualConfiguration Multilingual { get; set; }
     }
 

@@ -3,19 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection
 {
     [Table(nameof(BinaryContent), Schema = "core")]
-    public class BinaryContent : ChangeTrackedEntity
+    public class BinaryContent : ChangeTrackedEntity, IReferencedToEntity
     {
         public string Name { get; set; }
+
+        public Guid? ReferenceId { get; set; }
+        public string ReferenceType { get; set; }
+
         public string MimeType { get; set; }
 
         public byte[] Content { get; set; }
         public long ContentSize { get; set; }
         public string Description { get; set; }
-        public Guid? ReferenceId { get; set; }
-        public string ReferenceType { get; set; }
+
     }
 
     public class BinaryContentConfiguration : IEntityTypeConfiguration<BinaryContent>

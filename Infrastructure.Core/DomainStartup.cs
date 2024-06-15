@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EmailMessaga;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
@@ -54,6 +55,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.RegisterAllHostedService();
 
             Services.AddSingleton<ICacheService, CacheService>();
+
+            Services.AddSingleton<IEmailMessageGlobalBookmark, EmailMessageGlobalBookmark>();
+            Services.AddScoped<IEmailMessageBookmarkReplacer, EmailMessageBookmarkReplacer>();
 
             Services.AddScoped<IEMailSender, NoEmailSender>();
 

@@ -182,8 +182,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 .Set<TEntity>()
                 .AsQueryable();
 
-            query = IncludeAutoQueryProperties(query);
-
             var accessConditionInfo = _accessService.ResolveAccessConditionInfo<TEntity>();
             var accessCondition = accessConditionInfo.AccessCondition as IAccessCondition<TEntity>;
 
@@ -200,11 +198,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             query = AppendOrderBy(query);
 
             return query;
-        }
-
-        protected virtual IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)
-        {
-            return _entityQueryService.IncludeAutoQueryProperties(query);
         }
 
         protected virtual IQueryable<TEntity> AppendOrderBy(IQueryable<TEntity> query)

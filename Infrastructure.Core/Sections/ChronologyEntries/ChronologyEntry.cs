@@ -23,6 +23,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
     {
         public void Configure(EntityTypeBuilder<ChronologyEntry> builder)
         {
+            builder.Navigation(_ => _.CreatedBy).AutoInclude();
         }
     }
 

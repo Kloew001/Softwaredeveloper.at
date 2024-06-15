@@ -105,25 +105,5 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             return query;
         }
-
-        public IQueryable<TEntity> IncludeAutoQueryProperties(IQueryable<TEntity> query)
-        {
-            var autoQueryIncludePropertyNames = _memoryCache.GetOrCreate(
-                $"{nameof(EntityQueryService<TEntity>)}_{typeof(TEntity).Name}_AutoQueryIncludePropertyNames", _ =>
-            {
-                return typeof(TEntity)
-                .GetProperties()
-                .Where(_ => _.GetCustomAttributes(typeof(AutoQueryIncludeAttribute), true)?
-                               .Any() == true)
-                .Select(_ => _.Name)
-                .ToList();
-            });
-
-            autoQueryIncludePropertyNames
-                .ForEach(_ => query = query.Include(_));
-
-            return query;
-        }
-
     }
 }

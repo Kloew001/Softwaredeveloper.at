@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
@@ -47,5 +48,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 
         public Guid CultureId { get; set; }
         public virtual MultilingualCulture Culture { get; set; }
+    }
+
+    public static class EntityTranslationExtensions
+    {
+        //Get the translation for a specific culture or Default
+
+        public static TTranslation GetCultureTranslationOrDefault<TTranslation>(this IMultiLingualEntity<TTranslation> entity, Guid? cultureId)
+            where TTranslation : IEntityTranslation
+        {
+            if (cultureId != null)
+            {
+                var translation = entity.Translations.FirstOrDefault(t => t.CultureId == cultureId);
+
+                if (translation != null)
+                    return translation;
+            }
+
+            return entity.Translations.Where(_ => _.Culture.IsDefault).SingleOrDefault();
+        }
     }
 }
