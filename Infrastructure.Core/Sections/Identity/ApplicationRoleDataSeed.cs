@@ -16,7 +16,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public async Task SeedAsync(CancellationToken cancellationToken)
         {
-            foreach (var userRoleType in UserRoleType.GetAll())
+            var userRoleTypes = UserRoleType.GetAll();
+            foreach (var userRoleType in userRoleTypes )
             {
                 await _applicationUserService.CreateRoleAsync(
                     userRoleType.Id,

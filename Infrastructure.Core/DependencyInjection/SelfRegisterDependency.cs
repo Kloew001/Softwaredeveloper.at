@@ -41,7 +41,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         {
             var serviceTypes = AssemblyUtils.AllLoadedTypes()
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-               .Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
+               //.Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
                .ToList();
 
             foreach (var serviceType in serviceTypes)
@@ -54,6 +54,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
                 if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
                     services.AddSingleton(serviceType);
+
+                if (typeof(IAppStatupInit).IsAssignableFrom(serviceType))
+                {
+                    services.AddSingleton(serviceType);
+                    services.AddSingleton(typeof(IAppStatupInit), (sp) => sp.GetRequiredService(serviceType));
+                }
 
                 //if (typeof(ITypedService<>).IsAssignableFrom(serviceType))
                 var genericArguments = serviceType.GetInterfaces()
