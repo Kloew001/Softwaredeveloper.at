@@ -14,10 +14,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable
                     _.IsActive(isEnabled));
         }
 
-        public static Task<IQueryable<TEntity>> GetAllActive<TEntity>(this EntityService<TEntity> service, bool isEnabled = true)
+        public static ValueTask<IQueryable<TEntity>> GetQueryWhereIsActiveAsync<TEntity>(this EntityService<TEntity> service, bool isEnabled = true)
             where TEntity : Entity, IActivateable
         {
-            return service.GetCollectionQueryInternal(
+            return service.GetQueryAsync(
                 _ => _.IsActive(isEnabled));
         }
 

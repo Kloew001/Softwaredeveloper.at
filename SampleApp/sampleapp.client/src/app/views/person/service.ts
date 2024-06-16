@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable, map } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { PersonDto } from "./dtos";
+import { PageFilter, PageResult } from "../../core/dtos";
 
 @Injectable()
 export class PersonService {
@@ -25,6 +26,17 @@ export class PersonService {
       .pipe(
         (map((data) => {
           var result = plainToInstance(PersonDto, data);
+          console.log(result);
+          return result;
+        })));
+  }
+
+  getOverview(filter: PageFilter): Observable<PageResult<PersonDto>> {
+    return this.http.get<PageResult<PersonDto>>('/api/person/getOverview?page=' + filter.page)
+      .pipe(
+        (map((data) => {
+          debugger;
+          var result = plainToInstance(PageResult<PersonDto>, data);
           console.log(result);
           return result;
         })));

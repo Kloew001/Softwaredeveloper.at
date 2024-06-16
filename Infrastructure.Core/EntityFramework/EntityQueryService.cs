@@ -1,16 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+using System.Linq;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class AutoQueryIncludeAttribute : Attribute
-    {
-    }
-
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class OrderByAttribute : Attribute
     {
@@ -29,6 +26,36 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
     }
 
+    public class PageResult<TItem>
+    {
+        public int TotalCount { get; set; } = 0;
+        public int PageCount => 
+            PageSize == null ? 1 : 
+            PageSize <= 0 ? 0 : 
+            (int)Math.Ceiling((double)TotalCount / PageSize.Value);
+
+        public int? Page { get; set; } = null;
+        public int? PageSize { get; set; } = null;
+
+        public IEnumerable<TItem> PageItems { get; set; }
+
+        public PageResult()
+        {
+        }
+    }
+
+    public class PageFilter
+    {
+        public int? Page { get; set; } = 0;
+        public int? PageSize { get; set; } = 0;
+
+        public bool IsPagingActive => 
+            Page != null && 
+            PageSize != null &&
+            Page > 0 && 
+            PageSize > 0;
+    }
+
     public class EntityQueryService<TEntity> : ISingletonDependency
         where TEntity : Entity
     {
@@ -37,6 +64,33 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public EntityQueryService(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
+        }
+
+        public async Task<PageResult<TEntity>> GetPageResultAsync(IQueryable<TEntity> query, PageFilter pageFilter)
+        {
+            var result = new PageResult<TEntity>();
+            result.Page = pageFilter.Page;
+            result.PageSize = pageFilter.PageSize;
+
+            if (pageFilter.IsPagingActive)
+            {
+                var totalCount = await query.CountAsync();
+                result.TotalCount = totalCount;
+
+                var pageItems = await query
+                    .Skip((pageFilter.Page.Value - 1) * pageFilter.PageSize.Value)
+                    .Take(pageFilter.PageSize.Value)
+                    .ToArrayAsync();
+
+                result.PageItems = pageItems;
+            }
+            else
+            {
+                result.PageItems = await query.ToArrayAsync();
+                result.TotalCount = result.PageItems.Count();
+            }
+
+            return result;
         }
 
         public IQueryable<TEntity> AppendDefaultOrderBy(IQueryable<TEntity> query)

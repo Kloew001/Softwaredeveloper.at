@@ -81,13 +81,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
                     _.IsValidDateIncluded(validDate));
         }
 
-        public static Task<IQueryable<TEntity>> GetAllValid<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
+        public static ValueTask<IQueryable<TEntity>> GetAllValidAsync<TEntity>(this EntityService<TEntity> service, DateTime? validDate = null)
             where TEntity : Entity, ISupportValidDateRange
         {
             if (validDate == null)
                 validDate = DateTime.Now;
 
-            return service.GetCollectionQueryInternal(
+            return service.GetQueryAsync(
                 _ => _.IsValidDateIncluded(validDate));
         }
 

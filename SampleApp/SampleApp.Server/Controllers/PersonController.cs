@@ -1,6 +1,7 @@
 ﻿
 using SampleApp.Application.Sections.PersonSection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace RWA.Server.Controllers
@@ -17,6 +18,10 @@ namespace RWA.Server.Controllers
         [HttpGet]
         public Task<IEnumerable<PersonDto>> GetAll()
             => _service.GetAllAsync();
+
+        [HttpGet]
+        public Task<PageResult<PersonDto>> GetOverview([FromQuery] PersonService.PersonOverviewFilter filter)
+            => _service.GetOverviewAsync(filter);
 
         [HttpGet]
         public Task<PersonDto> GetSingleById(Guid id)

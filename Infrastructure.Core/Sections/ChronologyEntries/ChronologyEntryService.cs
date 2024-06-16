@@ -38,7 +38,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 
         public async Task<IEnumerable<ChronologyEntryDto>> GetCollectionAsync(Guid referenceId)
         {
-            var query = await GetCollectionQueryInternal(q =>
+            var query = await GetQueryAsync(q =>
                    q.Where(_ => _.ReferenceId == referenceId));
 
             return await GetCollectionAsync<ChronologyEntryDto>(query);

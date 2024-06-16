@@ -11,6 +11,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
 using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.Extensions.Caching.Distributed;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -120,7 +122,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task<TEntity> GetSingleInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
-            var query = await GetCollectionQueryInternal(queryExtension);
+            var query = await GetQueryAsync(queryExtension);
 
             var entity = await query.SingleOrDefaultAsync();
 
@@ -136,7 +138,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task<TEntity> GetFirstInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
-            var query = await GetCollectionQueryInternal(queryExtension);
+            var query = await GetQueryAsync(queryExtension);
 
             var entity = await query.FirstOrDefaultAsync();
 
@@ -149,6 +151,32 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             return entity;
         }
+
+
+        public virtual async Task<PageResult<TDto>> GetPagedCollectionAsync<TDto>(PageFilter pageFilter)
+            where TDto : Dto
+        {
+            var query = await GetQueryAsync();
+
+            return await GetPagedCollectionAsync<TDto>(query, pageFilter);
+        }
+
+        public virtual async Task<PageResult<TDto>> GetPagedCollectionAsync<TDto>(IQueryable<TEntity> query, PageFilter pageFilter)
+            where TDto : Dto
+        {
+            var entityPageResult = await _entityQueryService.GetPageResultAsync(query, pageFilter);
+
+            var dtoPageResult = new PageResult<TDto>();
+
+            dtoPageResult.Page = entityPageResult.Page;
+            dtoPageResult.PageSize = entityPageResult.PageSize;
+            dtoPageResult.TotalCount = entityPageResult.TotalCount;
+
+            dtoPageResult.PageItems = entityPageResult.PageItems.ConvertToDtos<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
+
+            return dtoPageResult;
+        }
+
 
         public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
             where TDto : Dto
@@ -163,12 +191,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : Dto
         {
-            var query = await GetCollectionQueryInternal(queryExtension);
+            var query = await GetQueryAsync(queryExtension);
 
             return await GetCollectionAsync<TDto>(query);
         }
 
-        public virtual async Task<IQueryable<TEntity>> GetCollectionQueryInternal(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async ValueTask<IQueryable<TEntity>> GetQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = _context
                 .Set<TEntity>()
