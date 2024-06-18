@@ -51,6 +51,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.AddSingleton<IEmailMessageGlobalBookmark, EmailMessageGlobalBookmark>();
             Services.AddScoped<IEmailMessageBookmarkReplacer, EmailMessageBookmarkReplacer>();
 
+            Services.AddScoped<IEMailSendHandler, EMailSendHandler>();
             Services.AddScoped<IEMailSender, NoEmailSender>();
 
             Services.AddScoped<IMonitorService, MonitorService>();

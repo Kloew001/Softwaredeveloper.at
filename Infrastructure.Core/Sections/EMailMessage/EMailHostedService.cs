@@ -1,11 +1,72 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
+    public interface IEMailSendHandler
+    {
+        Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize);
+        Task HandleMessageAsync(EmailMessage emailMessage);
+    }
+
+    public class EMailSendHandler : IEMailSendHandler
+    {
+        protected readonly IDbContext _context;
+        private readonly IEMailSender _emailSender;
+
+        public EMailSendHandler(IDbContext context, IEMailSender emailSender)
+        {
+            _context = context;
+            _emailSender = emailSender;
+        }
+
+        public async Task HandleMessageAsync(EmailMessage emailMessage)
+        {
+            try
+            {
+                await _emailSender.SendAsync(emailMessage);
+
+                emailMessage.ErrorMessage = null;
+                emailMessage.SentAt = DateTime.Now;
+                emailMessage.Status = EmailMessageStatusType.Sent;
+
+                OnSent(emailMessage);
+            }
+            catch (Exception ex)
+            {
+                emailMessage.ErrorMessage = ex.ToString();
+                emailMessage.Status = EmailMessageStatusType.Error;
+
+                OnError(emailMessage);
+            }
+        }
+
+        protected virtual void OnError(EmailMessage emailMessage)
+        {
+        }
+
+        protected virtual void OnSent(EmailMessage emailMessage)
+        {
+        }
+
+        public async Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize)
+        {
+            var mailMessagesIds =
+                await _context.Set<EmailMessage>()
+                    .Where(_ => _.Status == EmailMessageStatusType.Created &&
+                                _.SendAt < sendAt)
+                    .OrderByDescending(_ => _.SendAt)
+                    .Select(_ => _.Id)
+                    .Take(batchSize)
+                    .ToListAsync();
+
+            return mailMessagesIds;
+
+        }
+    }
+
     public class EMailHostedService : TimerHostedService
     {
         public EMailHostedService(
@@ -39,26 +100,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                     scope.ServiceProvider.GetService<ICurrentUserService>()
                         .SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
-                    var emailSender = scope.ServiceProvider.GetService<IEMailSender>();
+                    var eMailSendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
                     var context = scope.ServiceProvider.GetService<IDbContext>();
 
                     var mailMessage = await context.Set<EmailMessage>().SingleAsync(_ => _.Id == id);
 
-                    try
-                    {
-                        await emailSender.SendAsync(mailMessage);
-
-                        mailMessage.ErrorMessage = null;
-                        mailMessage.SentAt = DateTime.Now;
-                        mailMessage.Status = EmailMessageStatusType.Sent;
-                    }
-                    catch (Exception ex)
-                    {
-                        mailMessage.ErrorMessage = ex.ToString();
-                        mailMessage.Status = EmailMessageStatusType.Error;
-
-                        _logger.LogError(ex, ex.Message);
-                    }
+                    await eMailSendHandler.HandleMessageAsync(mailMessage);
 
                     await context.SaveChangesAsync();
                 }
@@ -73,21 +120,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             {
-                var context = scope.ServiceProvider.GetService<IDbContext>();
+                var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
 
-                var date = DateTime.Now.Subtract(_hostedServicesConfiguration
-                    .InitialDelay);
+                var date = DateTime.Now.Subtract(_hostedServicesConfiguration.InitialDelay);
 
-                var mailMessagesIds =
-                    await context.Set<EmailMessage>()
-                        .Where(_ => _.Status == EmailMessageStatusType.Created &&
-                                    _.SendAt < date)
-                        .OrderByDescending(_ => _.SendAt)
-                        .Select(_ => _.Id)
-                        .Take(_hostedServicesConfiguration.BatchSize)
-                        .ToListAsync();
-
-                return mailMessagesIds;
+                return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize);
             }
         }
     }
