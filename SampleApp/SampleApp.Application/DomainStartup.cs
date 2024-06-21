@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace SampleApp.Application
 {
@@ -13,6 +14,9 @@ namespace SampleApp.Application
             builder.UsePostgreSQLDbContextHandler();
 
             services.RegisterDBContext<SampleAppContext>();
+
+            //Services.AddScoped<IEMailSendHandler, MailToolEMailSendHandler>();
+            Services.AddScoped<IEMailSender, SmtpEMailSender>();
         }
     }
 }
