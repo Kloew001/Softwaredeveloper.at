@@ -41,6 +41,8 @@ jobs:
       run: dotnet pack Infrastructure.Core.SqlServer --configuration Release /p:Version=${VERSION} --no-build --output .
     - name: Pack
       run: dotnet pack Infrastructure.Core.Web --configuration Release /p:Version=${VERSION} --no-build --output .
+    - name: Pack
+      run: dotnet SampleApp.Application.Tests --configuration Release /p:Version=${VERSION} --no-build --output .
 
     - name: Push
       run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
@@ -59,6 +61,11 @@ jobs:
         
     - name: Push
       run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.Web.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+    - name: Push
+      run: dotnet nuget push SampleApp.Application.Tests.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
 

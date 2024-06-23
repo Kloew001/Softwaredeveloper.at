@@ -4,7 +4,7 @@ using SampleApp.Application.Sections.PersonSection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 
-namespace SampleApp.Tests
+namespace SampleApp.Application.Tests
 {
     public class PersonTests : SampleAppBaseTest
     {

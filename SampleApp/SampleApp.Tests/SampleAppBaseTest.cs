@@ -2,9 +2,9 @@
 
 using SampleApp.Application;
 
-namespace SampleApp.Tests
+namespace SampleApp.Application.Tests
 {
-    public class  SampleAppBaseTest : BaseTest<DomainStartup>
+    public class SampleAppBaseTest : BaseTest<DomainStartup>
     {
         
     }
