@@ -10,12 +10,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\SampleApp.Server\appsettings.Development.json" Link="appsettings.Development.json" />
-    <Content Include="..\SampleApp.Server\appsettings.json" Link="appsettings.json" />
+    <Content Include="..\SampleApp.Server\appsettings.Development.json" Link="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleApp.Server\appsettings.json" Link="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\SampleApp.Server\log4net.config" Link="log4net.config" />
+    <Content Include="..\SampleApp.Server\log4net.config" Link="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
