@@ -7,6 +7,8 @@ using Moq;
 using NUnit.Framework;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
+using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace Infrastructure.Core.Tests
 {
@@ -18,6 +20,7 @@ namespace Infrastructure.Core.Tests
         protected IConfigurationRoot _configuration;
         protected IHostBuilder _hostBuilder;
         private TDomainStartup _domainStartup;
+        protected IDbContext _context;
 
         //protected IDBContext _nadaContext;
         //protected IDbContextTransaction _dbTransaction;
@@ -40,6 +43,7 @@ namespace Infrastructure.Core.Tests
         {
             BuildHost();
             BuildRootServiceScope();
+
         }
 
         [TearDown]
@@ -66,7 +70,10 @@ namespace Infrastructure.Core.Tests
             _domainStartup.ConfigureApp(host);
 
             _serviceScope = host.Services.CreateScope();
-            
+
+            _context = _serviceScope.ServiceProvider
+                    .GetRequiredService<IDbContext>();
+
             //_nadaContext = _serviceScope.ServiceProvider.GetService<NadaContext>();
 
             //if (UseDbTransactionMode == DbTransactionModeType.OnePerTest)
@@ -107,7 +114,20 @@ namespace Infrastructure.Core.Tests
 
         protected virtual void CreateServiceCollection(IServiceCollection services, IHostEnvironment hostEnvironment, IConfigurationRoot configuration)
         {
+            services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
         }
 
+        protected async Task WaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        {
+            using var serivceScope = _serviceScope.ServiceProvider.CreateScope();
+
+            var asyncTaskExecutor = serivceScope.ServiceProvider
+                    .GetRequiredService<AsyncTaskExecutor>();
+
+            await asyncTaskExecutor.ExecuteBatchAsync(100, cancellationToken);
+
+            await asyncTaskExecutor
+                    .WaitUntilReferencedAsyncTasksFinished(referenceIds, timeoutInSeconds, cancellationToken);
+        }
     }
 }
