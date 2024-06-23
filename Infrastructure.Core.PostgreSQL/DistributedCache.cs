@@ -1,17 +1,17 @@
 ﻿using Community.Microsoft.Extensions.Caching.PostgreSql;
 
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public static class SqlServerDbContextHandlerExtensions
+    public static class PostgreSQLContextHandlerExtensions
     {
-        public static void UseDistributedCache(this IHostApplicationBuilder builder)
+        public static void UseDistributedCache(this IServiceCollection services, IConfiguration configuration)
         {
-            builder.Services.AddDistributedPostgreSqlCache((serviceProvider, options) =>
+            services.AddDistributedPostgreSqlCache((serviceProvider, options) =>
             {
-                var connectionString = builder.Configuration.GetConnectionString("DbContextConnection");
+                var connectionString = configuration.GetConnectionString("DbContextConnection");
 
                 options.ConnectionString = connectionString;
                 options.SchemaName = "core";

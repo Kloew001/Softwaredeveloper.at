@@ -7,11 +7,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class DistributedCacheExtensions
     {
-        public static void UseDistributedCache(this IHostApplicationBuilder builder)
+        public static void UseDistributedCache(this IServiceCollection services, IConfiguration configuration)
         {
-            builder.Services.AddDistributedSqlServerCache(options =>
+            services.AddDistributedSqlServerCache(options =>
             {
-                var connectionString = builder.Configuration.GetConnectionString("DbContextConnection");
+                var connectionString = configuration.GetConnectionString("DbContextConnection");
 
                 options.ConnectionString = connectionString;
                 options.SchemaName = "core";

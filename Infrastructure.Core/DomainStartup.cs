@@ -12,7 +12,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 {
     public interface IDomainStartupCore
     {
-        void ConfigureServices(IHostApplicationBuilder builder);
+        void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment);
         void ConfigureApp(IHost host);
     }
 
@@ -23,11 +23,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         protected IHostEnvironment HostEnvironment { get; set; }
         protected IServiceCollection Services { get; set; }
 
-        public virtual void ConfigureServices(IHostApplicationBuilder builder)
+        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment)
         {
-            Services = builder.Services;
-            Configuration = builder.Configuration;
-            HostEnvironment = builder.Environment;
+            Services = services;
+            Configuration = configuration;
+            HostEnvironment = hostEnvironment;
 
             ApplicationUserIds.ServiceAdminId = Guid.Parse(Configuration.GetSection("ServiceUser").GetValue<string>("Id"));
 
@@ -42,6 +42,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             ConfigureApplicationSettings();
 
             Services.AddHttpClient();
+            Services.AddMemoryCache();
 
             Services.RegisterSelfRegisterDependencies();
             Services.RegisterAllHostedService();

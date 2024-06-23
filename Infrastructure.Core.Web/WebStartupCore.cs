@@ -27,7 +27,7 @@ namespace Infrastructure.Core.Web
 
         public virtual void ConfigureServices(WebApplicationBuilder builder)
         {
-            DomainStartup.ConfigureServices(builder);
+            DomainStartup.ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
             builder.AddDefaultServices();
 

@@ -1,17 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace SampleApp.Application
 {
     public class DomainStartup : DomainStartupCore<ApplicationSettings>
     {
-        public override void ConfigureServices(IHostApplicationBuilder builder)
+        public override void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment)
         {
-            var services = builder.Services;
+            base.ConfigureServices(services, configuration, hostEnvironment);
 
-            base.ConfigureServices(builder);
-
-            builder.UsePostgreSQLDbContextHandler();
+            services.UsePostgreSQLDbContextHandler(configuration);
 
             services.RegisterDBContext<SampleAppContext>();
 

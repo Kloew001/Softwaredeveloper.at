@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,10 +13,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class SqlServerDbContextHandlerExtensions
     {
-        public static void UseSqlServerDbContextHandler(this IHostApplicationBuilder builder)
+        public static void UseSqlServerDbContextHandler(this IServiceCollection services, IConfiguration configuration)
         {
-            builder.Services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
-            builder.UseDistributedCache();
+            services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
+            services.UseDistributedCache(configuration);
         }
     }
 

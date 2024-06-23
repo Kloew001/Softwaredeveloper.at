@@ -32,9 +32,6 @@ namespace Infrastructure.Core.Web
 
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddMemoryCache();
-            //builder.Services.AddHttpClient();
-
             builder.Services.AddControllers(options =>
             {
                 //options.ModelBinderProviders.Remove

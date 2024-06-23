@@ -15,7 +15,7 @@ public class WebStartup : WebStartupCore<DomainStartup>
 
     public override void ConfigureServices(WebApplicationBuilder builder)
     {
-        DomainStartup.ConfigureServices(builder);
+        DomainStartup.ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
         builder.AddDefaultServices();
 

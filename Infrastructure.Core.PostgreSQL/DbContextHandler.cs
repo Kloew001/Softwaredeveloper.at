@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,10 +13,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class PostgreSQLDbContextHandlerExtensions
     {
-        public static void UsePostgreSQLDbContextHandler(this IHostApplicationBuilder builder)
+        public static void UsePostgreSQLDbContextHandler(this IServiceCollection services, IConfiguration configuration)
         {
-            builder.Services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
-            builder.UseDistributedCache();
+            services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
+            services.UseDistributedCache(configuration);
         }
     }
 
