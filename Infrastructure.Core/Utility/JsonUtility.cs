@@ -11,6 +11,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 
         public static T FromJson<T>(this string json, JsonSerializerSettings settings = null)
         {
+            if (json == null)
+                return default;
+
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, settings);
         }
     }

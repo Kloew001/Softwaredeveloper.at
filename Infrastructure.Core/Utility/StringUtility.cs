@@ -18,6 +18,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return !string.IsNullOrEmpty(str);
         }
 
+        public static string EmptyToNull(this string str)
+        {
+            if (str == null)
+                return null;
+
+            if (str.IsNullOrWhiteSpace())
+                return null;
+
+            return str;
+        }
+
+        public static bool IsNullOrWhiteSpace(this string str)
+        {
+            return string.IsNullOrWhiteSpace(str);
+        }
+
         public static string GenerateRandomString(string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", int length = 6)
         {
             var randomString = new StringBuilder();
