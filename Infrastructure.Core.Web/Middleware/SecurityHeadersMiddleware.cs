@@ -19,13 +19,15 @@ namespace Infrastructure.Core.Web.Middleware
             context.Response.Headers.Append("X-Frame-Options", new StringValues("SAMEORIGIN"));
             //context.Response.Headers.Append("X-XSS-Protection", new StringValues("1; mode=block"));//Deprecaded
             context.Response.Headers.Append("Referrer-Policy", new StringValues("strict-origin-when-cross-origin"));
+            context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
+            context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
 
             context.Response.OnStarting(state =>
             {
                 var ctx = (HttpContext)state;
 
                 if (ctx.Response.Headers.ContainsKey("Server"))
-                    ctx.Response.Headers.Remove("Server"); // For security reasons
+                    ctx.Response.Headers.Remove("Server");
 
                 if (ctx.Response.Headers.ContainsKey("x-powered-by") || ctx.Response.Headers.ContainsKey("X-Powered-By"))
                 {

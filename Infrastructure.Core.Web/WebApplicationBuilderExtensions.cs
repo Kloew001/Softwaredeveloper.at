@@ -23,7 +23,7 @@ namespace Infrastructure.Core.Web
     {
         public static WebApplicationBuilder AddDefaultServices(this WebApplicationBuilder builder)
         {
-            builder.AddMaxRequestBody();
+            builder.ConfigureHosting();
 
             builder.Services.AddLogging(options =>
             {
@@ -74,7 +74,7 @@ namespace Infrastructure.Core.Web
 
         private const int _defaultMxRequestBodySizeInMB = 5;
 
-        public static WebApplicationBuilder AddMaxRequestBody(this WebApplicationBuilder builder)
+        public static WebApplicationBuilder ConfigureHosting(this WebApplicationBuilder builder)
         {
             var maxRequestBodySizeInMB = builder.Configuration.GetSection("MaxRequestBodySizeInMB").Get<int>();
 
@@ -89,6 +89,8 @@ namespace Infrastructure.Core.Web
             builder.WebHost.ConfigureKestrel(serverOptions =>
             {
                 serverOptions.Limits.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
+
+                serverOptions.AddServerHeader = false;
             });
 
             return builder;
