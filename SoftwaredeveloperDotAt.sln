@@ -19,7 +19,7 @@ Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "sampleapp.client", "SampleA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleApp.Application", "SampleApp\SampleApp.Application\SampleApp.Application.csproj", "{A17E079A-4715-4518-BF04-8509BBB76878}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Application.Tests", "SampleApp\SampleApp.Tests\SampleApp.Application.Tests.csproj", "{EE964720-B2AF-41D3-A8B4-36BA187535F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Application.Tests", "SampleApp\SampleApp.Application.Tests\SampleApp.Application.Tests.csproj", "{EE964720-B2AF-41D3-A8B4-36BA187535F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Core.Tests", "Infrastructure.Core.Tests\Infrastructure.Core.Tests.csproj", "{1ACAC7B3-2F4D-49A8-8BEC-1D455BE77301}"
 EndProject
