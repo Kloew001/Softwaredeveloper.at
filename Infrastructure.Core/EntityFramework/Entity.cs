@@ -24,6 +24,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         //[Timestamp]
         //public byte[] Timestamp { get; set; }
 
+
+        //public string TransationID { get; set; }
+
         public override string ToString()
         {
             return $"[{GetType().Name} {Id}]";
