@@ -1,20 +1,24 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core;
+
 namespace Infrastructure.Core.Web.Middleware
 {
     public class SecurityHeadersMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IApplicationSettings _applicationSettings;
 
-        public SecurityHeadersMiddleware(RequestDelegate next)
+        public SecurityHeadersMiddleware(RequestDelegate next, IApplicationSettings applicationSettings)
         {
             _next = next;
+            _applicationSettings = applicationSettings;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; object-src 'none'; frame-ancestors 'self'; frame-action 'self'; ");
+            context.Response.Headers.Append("Content-Security-Policy", $"default-src 'self' {_applicationSettings.Url.BaseUrl}; object-src 'none';  style-src 'self'; frame-ancestors 'self'; form-action 'self';");
 
             context.Response.Headers.Append("X-Content-Type-Options", new StringValues("nosniff"));
             context.Response.Headers.Append("X-Frame-Options", new StringValues("SAMEORIGIN"));
