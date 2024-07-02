@@ -14,7 +14,7 @@ namespace Infrastructure.Core.Web.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            //context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; object-src 'none'; frame-ancestors 'self'; frame-action 'self'; ");
+            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; object-src 'none'; frame-ancestors 'self'; frame-action 'self'; ");
 
             context.Response.Headers.Append("X-Content-Type-Options", new StringValues("nosniff"));
             context.Response.Headers.Append("X-Frame-Options", new StringValues("SAMEORIGIN"));
