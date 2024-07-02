@@ -241,6 +241,8 @@ namespace Infrastructure.Core.Web
                 options.Preload = false;
                 options.IncludeSubDomains = true;
                 options.MaxAge = TimeSpan.FromDays(60);
+                
+                options.ExcludedHosts.Clear();
             });
 
             return builder;
