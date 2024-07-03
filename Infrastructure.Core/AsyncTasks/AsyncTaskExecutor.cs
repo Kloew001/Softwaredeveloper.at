@@ -84,8 +84,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
             {
                 var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(GetNextAsyncTaskOperationIdsAsync)}";
-                if (distributedLock.TryAcquireLock(lockName, 3) == false)
-                    throw new InvalidOperationException();
+                if (await distributedLock.TryAcquireLockAsync(lockName, 3) == false)
+                    throw new TimeoutException();
 
                 var dateNow = DateTime.Now;
 

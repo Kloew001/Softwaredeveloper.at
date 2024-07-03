@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
 {
@@ -20,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
         IEnumerable<IEntityAudit> IAuditableEntity.Audits => Audits.OfType<IEntityAudit>();
     }
 
-    public interface IEntityAudit
+    public interface IEntityAudit: ISupportValidDateRange
     {
         public Guid Id { get; set; }
 
@@ -28,11 +29,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
         IEntity Audit { get; set; }
 
         string TransactionId { get; set; }
-        DateTime AuditDate { get; set; }
         public Guid ModifiedById { get; set; }
-        string AuditAction { get; set; }
+        AuditActionType AuditAction { get; set; }
         string CallingMethod { get; set; }
         string MachineName { get; set; }
+    }
+
+    public enum AuditActionType
+    {
+        [EnumExtension(DisplayName = "Created")]
+        Created,
+
+        [EnumExtension(DisplayName = "Modified")]
+        Modified,
+
+        [EnumExtension(DisplayName = "Deleted")]
+        Deleted, 
     }
 
     public interface IEntityAudit<TEntity> : IEntityAudit
@@ -53,18 +65,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
     public abstract class EntityAudit<TEntity> : ChangeTrackedEntity, IEntityAudit<TEntity>
          where TEntity : Entity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Required]
-        public Guid Id { get; set; }
-
         public Guid AuditId { get; set; }
         public virtual TEntity Audit { get; set; }
 
         public string TransactionId { get; set; }
-        public DateTime AuditDate { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
 
-        public string AuditAction { get; set; }
+        public AuditActionType AuditAction { get; set; }
         public string CallingMethod { get; set; }
         public string MachineName { get; set; }
     }

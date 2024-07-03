@@ -89,8 +89,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (dbContextHandler == null)
                 throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
 
-            dbContextHandler.HandleEntityAudit(this);
-            dbContextHandler.HandleChangeTrackedEntity(this);
+            var transactionDateTime = DateTime.Now;
+
+            dbContextHandler.HandleEntityAudit(this, transactionDateTime);
+            dbContextHandler.HandleChangeTrackedEntity(this, transactionDateTime);
         }
 
         public TEntity CreateEntity<TEntity>()

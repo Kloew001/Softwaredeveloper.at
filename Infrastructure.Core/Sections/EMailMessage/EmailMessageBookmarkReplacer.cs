@@ -17,19 +17,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     public interface IEmailMessageBookmark
     {
         string Key { get; set; }
-        Func<EmailMessage, IEntity, string> ValueResolver { get; }
+        Func<IDbContext, EmailMessage, IEntity, string> ValueResolver { get; }
         Type TypeOfRoot { get; }
     }
 
     public class EmailMessageBookmark<TRoot> : IEmailMessageBookmark
     {
         public string Key { get; set; }
-        public Func<EmailMessage, TRoot, string> ValueResolver { get; set; }
+        public Func<IDbContext, EmailMessage, TRoot, string> ValueResolver { get; set; }
         public Type TypeOfRoot { get => typeof(TRoot); }
 
-        Func<EmailMessage, IEntity, string> IEmailMessageBookmark.ValueResolver => (e, o) => { return ValueResolver(e, (TRoot)o); };
+        Func<IDbContext, EmailMessage, IEntity, string> IEmailMessageBookmark.ValueResolver => (db, e, o) => { return ValueResolver(db, e, (TRoot)o); };
 
-        public EmailMessageBookmark(string key, Func<EmailMessage, TRoot, string> valueFunc)
+        public EmailMessageBookmark(string key, Func<IDbContext, EmailMessage, TRoot, string> valueFunc)
         {
             Key = key;
             ValueResolver = valueFunc;
@@ -61,16 +61,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(STYLE, GetStyle));
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(SIGNATURE, GetSignature));
-            Bookmarks.Add(new EmailMessageBookmark<IEntity>(BaseUrl, (e, o) => _applicationSettings.Url.BaseUrl));
-            Bookmarks.Add(new EmailMessageBookmark<IEntity>(CurrentYear, (e, o) => DateTime.Now.Year.ToString()));
+            Bookmarks.Add(new EmailMessageBookmark<IEntity>(BaseUrl, (db, e, o) => _applicationSettings.Url.BaseUrl));
+            Bookmarks.Add(new EmailMessageBookmark<IEntity>(CurrentYear, (db, e, o) => DateTime.Now.Year.ToString()));
         }
 
-        protected virtual string GetStyle(EmailMessage email, IEntity referenceEntity)
+        protected virtual string GetStyle(IDbContext context, EmailMessage email, IEntity referenceEntity)
         {
             return GetEmailConfiguration(email, referenceEntity)?.Style;
         }
 
-        protected virtual string GetSignature(EmailMessage email, IEntity referenceEntity)
+        protected virtual string GetSignature(IDbContext context, EmailMessage email, IEntity referenceEntity)
         {
             return GetEmailConfiguration(email, referenceEntity)?.Signature;
         }
@@ -100,13 +100,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
     public class EmailMessageBookmarkReplacer : IEmailMessageBookmarkReplacer
     {
-        private IEmailMessageGlobalBookmark _globalBookmarks;
-        private EmailMessageBookmarkSection _bookmarkReplaceSection;
+        private readonly IDbContext _context;
+        private readonly IEmailMessageGlobalBookmark _globalBookmarks;
+        private readonly EmailMessageBookmarkSection _bookmarkReplaceSection;
 
         public EmailMessageBookmarkReplacer(
+            IDbContext context,
             IEmailMessageGlobalBookmark globalBookmarks,
             EmailMessageBookmarkSection bookmarkReplaceSection)
         {
+            _context = context;
             _globalBookmarks = globalBookmarks;
             _bookmarkReplaceSection = bookmarkReplaceSection;
         }
@@ -147,7 +150,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             if (!ContainsBookmark(bookmark.Key, content))
                 return content;
 
-            var value = bookmark.ValueResolver(email, referenceEntity);
+            var value = bookmark.ValueResolver(_context, email, referenceEntity);
             content = ReplaceBookmark(bookmark.Key, content, value);
 
             return content;

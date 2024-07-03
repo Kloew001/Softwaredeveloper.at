@@ -11,6 +11,19 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class EntityExtensions
     {
+        public static IQueryable<T> GetDbSetByType<T>(this IDbContext context, Type entityType)
+        {
+            var method = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes);
+
+            // Make the method generic using the provided entity type.
+            var genericMethod = method.MakeGenericMethod(entityType);
+
+            // Invoke the method on the context to get the DbSet.
+            var dbSet = genericMethod.Invoke(context, null);
+
+            return (dbSet as IQueryable).OfType<T>();
+        }
+
         public static IDbContext ResolveDbContext(this IEntity entity)
         {
             var lazyLoader = (ILazyLoader)entity.GetType()

@@ -423,7 +423,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        protected async Task ValidateAndThrowInternalAsync(TEntity entity)
+        public async Task ValidateAndThrowInternalAsync(TEntity entity)
         {
             var validationResult = await ValidateInternalAsync(entity);
 
@@ -434,7 +434,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 throw validationResult.ToValidationException();
         }
 
-        protected async Task<ValidationResult> ValidateInternalAsync(TEntity entity)
+        public async Task<ValidationResult> ValidateInternalAsync(TEntity entity)
         {
             if (_sectionManager.IsActive<SuppressValidationSection>())
                 return null;

@@ -117,7 +117,7 @@ namespace Infrastructure.Core.Tests
             services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
         }
 
-        protected async Task WaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        protected async Task ExecuteBatchAndWaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             using var serivceScope = _serviceScope.ServiceProvider.CreateScope();
 

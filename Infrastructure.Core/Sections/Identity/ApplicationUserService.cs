@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 {
     public static class IApplicationUserServiceExtensions
@@ -160,11 +162,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
             try
             {
-                var applicationUser = await GetSingleByIdInternalAsync(applicationUserId);
+                var applicationUser = await GetUserInternalById(applicationUserId);
 
                 if (await _accessService.EvaluateAsync(applicationUser, (accessCondition, securityEntity) =>
                             accessCondition.CanCreateAsync(securityEntity)) == false)
                     throw new UnauthorizedAccessException();
+
+                using (var childScope = EntityServiceDependency.ServiceProvider.CreateChildScope())
+                {
+                    var context = childScope.ServiceProvider.GetRequiredService<IDbContext>();
+                    var applicationUserService = childScope.ServiceProvider.GetRequiredService<IApplicationUserService>();
+
+                    var applicationUserScoped = await applicationUserService.GetUserInternalById(applicationUserId);
+
+                    applicationUserScoped.CreateEntityAudit(context, AuditActionType.Created, DateTime.Now, Guid.NewGuid());
+
+                    await context.SaveChangesAsync();
+                }
+
+                applicationUser.Reload();
 
                 return applicationUser;
             }

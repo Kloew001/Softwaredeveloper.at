@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Vml.Office;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -43,8 +44,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         void OnModelCreating(ModelBuilder modelBuilder);
 
-        void HandleChangeTrackedEntity(DbContext context);
-        void HandleEntityAudit(DbContext context);
+        void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime);
+        void HandleEntityAudit(DbContext context, DateTime transactionDateTime);
     }
 
     public abstract class BaseDbContextHandler : IDbContextHandler
@@ -248,7 +249,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
 
 
-        public void HandleEntityAudit(DbContext context)
+        public void HandleEntityAudit(DbContext context, DateTime transactionDateTime)
         {
             var entityEntries = context.ChangeTracker
                 .Entries()
@@ -261,8 +262,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (!entityEntries.Any())
                 return;
 
-            var now = DateTime.Now;
             var transactionId = Guid.NewGuid();
+            var idbContext = context.As<IDbContext>();
 
             foreach (var entityEntry in entityEntries)
             {
@@ -287,34 +288,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 //    }
                 //}
 
-                var entityAuditType = auditableEntity.GetEntityAuditType();
-
-                var entityAudit = context.As<IDbContext>()
-                        .GetType()
-                        .GetMethod(nameof(IDbContext.CreateEntity))
-                        .MakeGenericMethod(entityAuditType)
-                        .Invoke(context, null)
-                        .As<IEntityAudit>();
-
-                auditableEntity.CopyPropertiesTo(entityAudit);
-
-                entityAudit.Id = Guid.NewGuid();
-
-                entityAudit.AuditId = auditableEntity.Id;
-                entityAudit.Audit = auditableEntity;
-
-                entityAudit.AuditDate = now;
-                entityAudit.AuditAction = entityEntry.State.ToString();
-
-                //var entityFrameworkEvent = auditEvent?.GetEntityFrameworkEvent();
-                entityAudit.TransactionId = transactionId.ToString();
-
-                //entityAudit.CallingMethod = auditEvent.Environment?.CallingMethodName;
-                //entityAudit.MachineName = auditEvent.Environment?.MachineName;
+                auditableEntity
+                    .CreateEntityAudit(idbContext, entityEntry.GetAuditActionType(), transactionDateTime, transactionId);
             }
         }
 
-        public void HandleChangeTrackedEntity(DbContext context)
+        public void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime)
         {
             var currentUserService = context.GetService<ICurrentUserService>();
 
@@ -330,8 +309,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
             //    .ToList();
 
-            var now = DateTime.Now;
-
             foreach (var entityEntry in changedEntries)
             {
                 var currentUserId = currentUserService?.GetCurrentUserId();
@@ -340,12 +317,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 var baseEntity = (ChangeTrackedEntity)entityEntry.Entity;
 
-                baseEntity.DateModified = now;
+                baseEntity.DateModified = transactionDateTime;
                 baseEntity.ModifiedById = currentUserId.Value;
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    baseEntity.DateCreated = now;
+                    baseEntity.DateCreated = transactionDateTime;
                     baseEntity.CreatedById = currentUserId.Value;
                 }
                 else if (entityEntry.State == EntityState.Modified)
