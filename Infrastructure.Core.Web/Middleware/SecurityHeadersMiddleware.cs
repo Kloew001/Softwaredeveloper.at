@@ -8,17 +8,20 @@ namespace Infrastructure.Core.Web.Middleware
     public class SecurityHeadersMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IApplicationSettings _applicationSettings;
 
-        public SecurityHeadersMiddleware(RequestDelegate next, IApplicationSettings applicationSettings)
+        public SecurityHeadersMiddleware(RequestDelegate next)
         {
             _next = next;
-            _applicationSettings = applicationSettings;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            context.Response.Headers.Append("Content-Security-Policy", $"default-src 'self' {_applicationSettings.Url.BaseUrl}; object-src 'none';  style-src 'self' 'unsafe-inline'  {_applicationSettings.Url.BaseUrl}; frame-ancestors 'self'; form-action 'self';");
+            context.Response.Headers.Append("Content-Security-Policy",
+                "default-src 'sel';" +
+                  "object-src 'none';" +
+                  "style-src 'self' 'unsafe-inline';" +
+                  "script-src 'self' 'unsafe-inline';" +
+                  "font-src 'self' https://fonts.gstatic.com https://cdn.materialdesignicons.com;");
 
             context.Response.Headers.Append("X-Content-Type-Options", new StringValues("nosniff"));
             context.Response.Headers.Append("X-Frame-Options", new StringValues("SAMEORIGIN"));
