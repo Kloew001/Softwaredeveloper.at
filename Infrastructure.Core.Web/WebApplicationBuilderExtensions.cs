@@ -91,6 +91,7 @@ namespace Infrastructure.Core.Web
                 serverOptions.Limits.MaxRequestBodySize = maxRequestBodySizeInMB * 1024 * 1024;
 
                 serverOptions.AddServerHeader = false;
+
             });
 
             return builder;
