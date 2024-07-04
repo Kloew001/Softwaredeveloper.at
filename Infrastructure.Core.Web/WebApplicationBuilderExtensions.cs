@@ -236,6 +236,7 @@ namespace Infrastructure.Core.Web
 
         public static WebApplicationBuilder AddDefaultHsts(this WebApplicationBuilder builder)
         {
+            //https://github.com/andrewlock/NetEscapades.AspNetCore.SecurityHeaders
             builder.Services.AddHsts(options =>
             {
                 options.Preload = false;
