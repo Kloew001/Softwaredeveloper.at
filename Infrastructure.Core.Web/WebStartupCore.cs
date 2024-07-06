@@ -74,7 +74,7 @@ namespace Infrastructure.Core.Web
         
             app.UseHsts();
 
-            app.UseMiddleware<SecurityHeadersMiddleware>();
+            app.UseSecurityHeaders();
 
             app.UseHttpsRedirection();
         }
