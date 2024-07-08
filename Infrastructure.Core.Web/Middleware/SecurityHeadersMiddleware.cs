@@ -28,6 +28,7 @@ namespace Infrastructure.Core.Web.Middleware
             context.Response.Headers.Append("Referrer-Policy", new StringValues("strict-origin-when-cross-origin"));
             context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
             context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
+            context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
             context.Response.OnStarting(state =>
             {
