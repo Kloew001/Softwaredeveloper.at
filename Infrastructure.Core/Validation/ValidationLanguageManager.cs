@@ -1,12 +1,24 @@
-﻿using System.Collections.Concurrent;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+
+using System.Collections.Concurrent;
 using System.Globalization;
 
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
 {
+    public class KeyValidationLanguageManager : ValidationLanguageManager
+    {
+        public override string GetString(string key, CultureInfo culture = null)
+        {
+            var value = _languages.GetOrAdd(key, k => KeyLanguage.GetTranslation(key));
+
+            return value ?? string.Empty;
+        }
+    }
+
     public class ValidationLanguageManager : FluentValidation.Resources.LanguageManager
     {
-        private readonly ConcurrentDictionary<string, string> _languages = new ConcurrentDictionary<string, string>();
+        protected readonly ConcurrentDictionary<string, string> _languages = new ConcurrentDictionary<string, string>();
 
         public ValidationLanguageManager()
         {
@@ -55,7 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
                 EnglishLanguage.BritishCulture => EnglishLanguage.GetTranslation(key),
                 EnglishLanguage.Culture => EnglishLanguage.GetTranslation(key),
                 GermanLanguage.Culture => GermanLanguage.GetTranslation(key),
-                _ => null,
+                _ => KeyLanguage.GetTranslation(key),
             };
         }
 

@@ -76,6 +76,8 @@ namespace Infrastructure.Core.Web
 
             app.UseSecurityHeaders();
 
+            app.UseCurrentCulture();
+
             app.UseHttpsRedirection();
         }
     }

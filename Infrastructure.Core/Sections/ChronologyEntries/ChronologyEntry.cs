@@ -15,7 +15,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
         public virtual Entity Reference { get; set; }
         
         public string ReferenceType { get; set; }
-        
+
+        public int? ChronologyType { get; set; }
+
         public virtual ICollection<ChronologyEntryTranslation> Translations { get; set; }
     }
 
