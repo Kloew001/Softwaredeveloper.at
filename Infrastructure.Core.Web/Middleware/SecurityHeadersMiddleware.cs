@@ -36,7 +36,7 @@ namespace Infrastructure.Core.Web.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             context.Response.Headers.ContentSecurityPolicy = new StringValues(
-                "default-src 'sel';" +
+                "default-src 'self';" +
                   "object-src 'none';" +
                   "style-src 'self' 'unsafe-inline';" +
                   "script-src 'self' 'unsafe-inline';" +
