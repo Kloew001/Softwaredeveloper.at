@@ -48,17 +48,14 @@ namespace Infrastructure.Core.Web
                 await next();
             });
 
+            app.UseHttpsRedirection();
+
+            app.UseExceptionHandler();
+
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            //app.UseProblemDetails();
-
             app.MapControllers();
-
-            app.UseExceptionHandler();
 
             if (app.Environment.IsDevelopment())
             {
@@ -74,11 +71,12 @@ namespace Infrastructure.Core.Web
         
             app.UseHsts();
 
-            app.UseSecurityHeaders();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseCurrentCulture();
 
-            app.UseHttpsRedirection();
+            app.UseSecurityHeaders();
         }
     }
 }
