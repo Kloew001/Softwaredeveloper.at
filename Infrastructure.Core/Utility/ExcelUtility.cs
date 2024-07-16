@@ -87,7 +87,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
             return dataSet;
         }
 
-        public static byte[] GetExcelFromDataSet(DataSet dataSet)
+        public static byte[] GetExcelFromDataSet(this DataSet dataSet)
         {
             using var memoryStream = new MemoryStream();
             using var workBook = new XLWorkbook();

@@ -23,6 +23,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        public string GetEnvironmentName() => _monitoreService.GetEnvironmentName();
+
+        [HttpGet]
+        [AllowAnonymous]
+        public string GetApplicationName() => _monitoreService.GetApplicationName();
+
+        [HttpGet]
+        [AllowAnonymous]
         public string Now() => DateTime.Now.ToString();
 
 

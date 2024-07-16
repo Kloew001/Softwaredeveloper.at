@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 using System.Diagnostics;
 
@@ -7,6 +8,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor
     public interface IMonitorService
     {
         Task<bool> IsAlive();
+        string GetEnvironmentName();
+        string GetApplicationName();
         Task<DBConnectionInfo> DBConnectionInfo();
     }
 
@@ -20,13 +23,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor
     public class MonitorService : IMonitorService
     {
         protected readonly IDbContext _dbContext;
+        protected readonly IHostEnvironment _hostEnvironment;
 
-        public MonitorService(IDbContext dbContext)
+        public MonitorService(IDbContext dbContext, IHostEnvironment hostEnvironment)
         {
             _dbContext = dbContext;
+            _hostEnvironment = hostEnvironment;
         }
 
         public Task<bool> IsAlive() => Task.FromResult(true);
+
+        public string GetEnvironmentName()
+        {
+            return _hostEnvironment.EnvironmentName;
+        }
+        public string GetApplicationName()
+        {
+            return _hostEnvironment.ApplicationName;
+        }
 
         public async Task<DBConnectionInfo> DBConnectionInfo()
         {
@@ -60,5 +74,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor
 
             return $"rows: {result.Count}, time: {watch.ElapsedMilliseconds}ms";
         }
+
     }
 }

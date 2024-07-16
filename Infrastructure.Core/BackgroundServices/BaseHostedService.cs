@@ -83,7 +83,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
             if (CanStart() == false)
             {
-                _logger.LogWarning($"IHostedService {Name} do not have configuration");
+                _logger.LogInformation($"IHostedService {Name} do not have configuration");
                 return Task.CompletedTask;
             }
 
