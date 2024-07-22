@@ -22,13 +22,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
 
         public ValidationLanguageManager()
         {
+            Enabled = true;
+
             //AddTranslation("en", "NotNullValidator", "'{PropertyName}' is required.");
             //AddTranslation("en-US", "NotNullValidator", "'{PropertyName}' is required.");
             //AddTranslation("en-GB", "NotNullValidator", "'{PropertyName}' is required.");
         }
+
         public override string GetString(string key, CultureInfo culture = null)
         {
-            string value;
+            string value = null;
 
             if (Enabled)
             {
@@ -45,18 +48,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
                     string parentCultureKey = currentCulture.Name + ":" + key;
                     value = _languages.GetOrAdd(parentCultureKey, k => GetTranslation(currentCulture.Name, key));
                 }
-
-                if (value == null && culture.Name != EnglishLanguage.Culture)
-                {
-                    value = base.GetString(key, culture);
-                }
             }
-            else
+
+            if (value == null)
             {
-                value = _languages.GetOrAdd(EnglishLanguage.Culture + ":" + key, k => EnglishLanguage.GetTranslation(key));
+                value = _languages.GetOrAdd("Key:" + key, k => KeyLanguage.GetTranslation(key));
             }
 
             return value ?? string.Empty;
+        }
+
+        public new void AddTranslation(string language, string key, string message)
+        {
+            if (string.IsNullOrEmpty(language)) throw new ArgumentNullException(nameof(language));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (string.IsNullOrEmpty(message)) throw new ArgumentNullException(nameof(message));
+
+            _languages[language + ":" + key] = message;
         }
 
         private static string GetTranslation(string culture, string key)
@@ -164,7 +172,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
                 "LessThanValidator" => "Muss kleiner sein als '{ComparisonValue}'.",
                 "NotEmptyValidator" => "Darf nicht leer sein.",
                 "NotEqualValidator" => "Darf nicht '{ComparisonValue}' sein.",
-                "NotNullValidator" => "Darf kein Nullwert sein.",
+                "NotNullValidator" => "Darf nicht leer sein.",
                 "PredicateValidator" => "Entspricht nicht der festgelegten Bedingung.",
                 "AsyncPredicateValidator" => "Entspricht nicht der festgelegten Bedingung.",
                 "RegularExpressionValidator" => "Weist ein ungültiges Format auf.",

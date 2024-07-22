@@ -35,7 +35,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
 
             ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
-            ValidatorOptions.Global.LanguageManager.Enabled = true;
 
             ReadableTimeSpan.EnableConfigurationBinding();
 

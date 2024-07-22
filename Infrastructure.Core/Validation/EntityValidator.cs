@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using FluentValidation.Resources;
 
 using Microsoft.Extensions.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
@@ -11,11 +12,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
         private readonly IServiceProvider _serviceProvider;
 
         public IDbContext DbContext { get; private set; }
+        public MultilingualService MultilingualService { get; private set; }
 
-        public EntityValidatorDependency(IDbContext dbContext , IServiceProvider serviceProvider)
+
+        public EntityValidatorDependency(IDbContext dbContext , IServiceProvider serviceProvider, MultilingualService multilingualService)
         {
             DbContext = dbContext;
             _serviceProvider = serviceProvider;
+            MultilingualService = multilingualService;
         }
 
         public T GetService<T>()
@@ -28,6 +32,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
         where TEntity : Entity
     {
         public EntityValidatorDependency<TEntity> Dependency { get; private set; }
+
+        public MultilingualService MultilingualService => Dependency.MultilingualService;
 
         public EntityValidator(EntityValidatorDependency<TEntity> dependency)
         {
