@@ -34,7 +34,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public EntityQueryService<TEntity> EntityQueryService { get; private set; }
         public EntityValidator<TEntity> Validator { get; private set; }
         public ICacheService CacheService { get; private set; }
-
+        public MultilingualService MultilingualService { get; private set; }
         public ICurrentUserService CurrentUserService { get; private set; }
 
         public EntityServiceDependency(
@@ -45,7 +45,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             SectionManager sectionManager,
             EntityQueryService<TEntity> entityQueryService,
             ICacheService cacheService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            MultilingualService multilingualService)
         {
             ServiceProvider = serviceProvider;
 
@@ -56,6 +57,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             EntityQueryService = entityQueryService;
             CurrentUserService = currentUserService;
             CacheService = cacheService;
+            MultilingualService = multilingualService;
 
             Validator = GetService<EntityValidator<TEntity>>();
         }
@@ -77,6 +79,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly ICurrentUserService _currentUserService;
         protected readonly EntityValidator<TEntity> _validator;
         protected readonly ICacheService _cacheService;
+        protected readonly MultilingualService _multilingualService;
 
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -91,6 +94,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _entityQueryService = entityServiceDependency.EntityQueryService;
             _currentUserService = entityServiceDependency.CurrentUserService;
             _cacheService = entityServiceDependency.CacheService;
+            _multilingualService = entityServiceDependency.MultilingualService;
 
             _validator = entityServiceDependency.Validator;
         }
