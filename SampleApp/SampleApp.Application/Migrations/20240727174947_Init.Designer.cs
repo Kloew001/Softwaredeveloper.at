@@ -12,15 +12,15 @@ using SampleApp.Application;
 namespace SampleApp.Application.Migrations
 {
     [DbContext(typeof(SampleAppContext))]
-    [Migration("20240614105755_AddDistributedCache")]
-    partial class AddDistributedCache
+    [Migration("20240727174947_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.5")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -54,11 +54,8 @@ namespace SampleApp.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AuditAction")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("AuditDate")
-                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+                    b.Property<int>("AuditAction")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("AuditId")
                         .HasColumnType("uuid");
@@ -98,6 +95,12 @@ namespace SampleApp.Application.Migrations
 
                     b.Property<string>("TransactionId")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
 
                     b.HasKey("Id");
 
@@ -293,7 +296,7 @@ namespace SampleApp.Application.Migrations
                     b.ToTable("MultilingualGlobalText", "core");
                 });
 
-            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent.BinaryContent", b =>
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -354,6 +357,9 @@ namespace SampleApp.Application.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("ChronologyType")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid")
@@ -420,6 +426,147 @@ namespace SampleApp.Application.Migrations
                     b.ToTable("ChronologyEntryTranslation");
                 });
 
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BinaryContentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EMailMessageId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BinaryContentId");
+
+                    b.HasIndex("EMailMessageId");
+
+                    b.ToTable("EMailMessageAttachment", "core");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique();
+
+                    b.ToTable("EMailMessageConfiguration", "core");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfigurationTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CultureId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HtmlContent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Signature")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Style")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoreId");
+
+                    b.HasIndex("CultureId");
+
+                    b.HasIndex("CoreId", "CultureId")
+                        .IsUnique();
+
+                    b.ToTable("EMailMessageConfigurationTranslation", "core");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ConfigurationID")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfigurationID");
+
+                    b.ToTable("EMailMessageTemplate", "core");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplateTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CultureId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HtmlContent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoreId");
+
+                    b.HasIndex("CultureId");
+
+                    b.HasIndex("CoreId", "CultureId")
+                        .IsUnique();
+
+                    b.ToTable("EMailMessageTemplateTranslation", "core");
+                });
+
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EmailMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -429,23 +576,14 @@ namespace SampleApp.Application.Migrations
                     b.Property<string>("AnAdress")
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("Attachment1")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("Attachment1Name")
-                        .HasColumnType("text");
-
-                    b.Property<byte[]>("Attachment2")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("Attachment2Name")
-                        .HasColumnType("text");
-
                     b.Property<string>("BccAdress")
                         .HasColumnType("text");
 
                     b.Property<string>("CcAdress")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CultureId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
@@ -474,7 +612,14 @@ namespace SampleApp.Application.Migrations
                     b.Property<string>("Subject")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TemplateId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CultureId");
+
+                    b.HasIndex("TemplateId");
 
                     b.HasIndex("ReferenceId", "ReferenceType");
 
@@ -613,11 +758,8 @@ namespace SampleApp.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AuditAction")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("AuditDate")
-                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+                    b.Property<int>("AuditAction")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("AuditId")
                         .HasColumnType("uuid");
@@ -663,6 +805,12 @@ namespace SampleApp.Application.Migrations
 
                     b.Property<string>("UserName")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
 
                     b.HasKey("Id");
 
@@ -801,7 +949,7 @@ namespace SampleApp.Application.Migrations
                     b.Navigation("Culture");
                 });
 
-            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContent.BinaryContent", b =>
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContent", b =>
                 {
                     b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -856,6 +1004,87 @@ namespace SampleApp.Application.Migrations
                     b.Navigation("Core");
 
                     b.Navigation("Culture");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageAttachment", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContent", "BinaryContent")
+                        .WithMany()
+                        .HasForeignKey("BinaryContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EmailMessage", "EMailMessage")
+                        .WithMany("Attachments")
+                        .HasForeignKey("EMailMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BinaryContent");
+
+                    b.Navigation("EMailMessage");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfigurationTranslation", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfiguration", "Core")
+                        .WithMany("Translations")
+                        .HasForeignKey("CoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual.MultilingualCulture", "Culture")
+                        .WithMany()
+                        .HasForeignKey("CultureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Core");
+
+                    b.Navigation("Culture");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplate", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfiguration", "Configuration")
+                        .WithMany()
+                        .HasForeignKey("ConfigurationID");
+
+                    b.Navigation("Configuration");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplateTranslation", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplate", "Core")
+                        .WithMany("Translations")
+                        .HasForeignKey("CoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual.MultilingualCulture", "Culture")
+                        .WithMany()
+                        .HasForeignKey("CultureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Core");
+
+                    b.Navigation("Culture");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EmailMessage", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual.MultilingualCulture", "Culture")
+                        .WithMany()
+                        .HasForeignKey("CultureId");
+
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("TemplateId");
+
+                    b.Navigation("Culture");
+
+                    b.Navigation("Template");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity.ApplicationRoleClaim", b =>
@@ -965,6 +1194,21 @@ namespace SampleApp.Application.Migrations
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntry", b =>
                 {
                     b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageConfiguration", b =>
+                {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageTemplate", b =>
+                {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EmailMessage", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity.ApplicationRole", b =>

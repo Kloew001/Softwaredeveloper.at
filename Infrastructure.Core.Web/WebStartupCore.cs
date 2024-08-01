@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
 namespace Infrastructure.Core.Web
 {
@@ -33,7 +34,7 @@ namespace Infrastructure.Core.Web
 
             builder.AddSwaggerGenWithBearer();
 
-            builder.AddBearerAuthentication();
+            builder.AddJwtBearerAuthentication();
 
             builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
         }
@@ -60,7 +61,8 @@ namespace Infrastructure.Core.Web
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                //app.UseSwaggerUI();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
             }
 
             app.UseRateLimiter();

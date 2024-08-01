@@ -38,7 +38,7 @@ namespace RWA.Server.Controllers
         [HttpPost]
         public Task<Guid> QuickCreate()
              => _service.QuickCreateAsync(new PersonDto());
-        
+
         [HttpPost]
         public Task<PersonDto> Update(PersonDto dto)
             => _service.UpdateAsync(dto);

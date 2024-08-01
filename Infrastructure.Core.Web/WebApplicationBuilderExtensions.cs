@@ -16,6 +16,17 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
+using DocumentFormat.OpenXml.Spreadsheet;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Core.Web
 {
@@ -99,58 +110,113 @@ namespace Infrastructure.Core.Web
 
         public static WebApplicationBuilder AddSwaggerGenWithBearer(this WebApplicationBuilder builder)
         {
-            builder.Services.AddSwaggerGen(config =>
+            builder.Services.AddSwaggerGen(c =>
             {
-                config.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Type = SecuritySchemeType.Http,
-                    In = ParameterLocation.Header,
-                    Scheme = "Bearer",
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
                     Name = "Authorization",
-                    BearerFormat = "JWT",
-                    Description = "JWT Authorization header using the Bearer scheme."
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer"
                 });
 
-                config.AddSecurityRequirement(new OpenApiSecurityRequirement
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
                 {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        },
-                        In = ParameterLocation.Header,
-                    },
-                    new List<string>()
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
                 }
-                });
+            },
+            new string[] {}
+        }
+    });
             });
 
             return builder;
         }
 
-        public static WebApplicationBuilder AddIdentity(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
+        public static WebApplicationBuilder AddJwtBearerAuthentication(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
         {
-            return builder;
-        }
+            //builder.Services.AddAuthentication(options =>
+            //{
+            //    options.DefaultAuthenticateScheme = IdentityConstants.BearerScheme;
+            //    options.DefaultChallengeScheme = IdentityConstants.BearerScheme;
+            //    options.DefaultSignInScheme = IdentityConstants.BearerScheme;
+            //})
+            //.AddBearerToken(IdentityConstants.BearerScheme, options =>
+            //{
+            //    options.BearerTokenExpiration = TimeSpan.FromMinutes(15);
+            //    options.RefreshTokenExpiration = TimeSpan.FromMinutes(60);
+            //});
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                options.ClaimsIdentity.UserIdClaimType = JwtRegisteredClaimNames.Sub;
+                options.ClaimsIdentity.UserNameClaimType = JwtRegisteredClaimNames.UniqueName;
+                options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+                options.ClaimsIdentity.EmailClaimType = JwtRegisteredClaimNames.Email;
+                options.ClaimsIdentity.SecurityStampClaimType = AccountService.JwtSecurityStamp;
+            });
 
-        public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
-        {
             builder.Services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = IdentityConstants.BearerScheme;
-                options.DefaultChallengeScheme = IdentityConstants.BearerScheme;
-                options.DefaultSignInScheme = IdentityConstants.BearerScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddBearerToken(IdentityConstants.BearerScheme, options =>
+            .AddJwtBearer(options =>
             {
-                options.BearerTokenExpiration = TimeSpan.FromMinutes(60);
+                options.MapInboundClaims = false;
+                options.SaveToken = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+                    ClockSkew = TimeSpan.Zero,
+                    SaveSigninToken = false,
+
+                    NameClaimType = JwtRegisteredClaimNames.Sub,
+                    RoleClaimType = ClaimsIdentity.DefaultRoleClaimType,
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async (ctx) =>
+                    {
+                        var signInManager = ctx.HttpContext.RequestServices
+                            .GetRequiredService<SignInManager<ApplicationUser>>();
+
+                        signInManager.AuthenticationScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                        var user = await signInManager.ValidateSecurityStampAsync(ctx.Principal);
+
+                        var x = ctx.Principal.FindFirstValue(signInManager.Options.ClaimsIdentity.SecurityStampClaimType);
+
+
+                        var user2 = await signInManager.UserManager.GetUserAsync(ctx.Principal);
+                        var s = await signInManager.UserManager.GetSecurityStampAsync(user2);
+
+                        if (user == null)
+                        {
+                            ctx.Fail("Invalid Security Stamp");
+                        }
+                    }
+                };
             });
 
-            var authorizationBuilder = builder.Services.AddAuthorizationBuilder();
-
+            var authorizationBuilder = builder.Services
+                .AddAuthorizationBuilder();
 
             if (authorizationOptions != null)
             {
@@ -161,9 +227,11 @@ namespace Infrastructure.Core.Web
                 authorizationBuilder.AddPolicy("api", p =>
                 {
                     p.RequireAuthenticatedUser();
-                    p.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
+                    p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
                 });
             }
+
+            builder.Services.AddTransient<ITokenService, JwtTokenService>();
 
             return builder;
         }
@@ -171,16 +239,17 @@ namespace Infrastructure.Core.Web
         public static WebApplicationBuilder AddCors(this WebApplicationBuilder builder)
         {
             var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
-            
+
             if (allowedOrigins != null && allowedOrigins.Any())
             {
                 builder.Services.AddCors(options =>
                 {
                     options.AddDefaultPolicy(policy =>
                       {
-                          policy.WithOrigins(allowedOrigins)
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          policy
+                              .WithOrigins(allowedOrigins)
+                              .AllowAnyMethod()
+                              .AllowAnyHeader();
                       });
                 });
             }
@@ -215,6 +284,7 @@ namespace Infrastructure.Core.Web
             where TRole : ApplicationRole
             where TContext : DbContext
         {
+            var identityBuilder =
             builder.Services
                 .AddIdentity<TUser, TRole>(options =>
                 {
@@ -232,8 +302,15 @@ namespace Infrastructure.Core.Web
                 .AddDefaultTokenProviders()
                 .AddUserConfirmation<UserConfirmation>();
 
+
+            identityBuilder
+                .AddTokenProvider(AccountService.TokenProviderName, typeof(DataProtectorTokenProvider<ApplicationUser>));
+
+
             return builder;
         }
+
+
 
         public static WebApplicationBuilder AddDefaultHsts(this WebApplicationBuilder builder)
         {
@@ -243,7 +320,7 @@ namespace Infrastructure.Core.Web
                 options.Preload = false;
                 options.IncludeSubDomains = true;
                 options.MaxAge = TimeSpan.FromDays(60);
-                
+
                 options.ExcludedHosts.Clear();
             });
 
@@ -291,54 +368,6 @@ namespace Infrastructure.Core.Web
                         };
                     });
                 });
-
-                //PartitionedRateLimiter.CreateChained(
-                //   PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                //   {
-                //       var userAgent = httpContext.Request.Headers.UserAgent.ToString();
-
-                //       httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out StringValues forwardedFor);
-
-                //       var ipAddress = forwardedFor.FirstOrDefault() ?? httpContext.Request.HttpContext.Connection.RemoteIpAddress?.ToString();
-
-                //       if (ipAddress == null)
-                //           return RateLimitPartition.GetNoLimiter("none");
-
-                //       return RateLimitPartition.GetFixedWindowLimiter
-                //       (userAgent, _ =>
-                //           new FixedWindowRateLimiterOptions
-                //           {
-                //               AutoReplenishment = true,
-                //               PermitLimit = 10,
-                //               Window = TimeSpan.FromSeconds(2)
-                //           });
-                //       }),
-                //       PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                //       {
-                //           var userAgent = httpContext.Request.Headers.UserAgent.ToString();
-
-                //           return RateLimitPartition.GetFixedWindowLimiter
-                //           (userAgent, _ =>
-                //               new FixedWindowRateLimiterOptions
-                //               {
-                //                   AutoReplenishment = true,
-                //                   PermitLimit = 30,
-                //                   Window = TimeSpan.FromSeconds(30)
-                //               });
-                //       }),
-                //       PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                //       {
-                //           var userAgent = httpContext.Request.Headers.UserAgent.ToString();
-
-                //           return RateLimitPartition.GetFixedWindowLimiter
-                //           (userAgent, _ =>
-                //               new FixedWindowRateLimiterOptions
-                //               {
-                //                   AutoReplenishment = true,
-                //                   PermitLimit = 40,
-                //                   Window = TimeSpan.FromSeconds(60)
-                //               });
-                //       }));
 
                 options.OnRejected = async (context, token) =>
                 {

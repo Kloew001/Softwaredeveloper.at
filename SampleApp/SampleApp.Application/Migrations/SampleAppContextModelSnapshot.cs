@@ -17,7 +17,7 @@ namespace SampleApp.Application.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.5")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -51,11 +51,8 @@ namespace SampleApp.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AuditAction")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("AuditDate")
-                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+                    b.Property<int>("AuditAction")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("AuditId")
                         .HasColumnType("uuid");
@@ -95,6 +92,12 @@ namespace SampleApp.Application.Migrations
 
                     b.Property<string>("TransactionId")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
 
                     b.HasKey("Id");
 
@@ -351,6 +354,9 @@ namespace SampleApp.Application.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("ChronologyType")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid")
@@ -749,11 +755,8 @@ namespace SampleApp.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AuditAction")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("AuditDate")
-                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+                    b.Property<int>("AuditAction")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("AuditId")
                         .HasColumnType("uuid");
@@ -799,6 +802,12 @@ namespace SampleApp.Application.Migrations
 
                     b.Property<string>("UserName")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
 
                     b.HasKey("Id");
 

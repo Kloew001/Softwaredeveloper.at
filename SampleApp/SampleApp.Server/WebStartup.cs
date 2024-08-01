@@ -20,24 +20,25 @@ public class WebStartup : WebStartupCore<DomainStartup>
         builder.AddDefaultServices();
 
         builder.Services.RegisterDBContext<SampleAppIdentityDbContext>();
+        builder.AddJwtBearerAuthentication();
 
-        builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
+        //builder.AddJwtBearerAuthentication(authorizationBuilder =>
+        //{
+        //    authorizationBuilder
+        //        .AddPolicy("api", policy =>
+        //        {
+        //            policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement());
 
-        builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
-        //builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+        //            //policy.RequireAuthenticatedUser();
+        //            //policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+        //        });
+        //});
 
         builder.AddSwaggerGenWithBearer();
 
-        builder.AddBearerAuthentication(authorizationBuilder =>
-        {
-            authorizationBuilder
-                .AddPolicy("api", policy =>
-                {
-                    policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement());
+        builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
 
-                    //policy.RequireAuthenticatedUser();
-                    //policy.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
-                });
-        });
+        //builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
+        builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
     }
 }

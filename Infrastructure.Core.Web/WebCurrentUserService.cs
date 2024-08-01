@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 
@@ -46,9 +49,14 @@ namespace Infrastructure.Core.Web
             if (_currentUserId.HasValue)
                 return _currentUserId.Value;
 
-            var claims = _httpContextAccessor.HttpContext?.User?.Claims;
+            var user = _httpContextAccessor.HttpContext?.User;
 
-            var id = claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+            var claims = user?.Claims;
+            //var userClaims = user?.Claims.Select(c => new { c.Type, c.Value }).ToList();
+
+            var id = claims?.FirstOrDefault(_ => 
+                _.Type == JwtRegisteredClaimNames.Sub || 
+                _.Type == ClaimTypes.NameIdentifier)?.Value;
 
             if (id != null)
                 _currentUserId = Guid.Parse(id);
