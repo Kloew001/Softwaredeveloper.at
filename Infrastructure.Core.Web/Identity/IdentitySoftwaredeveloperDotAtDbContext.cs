@@ -3,20 +3,18 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-using System.Net.Http.Headers;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
-    public abstract class IdentitySoftwaredeveloperDotAtDbContext :
+    public class IdentitySoftwaredeveloperDotAtDbContext :
         IdentityDbContext<
             ApplicationUser,
             ApplicationRole,
             Guid,
-            IdentityUserClaim<Guid>,
+            ApplicationUserClaim,
             ApplicationUserRole,
-            IdentityUserLogin<Guid>,
-            IdentityRoleClaim<Guid>,
-            IdentityUserToken<Guid>>
+            ApplicationUserLogin,
+            ApplicationRoleClaim,
+            ApplicationUserToken>
     {
         public IdentitySoftwaredeveloperDotAtDbContext()
         {
@@ -48,10 +46,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             //modelBuilder.ApplyConfiguration(new ApplicationRoleConfiguration());
             //modelBuilder.ApplyConfiguration(new ApplicationUserRoleConfiguration());
 
-            modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("ApplicationUserClaim", "identity");
-            modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("ApplicationUserLogin", "identity");
-            modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("ApplicationRoleClaim", "identity");
-            modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("ApplicationUserToken", "identity");
+            modelBuilder.Entity<ApplicationUserClaim>().ToTable("ApplicationUserClaim", "identity");
+            modelBuilder.Entity<ApplicationUserLogin>().ToTable("ApplicationUserLogin", "identity");
+            modelBuilder.Entity<ApplicationUserToken>().ToTable("ApplicationUserToken", "identity");
         }
     }
 

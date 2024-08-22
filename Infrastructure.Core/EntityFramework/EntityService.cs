@@ -1,18 +1,9 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using Microsoft.EntityFrameworkCore;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
-using static SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition.AccessService;
-using DocumentFormat.OpenXml.Vml.Office;
-using Microsoft.Extensions.Caching.Distributed;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -80,6 +71,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly EntityValidator<TEntity> _validator;
         protected readonly ICacheService _cacheService;
         protected readonly MultilingualService _multilingualService;
+        protected readonly IServiceProvider _serviceProvider;
 
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -87,6 +79,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             EntityServiceDependency = entityServiceDependency;
 
+            _serviceProvider = entityServiceDependency.ServiceProvider;
             _logger = entityServiceDependency.Logger;
             _context = entityServiceDependency.DbContext;
             _accessService = entityServiceDependency.AccessService;

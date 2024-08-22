@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using ExtendableEnums;
+
+using Microsoft.Extensions.Caching.Memory;
 
 using System.Reflection;
 
@@ -143,6 +145,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
                 if (propertyMap.TargetProperty.PropertyType.IsValueType ||
                     propertyMap.TargetProperty.PropertyType == typeof(string))
+                {
+                    propertyMap.TargetProperty
+                        .SetValue(target, sourceValue);
+                }
+                else if (propertyMap.TargetProperty.PropertyType.IsExtendableEnum())
+                {
+                    propertyMap.TargetProperty
+                        .SetValue(target, sourceValue);
+                }
+                else if (propertyMap.TargetProperty.PropertyType == typeof(byte[]))
                 {
                     propertyMap.TargetProperty
                         .SetValue(target, sourceValue);

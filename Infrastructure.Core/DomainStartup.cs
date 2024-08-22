@@ -56,10 +56,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             Services.AddScoped<IMonitorService, MonitorService>();
 
-            Services.AddScoped<IApplicationUserService>((sp) =>
-            {
-                return sp.GetRequiredService<ApplicationUserService>();
-            });
+            Services.AddScoped<IApplicationUserService>((sp) => sp.GetRequiredService<ApplicationUserService>());
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();

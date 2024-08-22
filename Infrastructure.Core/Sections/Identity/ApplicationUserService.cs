@@ -43,8 +43,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task<ApplicationUserDetailDto> GetCurrentUserAsync();
         ValueTask<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
         ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
-        Task<ApplicationUser> GetUserInternalById(Guid id);
-        Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
+        Task<ApplicationUser> GetUserByIdAsync(Guid id);
+        Task<ApplicationUser> GetUserByEMailAsync(string email);
+        Task<ApplicationUser> GetUserByUserNameAsync(string username);
+        Task<ApplicationUser> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
         Task<Guid> CreateRoleAsync(Guid id, string roleName);
         Task SetPreferedCultureAsync(string cultureName);
     }
@@ -56,20 +58,30 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
         }
 
-        public virtual Task<ApplicationUser> GetUserInternalById(Guid id)
+        public virtual Task<ApplicationUser> GetUserByIdAsync(Guid id)
         {
             return GetSingleInternalAsync((query) => query.Where(_ => _.Id == id));
         }
 
-        public virtual Task<ApplicationUser> GetEMailInternalAsync(string email)
+        public virtual Task<ApplicationUser> GetUserByEMailAsync(string email)
         {
             email = email.ToUpper().Trim();
             return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedEmail == email));
         }
 
+        public virtual Task<ApplicationUser> GetUserByUserNameAsync(string username)
+        {
+            username = username.ToUpper().Trim();
+
+            return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedUserName == username));
+        }
+
         public Task<ApplicationUserDetailDto> GetCurrentUserAsync()
         {
             var currentUserId = _currentUserService.GetCurrentUserId();
+            
+            if(currentUserId == null)
+                return null;
 
             return GetSingleByIdAsync<ApplicationUserDetailDto>(currentUserId.Value);
         }
@@ -131,7 +143,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return userRoleIds;
         }
 
-        public async ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
+        public virtual async ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
         {
             var userRoleIds = await GetRoleIdsAsync(userId);
 
@@ -153,16 +165,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             return id;
         }
 
-        public virtual async Task<ApplicationUser> CreateIdentityInternalAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default)
+        public virtual async Task<ApplicationUser> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default)
         {
             var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
 
-            var applicationUserId = await applicationUserIdentityService
-                .CreateUserAsync(identity, ct);
+            var currentUserId = _currentUserService.GetCurrentUserId();
+
+            if(!currentUserId.HasValue)
+                _currentUserService.SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
+
+            var applicationUserId = await applicationUserIdentityService.CreateUserAsync(identity, ct);
 
             try
             {
-                var applicationUser = await GetUserInternalById(applicationUserId);
+                var applicationUser = await GetUserByIdAsync(applicationUserId);
 
                 if (await _accessService.EvaluateAsync(applicationUser, (accessCondition, securityEntity) =>
                             accessCondition.CanCreateAsync(securityEntity)) == false)
@@ -173,7 +189,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
                     var context = childScope.ServiceProvider.GetRequiredService<IDbContext>();
                     var applicationUserService = childScope.ServiceProvider.GetRequiredService<IApplicationUserService>();
 
-                    var applicationUserScoped = await applicationUserService.GetUserInternalById(applicationUserId);
+                    var applicationUserScoped = await applicationUserService.GetUserByIdAsync(applicationUserId);
 
                     applicationUserScoped.CreateEntityAudit(context, AuditActionType.Created, DateTime.Now, Guid.NewGuid());
 
@@ -188,6 +204,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             {
                 await DeleteIdentityAsync(applicationUserId);
                 throw;
+            }
+            finally
+            {
+                if (!currentUserId.HasValue)
+                    _currentUserService.SetCurrentUserId(null);
             }
         }
 

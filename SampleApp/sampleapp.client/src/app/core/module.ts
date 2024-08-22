@@ -15,6 +15,7 @@ import { AsyncButtonComponent } from './components/async-button-component';
 import { ErrorInterceptor } from './interceptor/error.interceptor';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { IconSnackBarComponent } from './components/icon-snackbar-component';
+import { JwtInterceptor } from './interceptor/jwt.interceptor';
 
 
 @NgModule({
@@ -51,6 +52,7 @@ import { IconSnackBarComponent } from './components/icon-snackbar-component';
   ],
   providers: [
 
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
 
     CacheResolverService,

@@ -1,5 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Vml.Office;
 
+using ExtendableEnums.EntityFrameworkCore;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -96,6 +98,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyExtendableEnumConversions();
+
             ApplyBaseEntity(modelBuilder);
 
             ApplyEnumToStringValueConverter(modelBuilder);

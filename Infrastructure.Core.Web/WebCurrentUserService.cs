@@ -12,7 +12,7 @@ namespace Infrastructure.Core.Web
 {
     public class WebCurrentUserService : ICurrentUserService
     {
-        private IHttpContextAccessor _httpContextAccessor;
+        protected IHttpContextAccessor _httpContextAccessor;
         private readonly ICurrentLanguageService _currentLanguageService;
 
         public WebCurrentUserService(
@@ -49,19 +49,26 @@ namespace Infrastructure.Core.Web
             if (_currentUserId.HasValue)
                 return _currentUserId.Value;
 
+            _currentUserId = ResolveCurrentUserId();
+
+            return _currentUserId;
+        }
+
+        protected virtual Guid? ResolveCurrentUserId()
+        {
             var user = _httpContextAccessor.HttpContext?.User;
 
             var claims = user?.Claims;
             //var userClaims = user?.Claims.Select(c => new { c.Type, c.Value }).ToList();
 
-            var id = claims?.FirstOrDefault(_ => 
-                _.Type == JwtRegisteredClaimNames.Sub || 
+            var id = claims?.FirstOrDefault(_ =>
+                _.Type == JwtRegisteredClaimNames.Sub ||
                 _.Type == ClaimTypes.NameIdentifier)?.Value;
 
             if (id != null)
-                _currentUserId = Guid.Parse(id);
+                return Guid.Parse(id);
 
-            return _currentUserId;
+            return null;
         }
 
         public void SetCurrentUserId(Guid? currentUserId)

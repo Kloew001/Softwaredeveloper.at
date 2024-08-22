@@ -143,11 +143,34 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
                         await ErrorBackgroundServiceInfo(ex);
                     }
+                    finally
+                    {
+                        await CheckExecuting();
+
+                    }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Fatal Error: '{Name}'");
+            }
+        }
+
+        private async Task CheckExecuting()
+        {
+            if (BackgroundServiceInfoEnabled == false)
+                return;
+
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetService<IDbContext>();
+
+                var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
+
+                if (IsExecuting(backgroundServiceInfo))
+                {
+                    await ErrorBackgroundServiceInfo(new TimeoutException());
+                }
             }
         }
 
@@ -172,7 +195,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         protected virtual async Task<bool> CanStartBackgroundServiceInfo()
         {
-            if(BackgroundServiceInfoEnabled == false)
+            if (BackgroundServiceInfoEnabled == false)
                 return true;
 
             using (var scope = _serviceScopeFactory.CreateScope())
@@ -204,16 +227,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             }
         }
 
-        private bool IsExecuting(BackgroundserviceInfo backgroundServiceInfo)
+        protected bool IsExecuting(BackgroundserviceInfo backgroundServiceInfo)
         {
             return backgroundServiceInfo?.State == BackgroundserviceInfoStateType.Executing;
         }
 
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(60);
 
-        private bool IsTimeouted(BackgroundserviceInfo backgroundServiceInfo)
+        protected virtual bool IsTimeouted(BackgroundserviceInfo backgroundServiceInfo)
         {
-            if(IsExecuting(backgroundServiceInfo) && 
+            if (IsExecuting(backgroundServiceInfo) &&
                 _hostedServicesConfiguration.Interval.IsNull())
             {
                 var now = DateTime.Now;
@@ -225,7 +248,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
 
         protected virtual async Task StartBackgroundServiceInfo()
         {
-            if(BackgroundServiceInfoEnabled == false)
+            if (BackgroundServiceInfoEnabled == false)
                 return;
 
             using (var scope = _serviceScopeFactory.CreateScope())
@@ -339,7 +362,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
         {
             var enabledDateRanges = GetEnabledDateRange(dateTime).ToList();
 
-            if(_hostedServicesConfiguration.Interval.IsNull())
+            if (_hostedServicesConfiguration.Interval.IsNull())
                 return dateTime;
 
             var nextExecuteAt = dateTime.Add(_hostedServicesConfiguration.Interval.Value);

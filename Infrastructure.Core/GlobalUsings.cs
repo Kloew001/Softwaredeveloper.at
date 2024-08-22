@@ -14,4 +14,3 @@ global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntri
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
-

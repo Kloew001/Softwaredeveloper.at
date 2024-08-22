@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using DocumentFormat.OpenXml.Drawing;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
@@ -32,6 +33,34 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         {
             builder.ToTable("ApplicationRole", "identity");
         }
+    }
+
+    public class ApplicationUserClaim : IdentityUserClaim<Guid>
+    {
+
+    }
+
+    public class ApplicationRoleClaimConfiguration : IEntityTypeConfiguration<ApplicationRoleClaim>
+    {
+        public void Configure(EntityTypeBuilder<ApplicationRoleClaim> builder)
+        {
+            builder.ToTable("ApplicationRoleClaim", "identity");
+        }
+    }
+
+    public class ApplicationRoleClaim : IdentityRoleClaim<Guid>
+    {
+
+    }
+
+    public class ApplicationUserToken : IdentityUserToken<Guid>
+    {
+
+    }
+
+    public class ApplicationUserLogin : IdentityUserLogin<Guid>
+    {
+
     }
 
     public class ApplicationUserRole : IdentityUserRole<Guid>

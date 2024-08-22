@@ -35,7 +35,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 
         public async Task<Guid> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct)
         {
-            var user = await _userManager.FindByEmailAsync(identity.Email);
+            ApplicationUser user = null;
+
+            if (identity.UserName.IsNotNullOrEmpty())
+                user = await _userManager.FindByEmailAsync(identity.UserName);
+
+            else if (identity.Email.IsNotNullOrEmpty())
+                user = await _userManager.FindByEmailAsync(identity.Email);
 
             if (user != null)
                 return user.Id;

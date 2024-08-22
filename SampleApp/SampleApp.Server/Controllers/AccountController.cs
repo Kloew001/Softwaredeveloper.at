@@ -7,37 +7,31 @@ namespace RWA.Server.Controllers
 {
     public class AccountController : BaseApiController
     {
-        private readonly AccountService _accountService;
+        private readonly TokenAuthenticateService _authenticateService;
 
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public AccountController(AccountService accountService, IHttpContextAccessor httpContextAccessor)
+        public AccountController(TokenAuthenticateService authenticateService)
         {
-            _accountService = accountService;
-            _httpContextAccessor = httpContextAccessor;
+            _authenticateService = authenticateService;
         }
 
         [HttpPost]
         [AllowAnonymous]
-        public Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, UnauthorizedHttpResult, ProblemHttpResult>> AuthenticateToken
-                   ([FromBody] AuthenticateTokenRequest request)
-            => _accountService.AuthenticateToken(HttpContext, request);
+        public Task<Results<
+            Ok<AccessTokenResponse>, 
+            EmptyHttpResult, 
+            UnauthorizedHttpResult, 
+            ProblemHttpResult>> AuthenticateToken
+                   ([FromBody] AuthenticatePasswordRequest request)
+            => _authenticateService.AuthenticateTokenAsync(request);
 
         [HttpPost]
-        public Task<Results<Ok<AccessTokenResponse>,  ChallengeHttpResult>> RefreshToken
+        [AllowAnonymous]
+        public Task<Results<Ok<AccessTokenResponse>,  BadRequest>> RefreshToken
             ([FromBody] RefreshRequest refreshRequest)
-            => _accountService.RefreshToken(refreshRequest);
+            => _authenticateService.RefreshToken(refreshRequest);
        
         [HttpPost]
-        public Task RevokeToken
-             ()
-             => _accountService.RevokeToken();
-
-        [HttpGet]
-        public IActionResult GetUserClaims()
-        {
-            var userClaims = _httpContextAccessor.HttpContext?.User?.Claims.Select(c => new { c.Type, c.Value }).ToList();
-            return Ok(userClaims);
-        }
+        public Task RevokeToken()
+             => _authenticateService.RevokeToken();
     }
 }

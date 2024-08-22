@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             using (_serviceProvider.GetService<SectionManager>().CreateSectionScope<SecurityFreeSection>())
             {
-                var user = await _applicationUserService.GetUserInternalById(ApplicationUserIds.ServiceAdminId);
+                var user = await _applicationUserService.GetUserByIdAsync(ApplicationUserIds.ServiceAdminId);
                 if (user != null)
                     return;
 
@@ -57,7 +57,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             string password,
             string[] roleNames)
         {
-            id = (await _applicationUserService.CreateIdentityInternalAsync(new CreateApplicationUserIdentity
+            id = (await _applicationUserService.CreateUserAsync(new CreateApplicationUserIdentity
             {
                 Id = id,
                 FirstName = vorname,

@@ -116,6 +116,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
         public void ReplaceAllBookmarks(EmailMessage emailMessage, IEntity referenceEntity)
         {
+            if (referenceEntity == null)
+                return;
+
             emailMessage.Subject = ReplaceAllBookmarks(emailMessage, emailMessage.Subject, referenceEntity);
             emailMessage.HtmlContent = ReplaceAllBookmarks(emailMessage, emailMessage.HtmlContent, referenceEntity);
         }

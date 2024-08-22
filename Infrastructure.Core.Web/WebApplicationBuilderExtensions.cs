@@ -18,15 +18,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
-using DocumentFormat.OpenXml.Spreadsheet;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
-using DocumentFormat.OpenXml.InkML;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Core.Web
 {
@@ -124,22 +119,41 @@ namespace Infrastructure.Core.Web
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
             });
 
             return builder;
+        }
+
+        public static WebApplicationBuilder AddSwaggerGenWithNegotiate(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Swagger API", Version = "v1" });
+            });
+
+            return builder;
+        }
+
+        public class JwtSettings
+        {
+            public string SecretKey { get; set; }
+            public string Issuer { get; set; }
+            public string Audience { get; set; }
+            public int AccessTokenExpirationMinutes { get; set; } = 15;
+            public int RefreshTokenExpirationMinutes { get; set; } = 60;
         }
 
         public static WebApplicationBuilder AddJwtBearerAuthentication(this WebApplicationBuilder builder, Action<AuthorizationBuilder> authorizationOptions = null)
@@ -161,8 +175,13 @@ namespace Infrastructure.Core.Web
                 options.ClaimsIdentity.UserNameClaimType = JwtRegisteredClaimNames.UniqueName;
                 options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
                 options.ClaimsIdentity.EmailClaimType = JwtRegisteredClaimNames.Email;
-                options.ClaimsIdentity.SecurityStampClaimType = AccountService.JwtSecurityStamp;
+                options.ClaimsIdentity.SecurityStampClaimType = TokenAuthenticateService.JwtSecurityStampClaim;
             });
+
+            var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+            builder.Services.AddSingleton<JwtSettings>(jwtSettings);
+            builder.Services.AddTransient<ITokenService, JwtTokenService>();
+            builder.Services.AddTransient<TokenAuthenticateService>();
 
             builder.Services.AddAuthentication(options =>
             {
@@ -171,6 +190,7 @@ namespace Infrastructure.Core.Web
             })
             .AddJwtBearer(options =>
             {
+
                 options.MapInboundClaims = false;
                 options.SaveToken = false;
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -180,9 +200,9 @@ namespace Infrastructure.Core.Web
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
 
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
                     ClockSkew = TimeSpan.Zero,
                     SaveSigninToken = false,
 
@@ -201,15 +221,14 @@ namespace Infrastructure.Core.Web
 
                         var user = await signInManager.ValidateSecurityStampAsync(ctx.Principal);
 
-                        var x = ctx.Principal.FindFirstValue(signInManager.Options.ClaimsIdentity.SecurityStampClaimType);
-
-
-                        var user2 = await signInManager.UserManager.GetUserAsync(ctx.Principal);
-                        var s = await signInManager.UserManager.GetSecurityStampAsync(user2);
-
                         if (user == null)
                         {
                             ctx.Fail("Invalid Security Stamp");
+                        }
+                        else
+                        {
+                            var claimsSecurityStamp = ctx.Principal.FindFirstValue(signInManager.Options.ClaimsIdentity.SecurityStampClaimType);
+                            var securityStamp = await signInManager.UserManager.GetSecurityStampAsync(user);
                         }
                     }
                 };
@@ -226,12 +245,11 @@ namespace Infrastructure.Core.Web
             {
                 authorizationBuilder.AddPolicy("api", p =>
                 {
-                    p.RequireAuthenticatedUser();
                     p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                    p.RequireAuthenticatedUser();
                 });
             }
 
-            builder.Services.AddTransient<ITokenService, JwtTokenService>();
 
             return builder;
         }
@@ -304,7 +322,7 @@ namespace Infrastructure.Core.Web
 
 
             identityBuilder
-                .AddTokenProvider(AccountService.TokenProviderName, typeof(DataProtectorTokenProvider<ApplicationUser>));
+                .AddTokenProvider(TokenAuthenticateService.TokenProviderName, typeof(DataProtectorTokenProvider<ApplicationUser>));
 
 
             return builder;

@@ -1,22 +1,90 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
-
-using System.Net.Mail;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
     public static class EmailMessageServiceExtensions
     {
-        public static Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(this EntityService<TEntity> service, TEntity referenceEntity, string templateName, Guid? cultureId = null, Func<EmailMessage, Task> modifyEmailMessage = null)
+        public static async Task<EMailMessageTemplate> GetEMailMessageTemplate<TEntity>(this EntityService<TEntity> service, Guid templateId)
+            where TEntity : Entity
+        {
+            var template = await service.EntityServiceDependency.DbContext
+                .Set<EMailMessageTemplate>()
+                .IsActive()
+                .IsValidDateIncluded(DateTime.Now)
+                .SingleOrDefaultAsync(_ => _.Id == templateId);
+
+            return template;
+        }
+
+        public static async Task<EMailMessageTemplate> GetEMailMessageTemplate<TEntity>(this EntityService<TEntity> service, string templateName)
+            where TEntity : Entity
+        {
+            var template = await service.EntityServiceDependency.DbContext
+                .Set<EMailMessageTemplate>()
+                .IsActive()
+                .IsValidDateIncluded(DateTime.Now)
+                .SingleOrDefaultAsync(_ => _.Name == templateName);
+
+            if (template == null)
+                throw new InvalidOperationException($"Template {template} not found");
+
+            return template;
+        }
+
+        public static async Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(
+            this EntityService<TEntity> service,
+            TEntity referenceEntity,
+            string templateName,
+            Guid? cultureId = null,
+            Func<EmailMessage, ValueTask> modifyEmailMessage = null)
+            where TEntity : Entity
+        {
+            var template = await GetEMailMessageTemplate(service, templateName);
+
+            var emailMessageService =
+             service.EntityServiceDependency.ServiceProvider
+                .GetRequiredService<EmailMessageService>();
+
+            return await emailMessageService.CreateByTemplateAsync(referenceEntity, template, cultureId, modifyEmailMessage);
+        }
+
+        public static async Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(
+            this EntityService<TEntity> service,
+            TEntity referenceEntity,
+            Guid templateId,
+            Guid? cultureId = null,
+            Func<EmailMessage, ValueTask> modifyEmailMessage = null)
+            where TEntity : Entity
+        {
+            var template = await GetEMailMessageTemplate(service, templateId);
+
+            var emailMessageService =
+             service.EntityServiceDependency.ServiceProvider
+                .GetRequiredService<EmailMessageService>();
+
+            return await emailMessageService.CreateByTemplateAsync(referenceEntity, template, cultureId, modifyEmailMessage);
+        }
+
+        public static Task<EmailMessage> CreateEMailMessageByTemplateAsync<TEntity>(
+            this EntityService<TEntity> service,
+            TEntity referenceEntity,
+            EMailMessageTemplate template,
+            Guid? cultureId = null,
+            Func<EmailMessage, ValueTask> modifyEmailMessage = null)
             where TEntity : Entity
         {
             var emailMessageService =
-            service.EntityServiceDependency.ServiceProvider
+             service.EntityServiceDependency.ServiceProvider
                 .GetRequiredService<EmailMessageService>();
 
-            return emailMessageService.CreateByTemplateAsync(referenceEntity, templateName, cultureId, modifyEmailMessage);
+            if (template == null)
+                throw new InvalidOperationException($"Template {template} not found");
+
+            return emailMessageService.CreateByTemplateAsync(referenceEntity, template, cultureId, modifyEmailMessage);
         }
     }
 
@@ -53,7 +121,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             return email;
         }
 
-        public async Task<EmailMessage> CreateByTemplateAsync(Entity referenceEntity, string templateName, Guid? cultureId = null, Func<EmailMessage, Task> modifyEmailMessage = null)
+        public async Task<EmailMessage> CreateByTemplateAsync(
+            Entity referenceEntity, 
+            EMailMessageTemplate template, 
+            Guid? cultureId = null,
+            Func<EmailMessage, ValueTask> modifyEmailMessage = null)
         {
             var email = await CreateEmptyAsync(referenceEntity);
 
@@ -61,14 +133,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                 return null;
 
             email.CultureId = cultureId ?? _currentLanguageService.CurrentCultureId;
-
-            var template = _context.Set<EMailMessageTemplate>()
-                .IsActive()
-                .IsValidDateIncluded(DateTime.Now)
-                .SingleOrDefault(_ => _.Name == templateName);
-
-            if (template == null)
-                throw new InvalidOperationException($"Template {templateName} not found");
 
             email.Template = template;
 

@@ -1,6 +1,9 @@
 ﻿
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 public static class ApplicationUserIds
@@ -15,7 +18,6 @@ public static class ICurrentUserServiceExtension
         return currentUserService.GetCurrentUserId() == ApplicationUserIds.ServiceAdminId;
     }
 }
-
 
 public class ApplicationUser : Entity, IAuditableEntity<ApplicationUserAudit>
 {
@@ -76,8 +78,13 @@ public class ApplicationUserAudit : EntityAudit<ApplicationUser>
     public string LastName { get; set; }
 }
 
-public class ApplicationUserClaim : Entity
+public class ApplicationUserClaim
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Required]
+    public int Id { get; set; }
+
     public Guid UserId { get; set; }
 
     public string ClaimType { get; set; }

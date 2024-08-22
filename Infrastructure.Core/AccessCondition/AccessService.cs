@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
@@ -6,7 +7,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
     public class SecurityFreeSection : Section
     {
     }
-
     public class AccessService : IScopedDependency
     {
         private readonly IServiceProvider _serviceProvider;

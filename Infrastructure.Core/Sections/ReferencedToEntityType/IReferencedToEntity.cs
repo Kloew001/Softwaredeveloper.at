@@ -13,8 +13,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
         public static void SetReference<TEntitiy>(this IReferencedToEntity entity, TEntitiy referencedEntity)
             where TEntitiy : Entity
         {
-            entity.ReferenceId = referencedEntity.Id;
-            entity.ReferenceType = GetReferenceType(referencedEntity);
+            if (referencedEntity == null)
+            {
+                entity.ReferenceId = null;
+                entity.ReferenceType = null;
+            }
+            else
+            {
+                entity.ReferenceId = referencedEntity.Id;
+                entity.ReferenceType = GetReferenceType(referencedEntity);
+            }
         }
 
         private static string GetReferenceType<TEntitiy>(TEntitiy referencedEntity) 
