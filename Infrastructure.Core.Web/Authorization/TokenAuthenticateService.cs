@@ -32,7 +32,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization
     public class AccessTokenResponse
     {
         public string AccessToken { get; init; }
-        //public long ExpiresIn { get; init; }
+        public long ExpiresAt { get; init; }
         public string RefreshToken { get; init; }
     }
     public class RefreshRequest
@@ -153,12 +153,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization
         private AccessTokenResponse GetAccessTokenResponse(ApplicationUser user)
         {
             var claims = GetClaims(user);
-            var accessToken = _tokenService.GenerateAccessToken(claims);
+            var expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
+
+            var accessToken = _tokenService.GenerateAccessToken(claims, expires);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
             var accessTokenResponse = new AccessTokenResponse
             {
                 AccessToken = accessToken,
+                ExpiresAt = expires.ToUniversalTime().Ticks,
                 RefreshToken = refreshToken
             };
 
@@ -258,7 +261,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization
 
     public interface ITokenService
     {
-        string GenerateAccessToken(IEnumerable<Claim> claims);
+        string GenerateAccessToken(IEnumerable<Claim> claims, DateTime expires);
         string GenerateRefreshToken();
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
     }
@@ -273,10 +276,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization
             _jwtBearearOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
         }
 
-        public string GenerateAccessToken(IEnumerable<Claim> claims)
+        public string GenerateAccessToken(IEnumerable<Claim> claims, DateTime expires)
         {
-            var expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
-
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var tokenDescriptor = new SecurityTokenDescriptor
