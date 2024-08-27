@@ -37,20 +37,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return useCaseInfos;
         }
 
-        public async Task ExecuteAsync(Guid useCaseId, Dictionary<string, object> parameter)
+        public async Task<object> ExecuteAsync(Guid useCaseId, Dictionary<string, object> parameter)
         {
             var useCaseType = _useCaseServiceResolver.UseCases[useCaseId];
             var useCase = _serviceProvider.GetService(useCaseType) as IUseCase;
 
-            await useCase.ExecuteAsync(parameter);
+            return await useCase.ExecuteAsync(parameter);
         }
 
-        public async Task ExecuteAsync<TUseCase>(Dictionary<string, object> paramter)
+        public async Task<object> ExecuteAsync<TUseCase>(Dictionary<string, object> paramter)
             where TUseCase : IUseCase
         {
             var useCase = _serviceProvider.GetService<TUseCase>();
 
-            await useCase.ExecuteAsync(paramter);
+            return await useCase.ExecuteAsync(paramter);
         }
 
         public async Task<UseCaseInfo> EvaluateAsync<TUseCase>(Dictionary<string, object> paramter)

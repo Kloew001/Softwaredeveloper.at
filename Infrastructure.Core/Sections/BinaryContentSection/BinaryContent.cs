@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
+using MimeKit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection
 {
@@ -38,7 +39,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
         public static void Fill(this BinaryContent binaryContent, Utility.FileInfo fileInfo)
         {
             binaryContent.Name = fileInfo.FileName;
-            binaryContent.MimeType = fileInfo.FileContentType;
+            binaryContent.MimeType = 
+                fileInfo.FileContentType ?? 
+                MimeTypes.GetMimeType(fileInfo.FileName); ;
 
             Fill(binaryContent, fileInfo.Content);
         }

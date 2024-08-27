@@ -49,7 +49,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                     var mailMessage = new MimeMessage();
                     mailMessage.From.Add(new MailboxAddress(_config.FromName, _config.FromEmail));
 
-                    mailMessage.To.Add(MailboxAddress.Parse(message.AnAdress));
+                    foreach (var anAdress in message.AnAdress.Split(';'))
+                    {
+                        mailMessage.To.Add(MailboxAddress.Parse(anAdress));
+                    }
 
                     if (message.CcAdress.IsNullOrEmpty() == false)
                     {

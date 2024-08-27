@@ -19,12 +19,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
             _memoryCache = memoryCache;
         }
 
-        public TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider)
+        public virtual TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider)
         {
             return (TDto)SimpleNameMapping(entity, dto, serviceProvider);
         }
 
-        public TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider)
+        public virtual TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider)
         {
             return (TEntity)SimpleNameMapping(dto, entity, serviceProvider);
         }
@@ -68,14 +68,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
                     if (sourceProperty != null)
                     {
-                        propertyMaps.Add(new PropertyMap
-                        {
-                            TargetProperty = targetProperty,
-                            SourceProperties = new[] { sourceProperty.Name }
-                        });
+                            propertyMaps.Add(new PropertyMap
+                            {
+                                TargetProperty = targetProperty,
+                                SourceProperties = new[] { sourceProperty.Name }
+                            });
                     }
 
-                    if (AutoSubPropertyMapping && 
+                    if (AutoSubPropertyMapping &&
                         sourceProperty == null && isEntityToDto)
                     {
                         //PersonName -> Person.Name
@@ -88,15 +88,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
 
                             var sourcePropertySecoundLevel = sourcePropertyFirstLevel.PropertyType.GetProperty(secondLevelPropertyName);
 
-                            propertyMaps.Add(new PropertyMap
+                            if (targetProperty.PropertyType == sourcePropertySecoundLevel.PropertyType ||
+                                targetProperty.Name == "Id")
                             {
-                                TargetProperty = targetProperty,
-                                SourceProperties = new[]
+                                propertyMaps.Add(new PropertyMap
                                 {
+                                    TargetProperty = targetProperty,
+                                    SourceProperties = new[]
+                                    {
                                         sourcePropertyFirstLevel.Name,
                                         sourcePropertySecoundLevel.Name
                                 }
-                            });
+                                });
+                            }
+                            else
+                            {
+
+                            }
                         }
                     }
 

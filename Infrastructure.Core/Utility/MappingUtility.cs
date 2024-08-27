@@ -75,6 +75,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
                     destinationProperty.SetValue(destination, Guid.Parse((string)sourcePropertyValue));
                 }
             }
+            else if (sourceType == typeof(string) &&
+                    destinationProperty.PropertyType == typeof(Nullable<Guid>))
+            {
+                if (sourcePropertyValue == null)
+                {
+                    destinationProperty.SetValue(destination, Guid.Empty);
+                }
+                else
+                {
+                    if (sourcePropertyValue == null)
+                    {
+                        destinationProperty.SetValue(destination, null);
+                    }
+                    else
+                    {
+                        destinationProperty.SetValue(destination, Guid.Parse((string)sourcePropertyValue));
+                    }
+                }
+            }
         }
     }
 }

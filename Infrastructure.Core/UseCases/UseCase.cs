@@ -21,26 +21,32 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 
         ValueTask<bool> CanExecuteAsync(object paramter);
 
-        Task ExecuteAsync(object paramter);
+        Task<object> ExecuteAsync(object paramter);
     }
 
-    public interface IUseCase<TParamter> : IUseCase
+    public interface IUseCase<TParamter, TResult> : IUseCase
         where TParamter : new()
     {
         ValueTask<bool> IsAvailableAsync(TParamter paramter);
 
         ValueTask<bool> CanExecuteAsync(TParamter paramter);
-        Task ExecuteAsync(TParamter paramter);
+        Task<TResult> ExecuteAsync(TParamter paramter);
     }
 
-    public abstract class UseCase<TEntity, TParamter> : IUseCase<TParamter>, IScopedDependency, ITypedScopedDependency<IUseCase>
+    public abstract class UseCase<TEntity, TParamter, TResult> :
+        IUseCase<TParamter, TResult>,
+        IScopedDependency,
+        ITypedScopedDependency<IUseCase>
         where TEntity : Entity
         where TParamter : new()
     {
         public Guid UseCaseId => Guid.Parse(GetType().GetCustomAttribute<UseCaseAttribute>().Id);
 
-        public UseCase(EntityService<TEntity> entityService)
+        protected readonly EntityService<TEntity> _service;
+
+        public UseCase(EntityService<TEntity> service)
         {
+            _service= service;
         }
 
         public virtual ValueTask<bool> IsAvailableAsync() => ValueTask.FromResult(true);
@@ -53,7 +59,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 
         ValueTask<bool> IUseCase.IsAvailableAsync(object paramter) => IsAvailableAsync(CreateParamter(paramter));
         ValueTask<bool> IUseCase.CanExecuteAsync(object paramter) => CanExecuteAsync(CreateParamter(paramter));
-        Task IUseCase.ExecuteAsync(object paramter) => ExecuteAsync(CreateParamter(paramter));
+
+        async Task<object> IUseCase.ExecuteAsync(object paramter)
+        {
+            var result = await ExecuteAsync(CreateParamter(paramter));
+            return result;
+        }
 
         private TParamter CreateParamter(object paramter)
         {
@@ -70,7 +81,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return newParamter;
         }
 
-        public async Task ExecuteAsync(TParamter paramter)
+        public async Task<TResult> ExecuteAsync(TParamter paramter)
         {
             if (!await IsAvailableAsync())
                 throw new InvalidOperationException();
@@ -84,10 +95,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             if (!await CanExecuteAsync(paramter))
                 throw new InvalidOperationException();
 
-            await ExecuteInternal(paramter);
+            return await ExecuteInternal(paramter);
         }
 
-        protected abstract Task ExecuteInternal(TParamter paramter);
+        protected abstract Task<TResult> ExecuteInternal(TParamter paramter);
 
     }
 }

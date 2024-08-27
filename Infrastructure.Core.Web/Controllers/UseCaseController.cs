@@ -25,7 +25,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
             => _useCaseService.EvaluateAsync(parameter.UseCaseIds, parameter.Parameter);
         
         [HttpPost]
-        public Task Execute(UseCaseParamter parameter)
+        public Task<object> Execute(UseCaseParamter parameter)
             => _useCaseService.ExecuteAsync(parameter.UseCaseId.Value, parameter.Parameter);
     }
 }

@@ -104,7 +104,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 
             var parentSecurityEntity = accessConditionInfo.ParentSecurityProperty.GetValue(entity).As<IEntity>();
 
-            return GetSecurityEntityInternal(parentSecurityEntity);
+            var parentAccessConditionInfo = ResolveAccessConditionInfo(parentSecurityEntity);
+            return GetSecurityEntityInternal(parentSecurityEntity, parentAccessConditionInfo);
         }
 
         public AccessConditionInfo ResolveAccessConditionInfo<TEntity>()
