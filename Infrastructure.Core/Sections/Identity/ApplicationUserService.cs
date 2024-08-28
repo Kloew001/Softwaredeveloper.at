@@ -43,6 +43,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task<ApplicationUserDetailDto> GetCurrentUserAsync();
         ValueTask<bool> IsCurrentUserInRoleAsync(params Guid[] roleIds);
         ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds);
+        void RemoveRoleCache();
         Task<ApplicationUser> GetUserByIdAsync(Guid id);
         Task<ApplicationUser> GetUserByEMailAsync(string email);
         Task<ApplicationUser> GetUserByUserNameAsync(string username);
