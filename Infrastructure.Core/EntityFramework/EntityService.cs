@@ -4,6 +4,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -246,7 +247,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return entity;
         }
 
-        public virtual async Task<TEntity> QuickCreateInternalAsync(Func<TEntity, Task> modifyEntity = null)
+        public virtual async Task<TEntity> QuickCreateInternalAsync(Func<TEntity, ValueTask> modifyEntity = null)
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
@@ -255,7 +256,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
         }
 
-        public virtual async Task<TEntity> CreateInternalAsync(Func<TEntity, Task> modifyEntity = null)
+        public virtual async Task<TEntity> CreateInternalAsync(Func<TEntity, ValueTask> modifyEntity = null)
         {
             var entity = _context.Set<TEntity>().CreateProxy();
             await _context.AddAsync(entity);
@@ -283,6 +284,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         protected virtual Task OnCreateInternalAsync(TEntity entity)
         {
+            if (entity is ISupportPrePersistent supportPrePersistent)
+            {
+                supportPrePersistent.PrePersitent = true;
+            }
+
             return Task.CompletedTask;
         }
 
@@ -359,6 +365,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         protected virtual Task OnUpdateInternalAsync(TEntity entity)
         {
+            if (entity is ISupportPrePersistent supportPrePersistent)
+            {
+                supportPrePersistent.PrePersitent = false;
+            }
+
             return Task.CompletedTask;
         }
 

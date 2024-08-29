@@ -32,7 +32,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 
                 this.InitMultilingualProperty(c, c => c.Description, multilingualKey, textArgs);
 
-                return Task.CompletedTask;
+                return ValueTask.CompletedTask;
             });
         }
 
