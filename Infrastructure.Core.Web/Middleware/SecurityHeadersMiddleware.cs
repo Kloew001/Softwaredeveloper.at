@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core;
 
 namespace Infrastructure.Core.Web.Middleware
 {
@@ -18,19 +15,17 @@ namespace Infrastructure.Core.Web.Middleware
         }
     }
 
-    public class SecurityHeadersMiddleware
+    public interface ISecurityHeadersService 
     {
-        private readonly RequestDelegate _next;
+        void HandleHeaders(HttpContext context);
+    }
 
-        public SecurityHeadersMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-
-        public async Task InvokeAsync(HttpContext context)
+    public class SecurityHeadersService : ISecurityHeadersService
+    {
+        public void HandleHeaders(HttpContext context) 
         {
             context.Response.Headers.ContentSecurityPolicy = new StringValues(
-                "default-src 'self';" +
+                "default-src 'self' blob:;" +
                   "object-src 'none';" +
                   "style-src 'self' 'unsafe-inline';" +
                   "script-src 'self' 'unsafe-inline';" +
@@ -45,11 +40,40 @@ namespace Infrastructure.Core.Web.Middleware
             if (context.Response.Headers.ContainsKey(HeaderNames.StrictTransportSecurity))
                 context.Response.Headers.StrictTransportSecurity = new StringValues("max-age=31536000; includeSubDomains; preload");
 
+            context.Response.OnStarting(() =>
+            {
+                if (context.Response.Headers.ContainsKey(HeaderNames.Server))
+                    context.Response.Headers.Remove(HeaderNames.Server);
+
+                if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
+                    context.Response.Headers.Remove(HeaderNames.XPoweredBy);
+
+                return Task.CompletedTask;
+            });
+
             if (context.Response.Headers.ContainsKey(HeaderNames.Server))
                 context.Response.Headers.Remove(HeaderNames.Server);
 
             if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
                 context.Response.Headers.Remove(HeaderNames.XPoweredBy);
+
+        }
+    }
+
+    public class SecurityHeadersMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly ISecurityHeadersService _securityHeadersService;
+
+        public SecurityHeadersMiddleware(RequestDelegate next, ISecurityHeadersService securityHeadersService)
+        {
+            _next = next;
+            _securityHeadersService = securityHeadersService;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            _securityHeadersService.HandleHeaders(context);
 
             await _next(context);
         }

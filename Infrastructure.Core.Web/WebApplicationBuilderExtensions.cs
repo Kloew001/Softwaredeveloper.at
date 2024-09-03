@@ -74,6 +74,8 @@ namespace Infrastructure.Core.Web
             builder.AddRateLimiter();
 
             builder.AddDefaultHsts();
+            
+            builder.Services.AddSingleton<ISecurityHeadersService, SecurityHeadersService>();
 
             return builder;
         }

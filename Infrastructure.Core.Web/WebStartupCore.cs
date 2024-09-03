@@ -36,6 +36,7 @@ namespace Infrastructure.Core.Web
 
             builder.AddJwtBearerAuthentication();
 
+
             builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
         }
 

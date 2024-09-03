@@ -64,6 +64,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos
                         targetType.GetAttribute<DtoFactoryAttribute>()?.IgnoreId == true)
                         return;
 
+                    if (targetProperty.CanWrite == false)
+                        return;
+
                     var sourceProperty = sourceType.GetProperty(targetProperty.Name);
 
                     if (sourceProperty != null)
