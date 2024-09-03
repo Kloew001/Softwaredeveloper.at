@@ -26,7 +26,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
         public Task<ChronologyEntry> CreateInternalAsync<TEntity>(TEntity referenceEntity, string multilingualKey, params string[] textArgs)
             where TEntity : Entity
         {
-            return CreateInternalAsync(c =>
+            return CreateAsync(c =>
             {
                 c.SetReference(referenceEntity);
 
@@ -38,10 +38,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
 
         public async Task<IEnumerable<ChronologyEntryDto>> GetCollectionAsync(Guid referenceId)
         {
-            var query = await GetQueryAsync(q =>
-                   q.Where(_ => _.ReferenceId == referenceId));
-
-            return await GetCollectionAsync<ChronologyEntryDto>(query);
+            return await GetCollectionAsync<ChronologyEntryDto>(query =>
+                   query.Where(_ => _.ReferenceId == referenceId));
         }
     }
 }

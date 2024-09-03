@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 
         ValueTask<bool> CanExecuteAsync(object paramter);
 
-        Task<object> ExecuteAsync(object paramter);
+        Task<object> ExecuteAsync(object paramter, CancellationToken cancellationToken = default);
     }
 
     public interface IUseCase<TParamter, TResult> : IUseCase
@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
         ValueTask<bool> IsAvailableAsync(TParamter paramter);
 
         ValueTask<bool> CanExecuteAsync(TParamter paramter);
-        Task<TResult> ExecuteAsync(TParamter paramter);
+        Task<TResult> ExecuteAsync(TParamter paramter, CancellationToken cancellationToken = default);
     }
 
     public abstract class UseCase<TEntity, TParamter, TResult> :
@@ -46,7 +46,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 
         public UseCase(EntityService<TEntity> service)
         {
-            _service= service;
+            _service = service;
         }
 
         public virtual ValueTask<bool> IsAvailableAsync() => ValueTask.FromResult(true);
@@ -60,9 +60,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
         ValueTask<bool> IUseCase.IsAvailableAsync(object paramter) => IsAvailableAsync(CreateParamter(paramter));
         ValueTask<bool> IUseCase.CanExecuteAsync(object paramter) => CanExecuteAsync(CreateParamter(paramter));
 
-        async Task<object> IUseCase.ExecuteAsync(object paramter)
+        async Task<object> IUseCase.ExecuteAsync(object paramter, CancellationToken cancellationToken)
         {
-            var result = await ExecuteAsync(CreateParamter(paramter));
+            var result = await ExecuteAsync(CreateParamter(paramter), cancellationToken);
             return result;
         }
 
@@ -81,7 +81,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return newParamter;
         }
 
-        public async Task<TResult> ExecuteAsync(TParamter paramter)
+        public async Task<TResult> ExecuteAsync(TParamter paramter, CancellationToken cancellationToken = default)
         {
             if (!await IsAvailableAsync())
                 throw new InvalidOperationException();
@@ -95,10 +95,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             if (!await CanExecuteAsync(paramter))
                 throw new InvalidOperationException();
 
-            return await ExecuteInternal(paramter);
+            return await OnExecute(paramter, cancellationToken);
         }
 
-        protected abstract Task<TResult> ExecuteInternal(TParamter paramter);
+        protected abstract Task<TResult> OnExecute(TParamter paramter, CancellationToken cancellationToken);
 
     }
 }

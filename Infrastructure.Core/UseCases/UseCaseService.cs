@@ -20,7 +20,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             _useCaseServiceResolver = useCaseServiceResolver;
         }
 
-        public async Task<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<Guid> useCaseIds, Dictionary<string, object> parameter)
+        public async ValueTask<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<Guid> useCaseIds, Dictionary<string, object> parameter)
         {
             var useCaseInfos = new List<UseCaseInfo>();
 
@@ -53,7 +53,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return await useCase.ExecuteAsync(paramter);
         }
 
-        public async Task<UseCaseInfo> EvaluateAsync<TUseCase>(Dictionary<string, object> paramter)
+        public async ValueTask<UseCaseInfo> EvaluateAsync<TUseCase>(Dictionary<string, object> paramter)
             where TUseCase : IUseCase
         {
             var useCase = _serviceProvider.GetService<TUseCase>();
@@ -61,19 +61,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return await EvaluateAsync(useCase, paramter);
         }
 
-        private async Task<UseCaseInfo> EvaluateAsync(IUseCase useCase, Dictionary<string, object> paramter)
+        private async ValueTask<UseCaseInfo> EvaluateAsync(IUseCase useCase, Dictionary<string, object> paramter)
         {
-            return new UseCaseInfo()
+            var useCaseInfo = new UseCaseInfo()
             {
-                UseCaseId = useCase.UseCaseId,
-                IsAvailable =
-                        await useCase.IsAvailableAsync() &&
-                        await useCase.IsAvailableAsync(paramter),
-
-                CanExecute =
-                        await useCase.CanExecuteAsync() &&
-                        await useCase.CanExecuteAsync(paramter)
+                UseCaseId = useCase.UseCaseId
             };
+
+            useCaseInfo.IsAvailable =
+                        await useCase.IsAvailableAsync() &&
+                        await useCase.IsAvailableAsync(paramter);
+
+            useCaseInfo.CanExecute =
+                     useCaseInfo.IsAvailable &&
+                     await useCase.CanExecuteAsync() &&
+                     await useCase.CanExecuteAsync(paramter);
+
+            return useCaseInfo;
         }
     }
 }

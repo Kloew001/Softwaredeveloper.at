@@ -61,20 +61,20 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
 
         public virtual Task<ApplicationUser> GetUserByIdAsync(Guid id)
         {
-            return GetSingleInternalAsync((query) => query.Where(_ => _.Id == id));
+            return GetSingleAsync((query) => query.Where(_ => _.Id == id));
         }
 
         public virtual Task<ApplicationUser> GetUserByEMailAsync(string email)
         {
             email = email.ToUpper().Trim();
-            return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedEmail == email));
+            return GetSingleAsync((query) => query.Where(_ => _.NormalizedEmail == email));
         }
 
         public virtual Task<ApplicationUser> GetUserByUserNameAsync(string username)
         {
             username = username.ToUpper().Trim();
 
-            return GetSingleInternalAsync((query) => query.Where(_ => _.NormalizedUserName == username));
+            return GetSingleAsync((query) => query.Where(_ => _.NormalizedUserName == username));
         }
 
         public Task<ApplicationUserDetailDto> GetCurrentUserAsync()
@@ -225,7 +225,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             var currentUserId = _currentUserService.GetCurrentUserId().Value;
 
-            var applicationUser = await GetSingleByIdInternalAsync(currentUserId);
+            var applicationUser = await GetSingleByIdAsync(currentUserId);
 
             if (cultureName.IsNullOrEmpty())
             {
@@ -240,9 +240,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
                         .SingleAsync();
             }
 
-            await UpdateInternalAsync(applicationUser);
+            await UpdateAsync(applicationUser);
 
-            await SaveChangesAsync(applicationUser);
+            await SaveAsync(applicationUser);
 
             EntityServiceDependency
                 .ServiceProvider

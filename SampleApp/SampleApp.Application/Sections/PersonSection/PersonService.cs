@@ -14,9 +14,9 @@ namespace SampleApp.Application.Sections.PersonSection
         {
         }
 
-        protected override async Task OnCreateInternalAsync(Person person)
+        protected override async Task OnCreateAsync(Person person)
         {
-            await base.OnCreateInternalAsync(person);
+            await base.OnCreateAsync(person);
 
             if (person.FirstName.IsNullOrEmpty())
                 person.FirstName = DemoDataHelper.FirstNames.GetRandom();
@@ -24,16 +24,16 @@ namespace SampleApp.Application.Sections.PersonSection
             _cacheService.DistributedCache.Remove(_getAllAsyncCacheKey);
         }
 
-        override protected async Task OnUpdateInternalAsync(Person person)
+        override protected async Task OnUpdateAsync(Person person)
         {
-            await base.OnUpdateInternalAsync(person);
+            await base.OnUpdateAsync(person);
 
             _cacheService.DistributedCache.Remove(_getAllAsyncCacheKey);
         }
 
-        override protected async Task OnDeleteInternalAsync(Person person)
+        override protected async Task OnDeleteAsync(Person person)
         {
-            await base.OnDeleteInternalAsync(person);
+            await base.OnDeleteAsync(person);
 
             _cacheService.DistributedCache.Remove(_getAllAsyncCacheKey);
         }
@@ -56,15 +56,13 @@ namespace SampleApp.Application.Sections.PersonSection
 
         public async Task<PageResult<PersonDto>> GetOverviewAsync(PersonOverviewFilter filter = null)
         {
-            var query = await GetQueryAsync(q =>
+            var dtos = await base.GetPagedCollectionAsync<PersonDto>(filter, query =>
             {
                 if (filter.SearchText.IsNotNullOrEmpty())
-                    return q.Where(_=>_.FirstName.Contains(filter.SearchText));
+                    return query.Where(_ => _.FirstName.Contains(filter.SearchText));
 
-                return q;
+                return query;
             });
-
-            var dtos = await base.GetPagedCollectionAsync<PersonDto>(query, filter);
 
             return dtos;
         }

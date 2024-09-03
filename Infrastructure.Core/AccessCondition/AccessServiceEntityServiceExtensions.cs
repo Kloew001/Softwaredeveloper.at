@@ -1,16 +1,14 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
     public static class AccessServiceEntityServiceExtensions
     {
-        public static Task<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
+        public static ValueTask<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service)
             where TEntity : Entity
         {
             return CanCreateAsync(service, (Dto)null);
         }
 
-        public static async Task<bool> CanCreateAsync<TEntity, TDto>(this EntityService<TEntity> service, TDto dto)
+        public static async ValueTask<bool> CanCreateAsync<TEntity, TDto>(this EntityService<TEntity> service, TDto dto)
             where TEntity : Entity
             where TDto : Dto
         {
@@ -34,24 +32,47 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
             }
         }
 
-        public static async Task<bool> CanReadAsync<TEntity>(this EntityService<TEntity> service, Guid id)
+        public static async ValueTask<bool> CanCreateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+            where TEntity : Entity
+        {
+            if (await service.CanReadAsync(entity) == false)
+                return false;
+
+            var canCreate = await service.EntityServiceDependency.AccessService
+                .EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                    accessCondition.CanCreateAsync(securityEntity));
+
+            return canCreate;
+        }
+
+        public static async ValueTask<bool> CanReadAsync<TEntity>(this EntityService<TEntity> service, Guid id)
             where TEntity : Entity
         {
             try
             {
-                var entity = await service.GetSingleByIdInternalAsync(id);
+                var entity = await service.GetSingleByIdAsync(id);
                 return entity != null;
             }
             catch (UnauthorizedAccessException)
             {
                 return false;
-            }   
+            }
+        }
+
+        public static async ValueTask<bool> CanReadAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+            where TEntity : Entity
+        {
+            var canRead = await service.EntityServiceDependency.AccessService
+                .EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                         accessCondition.CanReadAsync(securityEntity));
+
+            return canRead;
         }
 
         public static async ValueTask<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, Guid id)
             where TEntity : Entity
         {
-            var entity = await service.GetSingleByIdInternalAsync(id);
+            var entity = await service.GetSingleByIdAsync(id);
 
             return await CanUpdateAsync(service, entity);
         }
@@ -59,25 +80,45 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
         public static async ValueTask<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
             where TEntity : Entity
         {
-            return await service.EntityServiceDependency.AccessService
+            if(await service.CanReadAsync(entity) == false) 
+                return false; 
+
+            var canUpdate = await service.EntityServiceDependency.AccessService
                 .EvaluateAsync(entity, (accessCondition, securityEntity) =>
                     accessCondition.CanUpdateAsync(securityEntity));
+
+            return canUpdate;
+        }
+
+        public static async ValueTask<bool> CanSaveAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+            where TEntity : Entity
+        {
+            var canUpdate = await service.EntityServiceDependency.AccessService
+                .EvaluateAsync(entity, (accessCondition, securityEntity) =>
+                    accessCondition.CanSaveAsync(securityEntity));
+
+            return canUpdate;
         }
 
         public static async ValueTask<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, Guid id)
             where TEntity : Entity
         {
-            var entity = await service.GetSingleByIdInternalAsync(id);
+            var entity = await service.GetSingleByIdAsync(id);
 
             return await CanDeleteAsync(service, entity);
         }
 
-        public static ValueTask<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
+        public static async ValueTask<bool> CanDeleteAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
             where TEntity : Entity
         {
-            return service.EntityServiceDependency.AccessService
+            if (await service.CanReadAsync(entity) == false)
+                return false;
+
+            var canDelete = await service.EntityServiceDependency.AccessService
                 .EvaluateAsync(entity, (accessCondition, securityEntity) =>
                     accessCondition.CanDeleteAsync(securityEntity));
+
+            return canDelete;
         }
 
         //public IQueryable<Entity> CanReadQuery(IQueryable<Entity> query)

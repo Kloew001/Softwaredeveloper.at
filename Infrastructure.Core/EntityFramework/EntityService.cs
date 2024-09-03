@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+using DocumentFormat.OpenXml.VariantTypes;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -96,29 +98,28 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual async Task<TDto> GetSingleByIdAsync<TDto>(Guid id)
             where TDto : Dto
         {
-            var entity = await GetSingleByIdInternalAsync(id);
+            var entity = await GetSingleByIdAsync(id);
 
-            var dto = entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
+            var dto = entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
 
             return dto;
         }
 
-        public virtual Task<TEntity> GetSingleByIdInternalAsync(Guid id)
+        public virtual Task<TEntity> GetSingleByIdAsync(Guid id)
         {
-            return GetSingleInternalAsync((query) => query.Where(_ => _.Id == id));
+            return GetSingleAsync((query) => query.Where(_ => _.Id == id));
         }
 
         public virtual async Task<TDto> GetSingleAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : Dto
         {
-            var entity = await GetSingleInternalAsync(queryExtension);
+            var entity = await GetSingleAsync(queryExtension);
 
-            var dto = entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
+            var dto = entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
 
             return dto;
         }
-
-        public virtual async Task<TEntity> GetSingleInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<TEntity> GetSingleAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = await GetQueryAsync(queryExtension);
 
@@ -127,14 +128,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (entity == null)
                 return null;
 
-            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanReadAsync(securityEntity)) == false)
+            if (await this.CanReadAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             return entity;
         }
 
-        public virtual async Task<TEntity> GetFirstInternalAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<TEntity> GetFirstAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = await GetQueryAsync(queryExtension);
 
@@ -143,55 +143,53 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (entity == null)
                 return null;
 
-            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanReadAsync(securityEntity)) == false)
+            if (await this.CanReadAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             return entity;
         }
 
-
-        public virtual async Task<PageResult<TDto>> GetPagedCollectionAsync<TDto>(PageFilter pageFilter)
+        public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : Dto
         {
-            var query = await GetQueryAsync();
+            var entities = await GetCollectionAsync(queryExtension);
 
-            return await GetPagedCollectionAsync<TDto>(query, pageFilter);
-        }
-
-        public virtual async Task<PageResult<TDto>> GetPagedCollectionAsync<TDto>(IQueryable<TEntity> query, PageFilter pageFilter)
-            where TDto : Dto
-        {
-            var entityPageResult = await _entityQueryService.GetPageResultAsync(query, pageFilter);
-
-            var dtoPageResult = new PageResult<TDto>();
-
-            dtoPageResult.Page = entityPageResult.Page;
-            dtoPageResult.PageSize = entityPageResult.PageSize;
-            dtoPageResult.TotalCount = entityPageResult.TotalCount;
-
-            dtoPageResult.PageItems = entityPageResult.PageItems.ConvertToDtos<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
-
-            return dtoPageResult;
-        }
-
-
-        public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(IQueryable<TEntity> query)
-            where TDto : Dto
-        {
-            var entities = await query.ToListAsync();
-
-            var dtos = entities.ConvertToDtos<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
+            var dtos = entities.ConvertToDtos<TDto>(serviceProvider: _serviceProvider);
 
             return dtos;
         }
 
-        public virtual async Task<IEnumerable<TDto>> GetCollectionAsync<TDto>(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        public virtual async Task<IEnumerable<TEntity>> GetCollectionAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
+        {
+            var entities = await (await GetQueryAsync(queryExtension)).ToListAsync();
+
+            return entities;
+        }
+
+        public virtual async Task<PageResult<TDto>> GetPagedCollectionAsync<TDto>(PageFilter pageFilter, Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
             where TDto : Dto
+        {
+            var entityPageResult = await GetPagedCollectionAsync(pageFilter, queryExtension);
+
+            var dtoPageResult = new PageResult<TDto>
+            {
+                Page = entityPageResult.Page,
+                PageSize = entityPageResult.PageSize,
+                TotalCount = entityPageResult.TotalCount,
+
+                PageItems = entityPageResult.PageItems.ConvertToDtos<TDto>(serviceProvider: _serviceProvider)
+            };
+
+            return dtoPageResult;
+        }
+
+        public virtual async Task<PageResult<TEntity>> GetPagedCollectionAsync(PageFilter pageFilter, Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
             var query = await GetQueryAsync(queryExtension);
 
-            return await GetCollectionAsync<TDto>(query);
+            var entityPageResult = await _entityQueryService.GetPageResultAsync(query, pageFilter);
+
+            return entityPageResult;
         }
 
         public virtual async ValueTask<IQueryable<TEntity>> GetQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
@@ -223,40 +221,49 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return _entityQueryService.AppendDefaultOrderBy(query);
         }
 
-        public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
+        public virtual async Task<Guid> QuickCreateAsync<TDto>(TDto dto)
             where TDto : Dto
-        {
-            var entity = await CreateInternalAsync<TDto>(dto);
-
-            await SaveChangesAsync(entity);
-
-            return entity.Id;
-        }
-
-        public virtual async Task<TEntity> CreateInternalAsync<TDto>(TDto dto)
-            where TDto : Dto
-        {
-            var entity = await CreateInternalAsync(async (e) =>
-            {
-                if(dto != null)
-                    dto.ConvertToEntity(e, serviceProvider: EntityServiceDependency.ServiceProvider);
-
-                await OnCreateInternalAsync(dto, e);
-            });
-
-            return entity;
-        }
-
-        public virtual async Task<TEntity> QuickCreateInternalAsync(Func<TEntity, ValueTask> modifyEntity = null)
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
-                var entity = await CreateInternalAsync(modifyEntity);
+                var entity = await QuickCreateAsync((e) =>
+                {
+                    if (dto != null)
+                        dto.ConvertToEntity(e, serviceProvider: _serviceProvider);
+
+                    return ValueTask.CompletedTask;
+                });
+
+                return entity.Id;
+            }
+        }
+
+        public virtual async Task<TEntity> QuickCreateAsync(Func<TEntity, ValueTask> modifyEntity = null)
+        {
+            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
+            {
+                var entity = await CreateAsync(modifyEntity);
                 return entity;
             }
         }
 
-        public virtual async Task<TEntity> CreateInternalAsync(Func<TEntity, ValueTask> modifyEntity = null)
+        public virtual async Task<TDto> CreateAsync<TDto>(TDto dto)
+            where TDto : Dto
+        {
+            var entity = await CreateAsync((e) =>
+            {
+                if (dto != null)
+                    dto.ConvertToEntity(e, serviceProvider: _serviceProvider);
+
+                return ValueTask.CompletedTask;
+            });
+
+            await SaveAsync(entity);
+
+            return entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
+        }
+
+        public virtual async Task<TEntity> CreateAsync(Func<TEntity, ValueTask> modifyEntity = null)
         {
             var entity = _context.Set<TEntity>().CreateProxy();
             await _context.AddAsync(entity);
@@ -264,25 +271,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (modifyEntity != null)
                 await modifyEntity(entity);
 
-            await OnCreateInternalAsync(entity);
+            await OnCreateAsync(entity);
 
-            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanCreateAsync(securityEntity)) == false)
+            if (await this.CanCreateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
-                await ValidateAndThrowInternalAsync(entity);
+                await ValidateAndThrowAsync(entity);
 
             return entity;
         }
 
-        protected virtual Task OnCreateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto
-        {
-            return Task.CompletedTask;
-        }
-
-        protected virtual Task OnCreateInternalAsync(TEntity entity)
+        protected virtual Task OnCreateAsync(TEntity entity)
         {
             if (entity is ISupportPrePersistent supportPrePersistent)
             {
@@ -290,16 +290,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             }
 
             return Task.CompletedTask;
-        }
-
-        public virtual async Task<Guid> QuickCreateAsync<TDto>(TDto dto)
-            where TDto : Dto
-        {
-            using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
-            {
-                var id = await CreateAsync<TDto>(dto);
-                return id;
-            }
         }
 
         public virtual async Task<TDto> QuickUpdateAsync<TDto>(TDto dto)
@@ -311,11 +301,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 return updatedDto;
             }
         }
-        public virtual async Task<TEntity> QuickUpdateInternalAsync(TEntity entity)
+
+        public virtual async Task<TEntity> QuickUpdateAsync(TEntity entity)
         {
             using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
             {
-                var updatedDto = await UpdateInternalAsync(entity);
+                var updatedDto = await UpdateAsync(entity);
                 return updatedDto;
             }
         }
@@ -323,47 +314,32 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
             where TDto : Dto
         {
-            var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
+            var entity = await GetSingleByIdAsync(dto.Id.Value);
 
-            entity = await UpdateInternalAsync(dto, entity);
+            dto.ConvertToEntity(entity, serviceProvider: _serviceProvider);
 
-            await SaveChangesAsync(entity);
+            entity = await UpdateAsync(entity);
 
-            return entity.ConvertToDto<TDto>(serviceProvider: EntityServiceDependency.ServiceProvider);
+            await SaveAsync(entity);
+
+            return entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
         }
 
-        public virtual async Task<TEntity> UpdateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto
+
+        public virtual async Task<TEntity> UpdateAsync(TEntity entity)
         {
-            dto.ConvertToEntity(entity, serviceProvider: EntityServiceDependency.ServiceProvider);
-            await OnUpdateInternalAsync(dto, entity);
+            await OnUpdateAsync(entity);
 
-            entity = await UpdateInternalAsync(entity);
-
-            return entity;
-        }
-
-        public virtual async Task<TEntity> UpdateInternalAsync(TEntity entity)
-        {
-            await OnUpdateInternalAsync(entity);
-
-            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanUpdateAsync(securityEntity)) == false)
+            if (await this.CanUpdateAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
             if (!_sectionManager.IsActive<SuppressValidationSection>())
-                await ValidateAndThrowInternalAsync(entity);
+                await ValidateAndThrowAsync(entity);
 
             return entity;
         }
 
-        protected virtual Task OnUpdateInternalAsync<TDto>(TDto dto, TEntity entity)
-            where TDto : Dto
-        {
-            return Task.CompletedTask;
-        }
-
-        protected virtual Task OnUpdateInternalAsync(TEntity entity)
+        protected virtual Task OnUpdateAsync(TEntity entity)
         {
             if (entity is ISupportPrePersistent supportPrePersistent)
             {
@@ -375,44 +351,42 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task DeleteAsync(Guid id)
         {
-            var entity = await GetSingleByIdInternalAsync(id);
+            var entity = await GetSingleByIdAsync(id);
 
-            await DeleteInternalAsync(entity);
+            await DeleteAsync(entity);
 
-            await SaveChangesAsync(entity);
+            await SaveAsync(entity);
         }
 
-        public async Task SaveChangesAsync(TEntity entity)
+        public async Task SaveAsync(TEntity entity)
         {
             if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
             {
-                if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanSaveAsync(securityEntity)) == false)
+                if (await this.CanSaveAsync(entity) == false)
                     throw new UnauthorizedAccessException();
 
-                await OnSaveInternalAsync(entity);
+                await OnSaveAsync(entity);
 
                 await _context.SaveChangesAsync();
             }
         }
 
-        protected virtual Task OnSaveInternalAsync(TEntity entity)
+        protected virtual Task OnSaveAsync(TEntity entity)
         {
             return Task.CompletedTask;
         }
 
-        public virtual async Task DeleteInternalAsync(TEntity entity)
+        public virtual async Task DeleteAsync(TEntity entity)
         {
-            if (await _accessService.EvaluateAsync(entity, (accessCondition, securityEntity) =>
-                        accessCondition.CanDeleteAsync(securityEntity)) == false)
+            if (await this.CanDeleteAsync(entity) == false)
                 throw new UnauthorizedAccessException();
 
-            await OnDeleteInternalAsync(entity);
+            await OnDeleteAsync(entity);
 
             _context.Remove(entity);
         }
 
-        protected virtual Task OnDeleteInternalAsync(TEntity entity)
+        protected virtual Task OnDeleteAsync(TEntity entity)
         {
             return Task.CompletedTask;
         }
@@ -422,18 +396,18 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         {
             using (_sectionManager.CreateSectionScope<SuppressSaveChangesSection>())
             {
-                var entity = await GetSingleByIdInternalAsync(dto.Id.Value);
+                var entity = await GetSingleByIdAsync(dto.Id.Value);
 
                 if (entity == null)
-                    entity = await CreateInternalAsync(dto);
+                    await CreateAsync(dto);
                 else
-                    entity = await UpdateInternalAsync<TDto>(dto, entity);
+                    await UpdateAsync(dto);
             }
         }
 
-        public async Task ValidateAndThrowInternalAsync(TEntity entity)
+        public async Task ValidateAndThrowAsync(TEntity entity)
         {
-            var validationResult = await ValidateInternalAsync(entity);
+            var validationResult = await ValidateAsync(entity);
 
             if (validationResult == null)
                 return;
@@ -442,7 +416,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 throw validationResult.ToValidationException();
         }
 
-        public async Task<ValidationResult> ValidateInternalAsync(TEntity entity)
+        public async Task<ValidationResult> ValidateAsync(TEntity entity)
         {
             if (_sectionManager.IsActive<SuppressValidationSection>())
                 return null;

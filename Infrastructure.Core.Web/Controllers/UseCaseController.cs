@@ -21,7 +21,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
         }
 
         [HttpPost]
-        public Task<IEnumerable<UseCaseService.UseCaseInfo>> Evaluate(UseCaseParamter parameter)
+        public ValueTask<IEnumerable<UseCaseService.UseCaseInfo>> Evaluate(UseCaseParamter parameter)
             => _useCaseService.EvaluateAsync(parameter.UseCaseIds, parameter.Parameter);
         
         [HttpPost]
