@@ -18,6 +18,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
         public Guid? ReferenceId { get; set; }
         public string ReferenceType { get; set; }
 
+        [NotMapped]
+        public virtual Entity Reference { get; set; }
+
         public string ParameterSerialized { get; set; }
 
         public Guid? ExecuteById { get; set; }

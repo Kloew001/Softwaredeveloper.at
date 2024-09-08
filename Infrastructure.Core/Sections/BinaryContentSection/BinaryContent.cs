@@ -13,6 +13,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 
         public Guid? ReferenceId { get; set; }
         public string ReferenceType { get; set; }
+        [NotMapped]
+        public virtual Entity Reference { get; set; }
 
         public string MimeType { get; set; }
 

@@ -32,8 +32,8 @@ namespace RWA.Server.Controllers
             => _service.ValidateAndThrowAsync(dto);
 
         [HttpPost]
-        public Task<Guid> Create(PersonDto dto)
-             => _service.CreateAsync(dto);
+        public async Task<Guid> Create(PersonDto dto)
+             => (await _service.CreateAsync(dto)).Id.Value;
 
         [HttpPost]
         public Task<Guid> QuickCreate()

@@ -22,7 +22,7 @@ namespace Infrastructure.Core.Web.Middleware
 
     public class SecurityHeadersService : ISecurityHeadersService
     {
-        public void HandleHeaders(HttpContext context) 
+        public void HandleHeaders(HttpContext context)
         {
             context.Response.Headers.ContentSecurityPolicy = new StringValues(
                 "default-src 'self' blob:;" +
@@ -40,23 +40,14 @@ namespace Infrastructure.Core.Web.Middleware
             if (context.Response.Headers.ContainsKey(HeaderNames.StrictTransportSecurity))
                 context.Response.Headers.StrictTransportSecurity = new StringValues("max-age=31536000; includeSubDomains; preload");
 
-            context.Response.OnStarting(() =>
-            {
-                if (context.Response.Headers.ContainsKey(HeaderNames.Server))
-                    context.Response.Headers.Remove(HeaderNames.Server);
-
-                if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
-                    context.Response.Headers.Remove(HeaderNames.XPoweredBy);
-
-                return Task.CompletedTask;
-            });
-
             if (context.Response.Headers.ContainsKey(HeaderNames.Server))
                 context.Response.Headers.Remove(HeaderNames.Server);
 
             if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
                 context.Response.Headers.Remove(HeaderNames.XPoweredBy);
 
+            if (context.Response.Headers.ContainsKey(HeaderNames.WWWAuthenticate))
+                context.Response.Headers.Remove(HeaderNames.WWWAuthenticate);
         }
     }
 
@@ -73,9 +64,16 @@ namespace Infrastructure.Core.Web.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            _securityHeadersService.HandleHeaders(context);
+            context.Response.OnStarting((c) =>
+            {
+                _securityHeadersService.HandleHeaders((HttpContext)c);
+
+                return Task.CompletedTask;
+            }, state: context);
 
             await _next(context);
+
+            //_securityHeadersService.HandleHeaders(context);
         }
     }
 }

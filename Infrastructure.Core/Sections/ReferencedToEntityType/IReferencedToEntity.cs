@@ -6,6 +6,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
     {
         Guid? ReferenceId { get; set; }
         string ReferenceType { get; set; }
+         Entity Reference { get; set; }
     }
 
     public static class IReferencedToEntityTypeExtensions
@@ -41,6 +42,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections
 
         public static async Task<IEntity> GetReferencedEntityAsync(this IReferencedToEntity entity, IDbContext context)
         {
+            if( entity.Reference != null )
+                return entity.Reference;
+
             var entityType = AssemblyUtils.AllLoadedTypes()
                 .Where(p => p.IsAbstract == false &&
                             p.IsInterface == false)

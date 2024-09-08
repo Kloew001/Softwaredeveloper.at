@@ -27,7 +27,7 @@ namespace SampleApp.Application.Tests
             persons = await personService.GetAllAsync();
 
             Assert.That(persons.Count() == countBefore + 1);
-            Assert.That(persons.Any(_ => _.Id == personId));
+            Assert.That(persons.Any(_ => _.Id == personId.Id));
         }
     }
 }

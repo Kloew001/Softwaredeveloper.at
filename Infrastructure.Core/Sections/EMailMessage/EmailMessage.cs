@@ -24,6 +24,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
         public Guid? ReferenceId { get; set; }
         public string ReferenceType { get; set; }
+        [NotMapped]
+        public virtual Entity Reference { get; set; }
 
         public Guid? CultureId { get; set; }
         public virtual MultilingualCulture Culture { get; set; }
