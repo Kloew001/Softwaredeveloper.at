@@ -232,13 +232,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                         asyncTaskOperation.StartedAt = null;
                         asyncTaskOperation.ExecuteAt = DateTime.Now.Add(TimeSpan.FromSeconds(asyncTaskOperation.RetryCount * 5));
                         asyncTaskOperation.RetryCount = asyncTaskOperation.RetryCount + 1;
-                        asyncTaskOperation.ErrorMessage = ex.Message;
+                        asyncTaskOperation.ErrorMessage = ex.ToString();
                     }
                     else
                     {
                         asyncTaskOperation.ExecuteAt = null;
                         asyncTaskOperation.Status = AsyncTaskOperationStatus.Failed;
-                        asyncTaskOperation.ErrorMessage = ex.Message;
+                        asyncTaskOperation.ErrorMessage = ex.ToString();
                     }
 
                     await context.SaveChangesAsync();
