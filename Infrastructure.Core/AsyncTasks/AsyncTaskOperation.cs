@@ -28,6 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
         public DateTime CreatedAt { get; set; }
         public DateTime? ExecuteAt { get; set; }
+        public AsyncTaskOperationPriority Priority { get; set; } = AsyncTaskOperationPriority.Medium;
         public DateTime? StartedAt { get; set; }
         public DateTime? FinishedAt { get; set; }
         public AsyncTaskOperationStatus Status { get; set; }

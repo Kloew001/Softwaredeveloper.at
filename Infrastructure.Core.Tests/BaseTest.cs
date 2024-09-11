@@ -124,7 +124,7 @@ namespace Infrastructure.Core.Tests
             var asyncTaskExecutor = serivceScope.ServiceProvider
                     .GetRequiredService<AsyncTaskExecutor>();
 
-            await asyncTaskExecutor.ExecuteBatchAsync(100, cancellationToken);
+            await asyncTaskExecutor.ExecuteNextOperationsAsync(100, cancellationToken);
 
             await asyncTaskExecutor
                     .WaitUntilReferencedAsyncTasksFinished(referenceIds, timeoutInSeconds, cancellationToken);

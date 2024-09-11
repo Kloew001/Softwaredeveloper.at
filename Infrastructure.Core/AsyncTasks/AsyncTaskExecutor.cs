@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Reflection;
 
+using DocumentFormat.OpenXml.Wordprocessing;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,7 +35,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             var parallelTasks = new List<Task>
             {
-                asyncTaskExecutor.ExecuteBatchAsync(_hostedServicesConfiguration.BatchSize, cancellationToken),
+                asyncTaskExecutor.ExecuteNextOperationsAsync(_hostedServicesConfiguration.BatchSize, cancellationToken),
                 asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100))),
                 asyncTaskExecutor.HandleTimeout()
             };
@@ -77,17 +79,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return await ExecuteAsyncTaskOperationIdAsync(operationId, cancellationToken);
         }
 
-        public async Task ExecuteBatchAsync(int batchSize = 10, CancellationToken cancellationToken = default)
+        public async Task ExecuteNextOperationsAsync(int batchSize = 10, CancellationToken cancellationToken = default)
         {
+            var dateNow = DateTime.Now;
             IEnumerable<Guid> asyncTaskOperationIds;
 
             using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
             {
-                var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(GetNextAsyncTaskOperationIdsAsync)}";
+                var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteNextOperationsAsync)}";
                 if (await distributedLock.TryAcquireLockAsync(lockName, 3) == false)
                     throw new TimeoutException();
-
-                var dateNow = DateTime.Now;
 
                 await RemoveDuplicatesAsync(dateNow, cancellationToken);
 
@@ -97,20 +98,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             }
 
             var tasks = new List<Task>();
-            var scopes = new List<IServiceScope>();
             foreach (var asyncTaskOperationId in asyncTaskOperationIds)
             {
-                var scope = _serviceProvider.CreateScope();
-                var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
+                tasks.Add(Task.Run(async () =>
+                {
+                    using (var childScope = _serviceProvider.CreateChildScope())
+                    {
+                        var asyncTaskExecutor = childScope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
-                var task = asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
-
-                tasks.Add(task);
-                scopes.Add(scope);
+                        await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
+                    }
+                }, cancellationToken));
             }
 
-            Task.WaitAll(tasks.ToArray(), cancellationToken);
-            scopes.ForEach(_ => _.Dispose());
+            Task.WaitAll([.. tasks], cancellationToken);
+
+            if (await AnyNextAsyncTaskOperationAsync(cancellationToken))
+            {
+                await ExecuteNextOperationsAsync(batchSize, cancellationToken);
+            }
         }
 
         private async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
@@ -291,7 +297,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 
             var operationIds = await
                 GetPendingQuery(dateNow)
-                .OrderBy(_ => _.ExecuteAt)
+                .OrderByDescending(_ => _.Priority)
+                .ThenBy(_ => _.ExecuteAt)
                 .ThenBy(_ => _.SortIndex)
                 .Select(_ => _.Id)
                 .Take(take)
@@ -334,7 +341,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return asyncTaskOperationHandler;
         }
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IEnumerable<IAsyncTaskOperationHandler> asyncTaskOperationHandlers, TimeSpan? delay = null)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IEnumerable<IAsyncTaskOperationHandler> asyncTaskOperationHandlers, TimeSpan? delay = null, int? retryCount = null, AsyncTaskOperationPriority priority = AsyncTaskOperationPriority.Medium)
         {
             var asyncTaskOperationIds = new List<AsyncTaskOperation>();
             var sortIndex = 0;
@@ -342,7 +349,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             foreach (var asyncTaskOperationHandler in asyncTaskOperationHandlers)
             {
                 asyncTaskOperationIds.AddRange(
-                    await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay));
+                    await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay, retryCount: retryCount, priority: priority));
 
                 sortIndex++;
             }
@@ -350,17 +357,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return asyncTaskOperationIds;
         }
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync<TAsyncTaskOperationHandler>(int sortIndex = 0, TimeSpan? delay = null)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync<TAsyncTaskOperationHandler>(int sortIndex = 0, TimeSpan? delay = null, int? retryCount = null, AsyncTaskOperationPriority priority = AsyncTaskOperationPriority.Medium)
             where TAsyncTaskOperationHandler : IAsyncTaskOperationHandler
         {
             var asyncTaskOperationHandler = CreateHandler<TAsyncTaskOperationHandler>();
 
-            return await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay);
+            return await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay, retryCount: retryCount, priority: priority);
         }
 
         private const int _defaultMaxRetryCount = 0;
 
-        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null, int? retryCount = null)
+        public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null, int? retryCount = null, AsyncTaskOperationPriority priority = AsyncTaskOperationPriority.Medium)
         {
             if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
                 return await GetAsyncTaskIdsInQueueAsync(asyncTaskOperationHandler);
@@ -381,6 +388,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 CreatedAt = now,
                 ExecuteAt = now.Add(delay ?? TimeSpan.Zero),
                 Status = AsyncTaskOperationStatus.Pending,
+                Priority = priority,
                 SortIndex = sortIndex,
                 RetryCount = 0,
                 MaxRetryCount = retryCount ?? _defaultMaxRetryCount
@@ -398,10 +406,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 var olderThen = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                await context.Set<AsyncTaskOperation>()
+                var query = context.Set<AsyncTaskOperation>()
                       .Where(_ => _.Status == AsyncTaskOperationStatus.Executing &&
-                                  _.StartedAt < olderThen)
-                  .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
+                                  _.StartedAt < olderThen);
+
+                if (query.Any())
+                {
+                    await query.ExecuteUpdateAsync(_ =>
+                        _.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
+                }
             }
         }
 
@@ -411,9 +424,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             {
                 var context = scope.ServiceProvider.GetService<IDbContext>();
 
-                await context.Set<AsyncTaskOperation>()
-                    .Where(_ => _.CreatedAt < olderThen)
-                    .ExecuteDeleteAsync();
+                var query = context.Set<AsyncTaskOperation>()
+                    .Where(_ => _.CreatedAt < olderThen);
+
+                if (query.Any())
+                {
+                    await query.ExecuteDeleteAsync();
+                }
             }
         }
 

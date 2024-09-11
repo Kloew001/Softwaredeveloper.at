@@ -2,6 +2,14 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
 {
+    public enum AsyncTaskOperationPriority
+    {
+        Low = 0,
+        Medium = 1,
+        High = 2,
+        Critical = 3
+    }
+
     public enum AsyncTaskOperationStatus
     {
         Pending = 0,

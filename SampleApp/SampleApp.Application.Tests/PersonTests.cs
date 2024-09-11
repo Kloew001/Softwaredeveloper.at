@@ -11,7 +11,7 @@ namespace SampleApp.Application.Tests
         [Test]
         public async Task CreatePerson()
         {
-            var personService = 
+            var personService =
                 _serviceScope.ServiceProvider
                 .GetService<PersonService>();
 

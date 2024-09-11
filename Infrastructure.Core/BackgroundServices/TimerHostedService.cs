@@ -30,7 +30,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             return true;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             try
             {
