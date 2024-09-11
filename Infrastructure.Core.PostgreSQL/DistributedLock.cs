@@ -71,9 +71,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             _logger.LogDebug("Lock {@LockId} rejected", lockId);
 
+            if(retry == -1)
+                retry = int.MaxValue;
+
             for (var r = 0; r < retry; r++)
             {
-                await Task.Delay(50);
+                await Task.Delay(100);
 
                 if (await TryAcquireLockAsync(lockId, 0))
                     return true;

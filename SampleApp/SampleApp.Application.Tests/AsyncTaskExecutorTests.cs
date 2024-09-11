@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Core.Tests;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
@@ -16,26 +17,28 @@ namespace SampleApp.Application.Tests
         [Test]
         public async Task Enqueue()
         {
-            var pendingOperationCount = GetPendingOperationCount();
-
-            Assert.That(pendingOperationCount == 0);
+            await _context.Set<AsyncTaskOperation>()
+                .ExecuteDeleteAsync();
 
             var executorTask = StartAsyncTaskExecutorAsync();
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 1000; i++)
             {
-                if (i % 5 == 0)
-                {
-                    await EnqueueAsync(10 * 1000, i, AsyncTaskOperationPriority.Low);
-                }
-                else
-                {
-                    await EnqueueAsync(new Random().Next(1, 800), i, AsyncTaskOperationPriority.Critical);
-                }
-                await _context.SaveChangesAsync();
-
-                await Task.Delay(new Random().Next(1, 1000));
+                //if (i <= 1 || i % 10 == 0)
+                //{
+                //    await EnqueueAsync(new Random().Next(10, 30) * 1000, i, AsyncTaskOperationPriority.Low);
+                //}
+                //else
+                //{
+                    //await EnqueueAsync(new Random().Next(100, 1000), i, AsyncTaskOperationPriority.Critical);
+                    await EnqueueAsync(0, i, AsyncTaskOperationPriority.Critical);
+                //}
+                
+               // await Task.Delay(new Random().Next(1, 1));
             }
+            await _context.SaveChangesAsync();
+            
+            var watch = Stopwatch.StartNew();
 
             while (GetPendingOperationCount() > 0)
             {
@@ -43,7 +46,7 @@ namespace SampleApp.Application.Tests
             }
 
             Debug.WriteLine($"----------------------------------");
-            Debug.WriteLine($"All Finished");
+            Debug.WriteLine($"All Finished: {watch.Elapsed}");
             Debug.WriteLine($"----------------------------------");
         }
 
@@ -115,17 +118,17 @@ namespace SampleApp.Application.Tests
         {
             var watch = Stopwatch.StartNew();
 
-            Debug.WriteLine($"Start {OperationNo}, {DateTime.Now:HH:mm:ss.ffff}");
+            Debug.WriteLine($"Start #{OperationNo}#");
 
             await Task.Delay(TaskDelayInMs);
 
             if (watch.ElapsedMilliseconds > 10000)
             {
-                Debug.WriteLine($"[CRITICAL], End {OperationNo}, {watch.ElapsedMilliseconds}ms, {DateTime.Now:HH:mm:ss.ffff}");
+                Debug.WriteLine($"[CRITICAL], End #{OperationNo}#, {watch.ElapsedMilliseconds}ms");
             }
             else
             {
-                Debug.WriteLine($"End {OperationNo}, {watch.ElapsedMilliseconds}ms, {DateTime.Now:HH:mm:ss.ffff}");
+                Debug.WriteLine($"End #{OperationNo}#, {watch.ElapsedMilliseconds}ms");
             }
         }
     }

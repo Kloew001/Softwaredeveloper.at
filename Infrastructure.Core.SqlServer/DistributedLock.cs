@@ -100,6 +100,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                 }
             }
 
+            if (_lockCreated == false)
+            {
+                for (var r = 0; r < retry; r++)
+                {
+                    await Task.Delay(100);
+
+                    if (await TryAcquireLockAsync(lockId, 0))
+                        return true;
+                }
+            }
+
             return _lockCreated;
         }
         
