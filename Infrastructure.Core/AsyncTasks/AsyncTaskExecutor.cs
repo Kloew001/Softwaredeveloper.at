@@ -495,16 +495,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             if (referenceIds.Length == 1)
                 return _context.Set<AsyncTaskOperation>()
                     .Where(o => o.ReferenceId == referenceIds[0] &&
-                                o.Status == AsyncTaskOperationStatus.Pending ||
-                                o.Status == AsyncTaskOperationStatus.Executing)
+                                (o.Status == AsyncTaskOperationStatus.Pending ||
+                                 o.Status == AsyncTaskOperationStatus.Executing))
                     .AnyAsync();
             else
             {
                 return _context.Set<AsyncTaskOperation>()
                     .Where(o => o.ReferenceId != null &&
                                 referenceIds.Contains(o.ReferenceId.Value) &&
-                              (o.Status == AsyncTaskOperationStatus.Pending ||
-                               o.Status == AsyncTaskOperationStatus.Executing))
+                                (o.Status == AsyncTaskOperationStatus.Pending ||
+                                 o.Status == AsyncTaskOperationStatus.Executing))
                     .AnyAsync();
             }
         }
