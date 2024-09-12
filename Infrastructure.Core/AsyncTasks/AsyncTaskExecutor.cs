@@ -493,11 +493,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             var timeout = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
 
             if (referenceIds.Length == 1)
+            {
+                var referenceId = referenceIds[0];
+
                 return _context.Set<AsyncTaskOperation>()
-                    .Where(o => o.ReferenceId == referenceIds[0] &&
+                    .Where(o => o.ReferenceId == referenceId &&
                                 (o.Status == AsyncTaskOperationStatus.Pending ||
                                  o.Status == AsyncTaskOperationStatus.Executing))
                     .AnyAsync();
+            }
             else
             {
                 return _context.Set<AsyncTaskOperation>()
