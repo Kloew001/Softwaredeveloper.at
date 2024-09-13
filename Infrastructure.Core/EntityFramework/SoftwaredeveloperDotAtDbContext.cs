@@ -89,7 +89,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (dbContextHandler == null)
                 throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
 
-            var transactionDateTime = DateTime.Now;
+            var dateTimeService = this.GetService<IDateTimeService>();
+
+            var transactionDateTime = dateTimeService.Now();
 
             dbContextHandler.HandleEntityAudit(this, transactionDateTime);
             dbContextHandler.HandleChangeTrackedEntity(this, transactionDateTime);

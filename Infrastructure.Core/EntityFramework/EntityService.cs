@@ -30,6 +30,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         public ICacheService CacheService { get; private set; }
         public MultilingualService MultilingualService { get; private set; }
         public ICurrentUserService CurrentUserService { get; private set; }
+        public IDateTimeService DateTimeService { get; private set; }
+        
 
         public EntityServiceDependency(
             IServiceProvider serviceProvider,
@@ -40,7 +42,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             EntityQueryService<TEntity> entityQueryService,
             ICacheService cacheService,
             ICurrentUserService currentUserService,
-            MultilingualService multilingualService)
+            MultilingualService multilingualService,
+            IDateTimeService dateTimeService)
         {
             ServiceProvider = serviceProvider;
 
@@ -52,6 +55,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             CurrentUserService = currentUserService;
             CacheService = cacheService;
             MultilingualService = multilingualService;
+            DateTimeService = dateTimeService;
 
             Validator = GetService<EntityValidator<TEntity>>();
         }
@@ -75,6 +79,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly ICacheService _cacheService;
         protected readonly MultilingualService _multilingualService;
         protected readonly IServiceProvider _serviceProvider;
+        protected readonly IDateTimeService _dateTimeService;
 
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -91,6 +96,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _currentUserService = entityServiceDependency.CurrentUserService;
             _cacheService = entityServiceDependency.CacheService;
             _multilingualService = entityServiceDependency.MultilingualService;
+            _dateTimeService = entityServiceDependency.DateTimeService;
 
             _validator = entityServiceDependency.Validator;
         }

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CsvHelper;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
@@ -11,10 +13,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         public static async Task<EMailMessageTemplate> GetEMailMessageTemplate<TEntity>(this EntityService<TEntity> service, Guid templateId)
             where TEntity : Entity
         {
+            var now = service.EntityServiceDependency.DateTimeService.Now();
+
             var template = await service.EntityServiceDependency.DbContext
                 .Set<EMailMessageTemplate>()
                 .IsActive()
-                .IsValidDateIncluded(DateTime.Now)
+                .IsValidDateIncluded(now)
                 .SingleOrDefaultAsync(_ => _.Id == templateId);
 
             return template;
@@ -23,10 +27,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         public static async Task<EMailMessageTemplate> GetEMailMessageTemplate<TEntity>(this EntityService<TEntity> service, string templateName)
             where TEntity : Entity
         {
+            var now = service.EntityServiceDependency.DateTimeService.Now();
+
             var template = await service.EntityServiceDependency.DbContext
                 .Set<EMailMessageTemplate>()
                 .IsActive()
-                .IsValidDateIncluded(DateTime.Now)
+                .IsValidDateIncluded(now)
                 .SingleOrDefaultAsync(_ => _.Name == templateName);
 
             if (template == null)

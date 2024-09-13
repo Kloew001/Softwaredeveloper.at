@@ -8,7 +8,9 @@ using NUnit.Framework;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace Infrastructure.Core.Tests
 {
@@ -19,7 +21,7 @@ namespace Infrastructure.Core.Tests
 
         protected IConfigurationRoot _configuration;
         protected IHostBuilder _hostBuilder;
-        private TDomainStartup _domainStartup;
+        protected TDomainStartup _domainStartup;
         protected IDbContext _context;
 
         //protected IDBContext _nadaContext;
@@ -86,13 +88,15 @@ namespace Infrastructure.Core.Tests
         {
             _configuration = new ConfigurationBuilder()
                 //.SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.UnitTest.json", optional: false, reloadOnChange: true)
                 .Build();
 
             var hostEnvironmentMock = new Mock<IHostEnvironment>();
             hostEnvironmentMock
                 .SetupGet(p => p.EnvironmentName)
-                .Returns(() => Environments.Development);
+                .Returns(() => Microsoft.Extensions.Hosting.Environments.Development);
             var hostEnvironment = hostEnvironmentMock.Object;
 
             _domainStartup = new TDomainStartup();
@@ -117,17 +121,47 @@ namespace Infrastructure.Core.Tests
             services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
         }
 
-        protected async Task ExecuteBatchAndWaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        protected async Task WaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             using var serivceScope = _serviceScope.ServiceProvider.CreateScope();
 
             var asyncTaskExecutor = serivceScope.ServiceProvider
                     .GetRequiredService<AsyncTaskExecutor>();
 
-            await asyncTaskExecutor.ExecuteNextOperationsAsync(100, cancellationToken);
-
             await asyncTaskExecutor
                     .WaitUntilReferencedAsyncTasksFinished(referenceIds, timeoutInSeconds, cancellationToken);
         }
+
+        protected Task StartAsyncTaskExecutorAsync(CancellationToken cancellationToken = default)
+        {
+            return StartHostedServiceAsync<AsyncTaskExecutorHostedService>(
+                10,
+                TimeSpan.FromMicroseconds(500), cancellationToken);
+        }
+
+        protected Task StartHostedServiceAsync<THostedService>(int batchSize, TimeSpan interval, CancellationToken cancellationToken = default)
+            where THostedService : BaseHostedService
+        {
+            return Task.Run(async () =>
+            {
+                using (var childScope = _serviceScope.ServiceProvider.CreateChildScope())
+                {
+                    var hostedService =
+                        childScope.ServiceProvider
+                        .GetService<THostedService>();
+
+                    var applicationSettings = childScope.ServiceProvider
+                        .GetService<IApplicationSettings>();
+
+                    applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
+
+                    hostedServicesConfiguration.BatchSize = batchSize;
+                    hostedServicesConfiguration.Interval = interval;
+
+                    await hostedService.ExecuteAsync(cancellationToken);
+                }
+            }, cancellationToken);
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
@@ -10,6 +11,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         protected readonly UserManager<ApplicationUser> _userManager;
         protected readonly IUserStore<ApplicationUser> _userStore;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly IDateTimeService _dateTimeService;
 
         public WebApplicationUserIdentityService(IServiceProvider serviceProvider)
         {
@@ -17,6 +19,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             _userManager = serviceProvider.GetService<UserManager<ApplicationUser>>();
             _userStore = serviceProvider.GetService<IUserStore<ApplicationUser>>();
             _roleManager = serviceProvider.GetService<RoleManager<ApplicationRole>>();
+            _dateTimeService = serviceProvider.GetService<IDateTimeService>();
         }
 
         public async Task<Guid> CreateRoleAsync(Guid id, string roleName)
@@ -56,7 +59,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
             user.FirstName = identity.FirstName;
             user.LastName = identity.LastName;
             user.IsEnabled = true;
-            user.DateCreated = DateTime.Now;
+            user.DateCreated = _dateTimeService.Now();
 
             user.EmailConfirmed = identity.EmailConfirmed;
 

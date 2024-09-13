@@ -75,7 +75,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
             where TDto : Dto, new()
         {
             if (validDate == null)
-                validDate = DateTime.Now;
+                validDate = service.EntityServiceDependency.DateTimeService.Now();
 
             return service.GetCollectionAsync<TDto>(_ =>
                     _.IsValidDateIncluded(validDate));
@@ -85,7 +85,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
             where TEntity : Entity, ISupportValidDateRange
         {
             if (validDate == null)
-                validDate = DateTime.Now;
+                validDate = service.EntityServiceDependency.DateTimeService.Now();
 
             return service.GetQueryAsync(
                 _ => _.IsValidDateIncluded(validDate));

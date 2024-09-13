@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
 
 using System.Reflection;
 
@@ -31,8 +32,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public string Now() => DateTime.Now.ToString();
-
+        public string Now([FromServices] IDateTimeService dateTimeService) => dateTimeService.Now().ToString();
 
         [HttpGet]
         [AllowAnonymous]

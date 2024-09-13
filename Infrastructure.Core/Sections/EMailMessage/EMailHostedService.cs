@@ -15,11 +15,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
     {
         protected readonly IDbContext _context;
         private readonly IEMailSender _emailSender;
+        private readonly IDateTimeService _dateTimeService;
 
-        public EMailSendHandler(IDbContext context, IEMailSender emailSender)
+        public EMailSendHandler(IDbContext context, IEMailSender emailSender, IDateTimeService dateTimeService)
         {
             _context = context;
             _emailSender = emailSender;
+            _dateTimeService = dateTimeService;
         }
 
         public async Task HandleMessageAsync(EmailMessage emailMessage)
@@ -29,7 +31,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                 await _emailSender.SendAsync(emailMessage);
 
                 emailMessage.ErrorMessage = null;
-                emailMessage.SentAt = DateTime.Now;
+                emailMessage.SentAt = _dateTimeService.Now();
                 emailMessage.Status = EmailMessageStatusType.Sent;
 
                 OnSent(emailMessage);
@@ -122,7 +124,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             {
                 var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
 
-                var date = DateTime.Now.Subtract(_hostedServicesConfiguration.InitialDelay);
+                var now = DateTime.Now;
+                var date = now.Subtract(_hostedServicesConfiguration.InitialDelay);
 
                 return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize);
             }

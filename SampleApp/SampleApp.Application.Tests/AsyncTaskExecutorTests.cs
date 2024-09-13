@@ -3,9 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core;
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 using System.Data;
 using System.Diagnostics;
@@ -48,29 +46,6 @@ namespace SampleApp.Application.Tests
             Debug.WriteLine($"----------------------------------");
             Debug.WriteLine($"All Finished: {watch.Elapsed}");
             Debug.WriteLine($"----------------------------------");
-        }
-
-        private Task StartAsyncTaskExecutorAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.Run(async () =>
-            {
-                using (var childScope = _serviceScope.ServiceProvider.CreateChildScope())
-                {
-                    var asyncTaskExecutorHostedService =
-                        childScope.ServiceProvider
-                        .GetService<AsyncTaskExecutorHostedService>();
-
-                    var applicationSettings = childScope.ServiceProvider
-                        .GetService<IApplicationSettings>();
-
-                    applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
-
-                    hostedServicesConfiguration.BatchSize = 10;
-                    hostedServicesConfiguration.Interval = TimeSpan.FromSeconds(1);
-
-                    await asyncTaskExecutorHostedService.ExecuteAsync(cancellationToken);
-                }
-            }, cancellationToken);
         }
 
 

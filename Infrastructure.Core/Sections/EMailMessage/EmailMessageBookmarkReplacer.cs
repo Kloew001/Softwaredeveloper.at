@@ -51,18 +51,23 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
         protected readonly ILogger<EmailMessageGlobalBookmark> _logger;
         protected readonly IApplicationSettings _applicationSettings;
+        protected readonly IDateTimeService _dateTimeService;
 
         public List<IEmailMessageBookmark> Bookmarks { get; set; } = [];
 
-        public EmailMessageGlobalBookmark(ILogger<EmailMessageGlobalBookmark> logger, IApplicationSettings applicationSettings)
+        public EmailMessageGlobalBookmark(
+            ILogger<EmailMessageGlobalBookmark> logger, 
+            IApplicationSettings applicationSettings,
+            IDateTimeService dateTimeService)
         {
             _logger = logger;
             _applicationSettings = applicationSettings;
+            _dateTimeService = dateTimeService;
 
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(STYLE, GetStyle));
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(SIGNATURE, GetSignature));
             Bookmarks.Add(new EmailMessageBookmark<IEntity>(BaseUrl, (db, e, o) => _applicationSettings.Url.BaseUrl));
-            Bookmarks.Add(new EmailMessageBookmark<IEntity>(CurrentYear, (db, e, o) => DateTime.Now.Year.ToString()));
+            Bookmarks.Add(new EmailMessageBookmark<IEntity>(CurrentYear, (db, e, o) => _dateTimeService.Now().Year.ToString()));
         }
 
         protected virtual string GetStyle(IDbContext context, EmailMessage email, IEntity referenceEntity)
