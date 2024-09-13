@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,6 +13,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+using System.Threading;
 
 namespace Infrastructure.Core.Tests
 {
@@ -118,28 +122,37 @@ namespace Infrastructure.Core.Tests
 
         protected virtual void CreateServiceCollection(IServiceCollection services, IHostEnvironment hostEnvironment, IConfigurationRoot configuration)
         {
-            services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            //services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
         }
 
         protected async Task WaitUntilReferencedAsyncTasksFinished(Guid[] referenceIds, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
-            using var serivceScope = _serviceScope.ServiceProvider.CreateScope();
-
-            var asyncTaskExecutor = serivceScope.ServiceProvider
-                    .GetRequiredService<AsyncTaskExecutor>();
+            var asyncTaskExecutor = _serviceScope.ServiceProvider.GetRequiredService<AsyncTaskExecutor>();
 
             await asyncTaskExecutor
                     .WaitUntilReferencedAsyncTasksFinished(referenceIds, timeoutInSeconds, cancellationToken);
         }
 
-        protected Task StartAsyncTaskExecutorAsync(CancellationToken cancellationToken = default)
+        protected Task ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken = default)
         {
-            return StartHostedServiceAsync<AsyncTaskExecutorHostedService>(
-                10,
-                TimeSpan.FromMicroseconds(500), cancellationToken);
+            return _serviceScope.ServiceProvider
+                .CreateChildScope<AsyncTaskExecutor>(async (childServiceProvider, asyncTaskExecutor, ct) =>
+                {
+                    await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, ct);
+                }, cancellationToken);
+            
+            //var asyncTaskExecutor = _serviceScope.ServiceProvider.GetRequiredService<AsyncTaskExecutor>();
+
+            //return asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
         }
 
-        protected Task StartHostedServiceAsync<THostedService>(int batchSize, TimeSpan interval, CancellationToken cancellationToken = default)
+        protected Task StartAsyncTaskExecutorAsync(CancellationToken cancellationToken = default)
+        {
+            return StartHostedServiceAsync<AsyncTaskExecutorHostedService>(cancellationToken);
+        }
+
+        protected Task StartHostedServiceAsync<THostedService>(CancellationToken cancellationToken = default)
             where THostedService : BaseHostedService
         {
             return Task.Run(async () =>
@@ -154,9 +167,6 @@ namespace Infrastructure.Core.Tests
                         .GetService<IApplicationSettings>();
 
                     applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
-
-                    hostedServicesConfiguration.BatchSize = batchSize;
-                    hostedServicesConfiguration.Interval = interval;
 
                     await hostedService.ExecuteAsync(cancellationToken);
                 }

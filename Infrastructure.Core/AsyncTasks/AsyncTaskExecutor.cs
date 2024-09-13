@@ -78,11 +78,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             return handlerTypes;
         }
 
-        public async Task<bool> ExecuteAsync(Guid operationId, CancellationToken cancellationToken)
-        {
-            return await ExecuteAsyncTaskOperationIdAsync(operationId, cancellationToken);
-        }
-
         private SemaphoreSlim _semaphore = null;
 
         public async Task ExecuteNextOperationsAsync(int batchSize = 10, CancellationToken cancellationToken = default)
@@ -154,7 +149,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                 await SetExecutingAsync(asyncTaskOperationId);
             }
 
-            using (var childScope = _serviceProvider.CreateChildScope())
+            using (var childScope = _serviceProvider.CreateScope())
             {
                 var asyncTaskExecutor = childScope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
@@ -162,7 +157,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
             }
         }
 
-        private async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
+        public async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
         {
             using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
             {
@@ -175,7 +170,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks
                     var asyncTaskOperation = await _context.Set<AsyncTaskOperation>()
                         .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
 
-                    if (asyncTaskOperation.Status != AsyncTaskOperationStatus.Executing)
+                    if (asyncTaskOperation.Status > AsyncTaskOperationStatus.Executing)
                         throw new InvalidOperationException();
 
                     if (asyncTaskOperation.ExecuteById.HasValue)

@@ -37,14 +37,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         private Guid? _previousUserId = null;
 
         private readonly IDbContext _context;
-        private readonly IServiceProvider _serviceProvider;
 
         public bool IsAuthenticated => _currentUserId != null;
 
-        public CurrentUserService(IDbContext context,  IServiceProvider serviceProvider)
+        public CurrentUserService(IDbContext context)
         {
             _context = context;
-            _serviceProvider = serviceProvider;
         }
 
         public void SetPreviousUser()

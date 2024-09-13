@@ -63,7 +63,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-            Services.AddSingleton<IDateTimeService, DateTimeService>();
+            Services.AddScoped<IDateTimeService, DateTimeService>();
         }
 
         protected virtual void ConfigureApplicationSettings()
