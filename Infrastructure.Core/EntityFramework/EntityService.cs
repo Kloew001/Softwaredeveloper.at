@@ -235,6 +235,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
                     return ValueTask.CompletedTask;
                 });
 
+                await SaveAsync(entity);
+
                 return entity.Id;
             }
         }
