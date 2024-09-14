@@ -1,23 +1,17 @@
-﻿using DocumentFormat.OpenXml.Vml.Office;
-
-using ExtendableEnums.EntityFrameworkCore;
+﻿using ExtendableEnums.EntityFrameworkCore;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 
 using System.Linq.Expressions;
@@ -34,7 +28,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             {
                 var dbContextHandler = serviceProvider.GetRequiredService<IDbContextHandler>();
                 dbContextHandler.DBContextOptions(serviceProvider, options);
-            });
+            }, contextLifetime : ServiceLifetime.Scoped);
         }
     }
 

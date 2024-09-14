@@ -1,12 +1,10 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using FluentValidation.Results;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using DocumentFormat.OpenXml.VariantTypes;
+using SoftwaredeveloperDotAt.Infrastructure.Core.UnitOfWork;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -70,7 +68,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;
-        protected readonly IDbContext _context;
+        //protected readonly IDbContext _context;
         protected readonly AccessService _accessService;
         protected readonly SectionManager _sectionManager;
         protected readonly EntityQueryService<TEntity> _entityQueryService;
@@ -81,6 +79,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         protected readonly IServiceProvider _serviceProvider;
         protected readonly IDateTimeService _dateTimeService;
 
+        protected ICurrentUnitOfWorkScope _currentUnitOfWorkScope;
+        public IUnitOfWorkScope WorkScope => _currentUnitOfWorkScope.CurrentWorkScope;
+        public IDbContext Context => WorkScope.Context;
+
         public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
         public EntityService(EntityServiceDependency<TEntity> entityServiceDependency)
@@ -89,7 +91,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             _serviceProvider = entityServiceDependency.ServiceProvider;
             _logger = entityServiceDependency.Logger;
-            _context = entityServiceDependency.DbContext;
+            //_context = entityServiceDependency.DbContext;
             _accessService = entityServiceDependency.AccessService;
             _sectionManager = entityServiceDependency.SectionManager;
             _entityQueryService = entityServiceDependency.EntityQueryService;
@@ -97,6 +99,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             _cacheService = entityServiceDependency.CacheService;
             _multilingualService = entityServiceDependency.MultilingualService;
             _dateTimeService = entityServiceDependency.DateTimeService;
+
+            _currentUnitOfWorkScope = _serviceProvider.GetService<ICurrentUnitOfWorkScope>();
 
             _validator = entityServiceDependency.Validator;
         }
@@ -200,7 +204,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async ValueTask<IQueryable<TEntity>> GetQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> queryExtension = null)
         {
-            var query = _context
+            var query = Context
                 .Set<TEntity>()
                 .AsQueryable();
 
@@ -271,8 +275,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
         public virtual async Task<TEntity> CreateAsync(Func<TEntity, ValueTask> modifyEntity = null)
         {
-            var entity = _context.Set<TEntity>().CreateProxy();
-            await _context.AddAsync(entity);
+            var entity = Context.Set<TEntity>().CreateProxy();
+            await Context.AddAsync(entity);
 
             if (modifyEntity != null)
                 await modifyEntity(entity);
@@ -373,7 +377,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
                 await OnSaveAsync(entity);
 
-                await _context.SaveChangesAsync();
+                await Context.SaveChangesAsync();
             }
         }
 
@@ -389,7 +393,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             await OnDeleteAsync(entity);
 
-            _context.Remove(entity);
+            Context.Remove(entity);
         }
 
         protected virtual Task OnDeleteAsync(TEntity entity)

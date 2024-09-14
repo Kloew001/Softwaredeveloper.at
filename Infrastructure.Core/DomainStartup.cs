@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.UnitOfWork;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
 
 using TomLonghurst.ReadableTimeSpan;
@@ -64,6 +65,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             Services.AddScoped<IDateTimeService, DateTimeService>();
+
+            Services.AddUnitOfWork();
         }
 
         protected virtual void ConfigureApplicationSettings()

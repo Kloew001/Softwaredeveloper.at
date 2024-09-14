@@ -90,7 +90,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         public Task<bool> IsEMailAlreadyInUse(string email)
         {
             var normalizedEmail = email.ToUpper().Trim();
-            return _context
+            return Context
                 .Set<ApplicationUser>()
                     .Where(_ => _.NormalizedEmail == normalizedEmail)
                     .AnyAsync();
@@ -99,7 +99,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         public Task<bool> IsUserNameAlreadyInUse(string username)
         {
             var normalizedUserName = username.ToUpper().Trim();
-            return _context
+            return Context
                 .Set<ApplicationUser>()
                     .Where(_ => _.NormalizedUserName == normalizedUserName)
                     .AnyAsync();
@@ -111,7 +111,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
                 .Select(_ => _.ToUpper().Trim())
                 .ToList();
 
-            return _context
+            return Context
                 .Set<ApplicationUser>()
                     .Where(_ => normalizedUserNames.Contains(_.NormalizedUserName))
                     .AnyAsync();
@@ -133,7 +133,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         {
             var userRoleIds = await _cacheService.MemoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
             {
-                return await _context
+                return await Context
                     .Set<ApplicationUserRole>()
                         .Where(_ => _.UserId == userId)
                         .Select(_ => _.RoleId)
@@ -234,7 +234,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
             else
             {
                 applicationUser.PreferedCulture =
-                    await _context.Set<MultilingualCulture>()
+                    await Context.Set<MultilingualCulture>()
                         .Where(_ => _.IsActive &&
                                     _.Name == cultureName.ToLower())
                         .SingleAsync();
