@@ -1,12 +1,7 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
-using Microsoft.EntityFrameworkCore;
-using FluentValidation;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using FluentValidation.Results;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using DocumentFormat.OpenXml.VariantTypes;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
@@ -417,12 +412,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
             if (validationResult == null)
                 return;
-
+            
             if (validationResult.IsValid == false)
-                throw validationResult.ToValidationException();
+                throw ToValidationException(validationResult);
         }
 
-        public async Task<ValidationResult> ValidateAsync(TEntity entity)
+        private ValidationException ToValidationException(FluentValidation.Results.ValidationResult validationResult)
+        {
+            return new ValidationException(this.GetText("ValidationError.Message"),
+                validationResult.Errors.Select(e => new ValidationError
+                {
+                    PropertyName = e.PropertyName,
+                    ErrorMessage = e.ErrorMessage
+                }));
+        }
+
+        public async Task<FluentValidation.Results.ValidationResult> ValidateAsync(TEntity entity)
         {
             if (_sectionManager.IsActive<SuppressValidationSection>())
                 return null;

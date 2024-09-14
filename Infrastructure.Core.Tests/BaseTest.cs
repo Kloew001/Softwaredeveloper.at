@@ -93,8 +93,8 @@ namespace Infrastructure.Core.Tests
             _configuration = new ConfigurationBuilder()
                 //.SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.UnitTest.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettings.UnitTest.json", optional: true, reloadOnChange: true)
                 .Build();
 
             var hostEnvironmentMock = new Mock<IHostEnvironment>();

@@ -36,14 +36,14 @@ namespace Infrastructure.Core.Web.Middleware
 
         public class ValidationProblemDetails : ProblemDetails
         {
-            public IEnumerable<ValidationError> Errors { get; set; }
+            public IEnumerable<ValidationError> ValidationErrors { get; set; }
 
             public ValidationProblemDetails(ValidationException validationException)
             {
                 Status = StatusCodes.Status412PreconditionFailed;
                 Title = validationException.Message;
                 Detail = validationException.Message;
-                Errors = validationException.Errors;
+                ValidationErrors = validationException.ValidationErrors;
             }
         }
     }

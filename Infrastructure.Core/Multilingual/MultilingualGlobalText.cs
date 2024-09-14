@@ -45,6 +45,24 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
                 _.CultureId,
                 _.Key
             }).IsUnique();
+
+            builder.HasData(new List<MultilingualGlobalText>()
+                {
+                    new ()
+                    {
+                        Id = new Guid("67BE8513-7ACD-41ED-9CF6-BC554DFA90DC"),
+                        Key = "ValidationError.Message",
+                        Text = "Validierungsfehler sind aufgetreten.",
+                        CultureId = MultilingualCultureIds.De,
+                    },
+                    new ()
+                    {
+                        Id = new Guid("72A7FD7A-36B2-4F3C-B699-595392DE0465"),
+                        Key = "ValidationError.Message",
+                        Text = "Validation error occurred.",
+                        CultureId = MultilingualCultureIds.En,
+                    },
+            });
         }
     }
 
