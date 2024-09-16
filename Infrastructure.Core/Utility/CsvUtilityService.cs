@@ -1,13 +1,13 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 
-using DocumentFormat.OpenXml.Spreadsheet;
 using System.Globalization;
 using System.Text;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
-    public class CsvUtilityService : ISingletonDependency
+    [SingletonDependency]
+    public class CsvUtilityService
     {
         public TCsvLine[] ReadCsv<TCsvLine, TMap>(byte[] content, Action<CsvConfiguration> configurationModify = null, Encoding encoding = null)
             where TMap : ClassMap

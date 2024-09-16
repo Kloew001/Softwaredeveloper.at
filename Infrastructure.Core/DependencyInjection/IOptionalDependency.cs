@@ -7,7 +7,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
         T Value { get; }
     }
 
-    public class OptionalDependency<T> : IOptionalDependency<T>, ITransientDependency
+    [TransientDependency]
+    public class OptionalDependency<T> : IOptionalDependency<T>
     {
         public OptionalDependency(IServiceProvider serviceProvider)
         {

@@ -56,7 +56,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             PageSize > 0;
     }
 
-    public class EntityQueryService<TEntity> : ISingletonDependency
+    [SingletonDependency]
+    public class EntityQueryService<TEntity>
         where TEntity : Entity
     {
         private IMemoryCache _memoryCache;

@@ -3,7 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    public class ExcelMultilingualService : MultilingualImportExportHandlerService, IScopedDependency
+    [ScopedDependency]
+    public class ExcelMultilingualService : MultilingualImportExportHandlerService
     {
         public ExcelMultilingualService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory, IApplicationSettings applicationSettings)
             : base(context, memoryCache, serviceScopeFactory, applicationSettings)

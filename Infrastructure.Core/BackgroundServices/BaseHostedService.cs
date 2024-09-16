@@ -74,7 +74,22 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices
             _logger = logger;
 
             _applicationSettings = applicationSettings;
-            _applicationSettings.HostedServices.TryGetValue(GetType().Name, out _hostedServicesConfiguration);
+            _hostedServicesConfiguration = GetConfiguration();
+        }
+
+        protected virtual HostedServicesConfiguration GetConfiguration()
+        {
+            _applicationSettings.HostedServices.TryGetValue(GetType().Name, out var hostedServicesConfiguration);
+
+            if (hostedServicesConfiguration == null)
+                hostedServicesConfiguration = GetDefaultConfiguration();
+
+            return hostedServicesConfiguration;
+        }
+
+        protected virtual HostedServicesConfiguration GetDefaultConfiguration()
+        {
+            return null;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

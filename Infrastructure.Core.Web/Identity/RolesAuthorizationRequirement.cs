@@ -16,7 +16,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
         }
     }
 
-    public class RolesAuthorizationRequirementHandler : AuthorizationHandler<RolesAuthorizationRequirement>, IScopedDependency, ITypedScopedDependency<IAuthorizationHandler>
+    [ScopedDependency<IAuthorizationHandler>]
+    public class RolesAuthorizationRequirementHandler : AuthorizationHandler<RolesAuthorizationRequirement>
     {
         private readonly IDbContext _dbContext;
         private readonly IMemoryCache _memoryCache;

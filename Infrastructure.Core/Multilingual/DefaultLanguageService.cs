@@ -12,10 +12,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         MultilingualCultureDto Culture { get; }
     }
 
-    public class DefaultLanguageService : 
-        IDefaultLanguageService, 
-        ITypedSingletonDependency<IDefaultLanguageService>, 
-        IAppStatupInit
+    [SingletonDependency<IDefaultLanguageService>]
+    public class DefaultLanguageService : IDefaultLanguageService, IAppStatupInit
     {
         public MultilingualCultureDto Culture { get; private set; }
 

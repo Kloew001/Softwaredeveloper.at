@@ -2,7 +2,8 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
-    public class SectionManager : IScopedDependency
+    [ScopedDependency]
+    public class SectionManager
     {
         private readonly IServiceProvider _serviceProvider;
 
@@ -72,7 +73,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
         public bool IsActive { get; }
     }
 
-    public abstract class Section : ISection, IScopedDependency, ITypedScopedDependency<ISection>
+    [ScopedDependency<ISection>]
+    public abstract class Section : ISection
     {
         public List<SectionScope> Scopes { get; set; }
         public SectionScope CurrentScope => Scopes?.LastOrDefault(_ => _.IsActive != null);

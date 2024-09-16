@@ -2,11 +2,12 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 {
-    public class UseCaseService : IScopedDependency
+    [ScopedDependency]
+    public class UseCaseService
     {
         public class UseCaseInfo
         {
-            public Guid UseCaseId { get; set; }
+            public string UseCaseIdentifier { get; set; }
             public bool IsAvailable { get; set; }
             public bool CanExecute { get; set; }
         }
@@ -20,13 +21,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             _useCaseServiceResolver = useCaseServiceResolver;
         }
 
-        public async ValueTask<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<Guid> useCaseIds, Dictionary<string, object> parameter)
+        public async ValueTask<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<string> useCaseIdentifiers, Dictionary<string, object> parameter)
         {
             var useCaseInfos = new List<UseCaseInfo>();
 
-            foreach (var useCaseId in useCaseIds)
+            foreach (var useCaseIdentifier in useCaseIdentifiers)
             {
-                var useCaseType = _useCaseServiceResolver.UseCases[useCaseId];
+                var useCaseType = _useCaseServiceResolver.UseCases[useCaseIdentifier];
 
                 var useCase = _serviceProvider.GetService(useCaseType) as IUseCase;
 
@@ -37,9 +38,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
             return useCaseInfos;
         }
 
-        public async Task<object> ExecuteAsync(Guid useCaseId, Dictionary<string, object> parameter)
+        public async Task<object> ExecuteAsync(string useCaseIdentifier, Dictionary<string, object> parameter)
         {
-            var useCaseType = _useCaseServiceResolver.UseCases[useCaseId];
+            var useCaseType = _useCaseServiceResolver.UseCases[useCaseIdentifier];
             var useCase = _serviceProvider.GetService(useCaseType) as IUseCase;
 
             return await useCase.ExecuteAsync(parameter);
@@ -65,7 +66,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
         {
             var useCaseInfo = new UseCaseInfo()
             {
-                UseCaseId = useCase.UseCaseId
+                UseCaseIdentifier = useCase.UseCaseIdentifier
             };
 
             useCaseInfo.IsAvailable =

@@ -52,7 +52,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         }
     }
 
-    public class MultilingualService : IScopedDependency
+    [ScopedDependency]
+    public class MultilingualService
     {
         private readonly MultilingualGlobalTextCacheService _multilingualGlobalTextCacheService;
         private readonly ICurrentLanguageService _currentLanguageService;

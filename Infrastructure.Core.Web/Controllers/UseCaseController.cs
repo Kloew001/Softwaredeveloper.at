@@ -15,17 +15,17 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers
 
         public class UseCaseParamter
         {
-            public IEnumerable<Guid> UseCaseIds { get; set; }
-            public Guid? UseCaseId { get; set; }
+            public IEnumerable<string> UseCaseIdentifiers { get; set; }
+            public string UseCaseIdentifier { get; set; }
             public Dictionary<string, object> Parameter { get; set; }
         }
 
         [HttpPost]
         public ValueTask<IEnumerable<UseCaseService.UseCaseInfo>> Evaluate(UseCaseParamter parameter)
-            => _useCaseService.EvaluateAsync(parameter.UseCaseIds, parameter.Parameter);
+            => _useCaseService.EvaluateAsync(parameter.UseCaseIdentifiers, parameter.Parameter);
         
         [HttpPost]
         public Task<object> Execute(UseCaseParamter parameter)
-            => _useCaseService.ExecuteAsync(parameter.UseCaseId.Value, parameter.Parameter);
+            => _useCaseService.ExecuteAsync(parameter.UseCaseIdentifier, parameter.Parameter);
     }
 }

@@ -6,9 +6,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public abstract class SoftwaredeveloperDotAtDbContext : DbContext,
-        IDbContext,
-        ITypedScopedDependency<IDbContext>
+    [ScopedDependency<IDbContext>]
+    public abstract class SoftwaredeveloperDotAtDbContext : DbContext, IDbContext
     {
         public bool UseProxy { get; set; } = true;
 
@@ -82,6 +81,25 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
+        [ScopedDependency]
+        public class DbContextTransaction
+        {
+            public Guid TransactionId { get; set; }
+            public DateTime? TransactionTime { get; set; }
+
+            private readonly IDateTimeService _dateTimeService;
+            public DbContextTransaction(IDateTimeService dateTimeService)
+            {
+                _dateTimeService = dateTimeService;
+            }
+
+            public void EnsureTime()
+            {
+                if(TransactionTime == null)
+                    TransactionTime = _dateTimeService.Now();
+            }
+        }
+
         private void BeforeSaveChanges()
         {
             var dbContextHandler = this.GetService<IDbContextHandler>();
@@ -89,9 +107,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             if (dbContextHandler == null)
                 throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
 
-            var dateTimeService = this.GetService<IDateTimeService>();
+            var transactionService = this.GetService<DbContextTransaction>();
+            transactionService.EnsureTime();
 
-            var transactionDateTime = dateTimeService.Now();
+            var transactionDateTime = transactionService.TransactionTime.Value;
 
             dbContextHandler.HandleEntityAudit(this, transactionDateTime);
             dbContextHandler.HandleChangeTrackedEntity(this, transactionDateTime);

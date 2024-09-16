@@ -1,12 +1,11 @@
 ﻿using FluentValidation;
-using FluentValidation.Resources;
 
 using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
 {
-    public class EntityValidatorDependency<TEntity> : ITransientDependency
+    [TransientDependency]
+    public class EntityValidatorDependency<TEntity>
         where TEntity : Entity
     {
         private readonly IServiceProvider _serviceProvider;
@@ -28,7 +27,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
         }
     }
 
-    public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>, IScopedDependency, ITypedScopedDependency<EntityValidator<TEntity>>
+    [ScopedDependency]
+    public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>//, ITypedScopedDependency<EntityValidator<TEntity>>
         where TEntity : Entity
     {
         public EntityValidatorDependency<TEntity> Dependency { get; private set; }

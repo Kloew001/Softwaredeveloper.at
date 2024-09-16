@@ -1,8 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-
-using MimeKit;
-
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
+﻿using MimeKit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection
 {
@@ -13,7 +9,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
         public BinaryContent BinaryContent { get; set; }
     }
 
-    public class BinaryContentService : IScopedDependency
+    [ScopedDependency]
+    public class BinaryContentService
     {
         private IDbContext _context;
 

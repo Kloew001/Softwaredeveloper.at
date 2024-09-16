@@ -52,6 +52,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity
         Task SetPreferedCultureAsync(string cultureName);
     }
 
+    [ScopedDependency<IApplicationUserService>]
     public class ApplicationUserService : EntityService<ApplicationUser>, IApplicationUserService
     {
         public ApplicationUserService(EntityServiceDependency<ApplicationUser> entityServiceDependency)

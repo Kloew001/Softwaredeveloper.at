@@ -1,6 +1,7 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public class AccessConditionService : IScopedDependency
+    [ScopedDependency]
+    public class AccessConditionService
     {
         protected readonly ICurrentUserService _currentUserService;
         protected readonly IApplicationUserService _applicationUserService;

@@ -7,7 +7,8 @@ using System.Text;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
-    public sealed class SQLServerDistributedLock : IDistributedLock, ITransientDependency, ITypedTransientDependency<IDistributedLock>, IDisposable
+    [TransientDependency<IDistributedLock>]
+    public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
     {
         private const string _lockMode = "Exclusive";
         private const string _lockOwner = "Transaction";

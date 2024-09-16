@@ -7,8 +7,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 {
     public interface IEMailSendHandler
     {
-        Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize);
-        Task HandleMessageAsync(EmailMessage emailMessage);
+        Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize, CancellationToken ct);
+        Task HandleMessageAsync(EmailMessage emailMessage, CancellationToken ct);
     }
 
     public class EMailSendHandler : IEMailSendHandler
@@ -24,7 +24,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             _dateTimeService = dateTimeService;
         }
 
-        public async Task HandleMessageAsync(EmailMessage emailMessage)
+        public async Task HandleMessageAsync(EmailMessage emailMessage, CancellationToken ct)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         {
         }
 
-        public async Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize)
+        public async Task<List<Guid>> GetIdsAsync(DateTime sendAt, int batchSize, CancellationToken ct)
         {
             var mailMessagesIds =
                 await _context.Set<EmailMessage>()
@@ -62,14 +62,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
                     .OrderByDescending(_ => _.SendAt)
                     .Select(_ => _.Id)
                     .Take(batchSize)
-                    .ToListAsync();
+                    .ToListAsync(ct);
 
             return mailMessagesIds;
 
         }
     }
 
-    public class EMailHostedService : TimerHostedService
+    public class EMailHostedService : HandleBatchTimeHostedService
     {
         public EMailHostedService(
             IServiceScopeFactory serviceScopeFactory,
@@ -79,21 +79,21 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             : base(serviceScopeFactory, appLifetime, logger, settings)
         {
         }
-
-        protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
+        
+        protected override async Task<List<Guid>> GetIdsAsync(CancellationToken ct)
         {
-            var ids = await GetIdsAsync();
-
-            if (ids.Any() == false)
-                return;
-
-            foreach (var id in ids)
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                await HandleMessageAsync(id);
+                var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
+
+                var now = DateTime.Now;
+                var date = now.Subtract(_hostedServicesConfiguration.InitialDelay);
+
+                return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize, ct);
             }
         }
 
-        private async Task HandleMessageAsync(Guid id)
+        protected override async Task HandleIdAsync(Guid id, CancellationToken ct)
         {
             try
             {
@@ -107,9 +107,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
 
                     var mailMessage = await context.Set<EmailMessage>().SingleAsync(_ => _.Id == id);
 
-                    await eMailSendHandler.HandleMessageAsync(mailMessage);
+                    await eMailSendHandler.HandleMessageAsync(mailMessage, ct);
 
-                    await context.SaveChangesAsync();
+                    await context.SaveChangesAsync(ct);
                 }
             }
             catch (Exception ex)
@@ -118,17 +118,5 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
             }
         }
 
-        private async Task<List<Guid>> GetIdsAsync()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
-
-                var now = DateTime.Now;
-                var date = now.Subtract(_hostedServicesConfiguration.InitialDelay);
-
-                return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize);
-            }
-        }
     }
 }

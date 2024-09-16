@@ -1,6 +1,7 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed
 {
-    public interface IDataSeed : ITypedScopedDependency<IDataSeed>
+    [ScopedDependency<IDataSeed>]
+    public interface IDataSeed
     {
         decimal Priority { get; }
         bool AutoExecute { get; }

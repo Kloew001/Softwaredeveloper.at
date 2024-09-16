@@ -2,7 +2,8 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
 {
-    public class ScopedCache : IScopedDependency
+    [ScopedDependency]
+    public class ScopedCache
     {
         //https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Caching.Memory/src/MemoryCache.cs
         private readonly ConcurrentDictionary<string, object> _cache;

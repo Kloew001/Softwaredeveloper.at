@@ -12,7 +12,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
     }
 
-    public class EntityServiceDependency<TEntity> : ITransientDependency
+    [TransientDependency]
+    public class EntityServiceDependency<TEntity>
         where TEntity : Entity
     {
         public IServiceProvider ServiceProvider { get; private set; }
@@ -61,7 +62,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
         }
     }
 
-    public class EntityService<TEntity> : IScopedDependency
+    [ScopedDependency]
+    public class EntityService<TEntity>
         where TEntity : Entity
     {
         protected readonly ILogger<EntityService<TEntity>> _logger;

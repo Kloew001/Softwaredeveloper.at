@@ -5,13 +5,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
     [AttributeUsage(AttributeTargets.Class)]
     public class UseCaseAttribute : Attribute
     {
-        public string Id { get; set; }
+        public string UniqueIdentifier { get; set; }
 
     }
 
+    [ScopedDependency<IUseCase>]
     public interface IUseCase
     {
-        Guid UseCaseId { get; }
+        string UseCaseIdentifier { get; }
 
         ValueTask<bool> IsAvailableAsync();
 
@@ -34,13 +35,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
     }
 
     public abstract class UseCase<TEntity, TParamter, TResult> :
-        IUseCase<TParamter, TResult>,
-        IScopedDependency,
-        ITypedScopedDependency<IUseCase>
+        IUseCase<TParamter, TResult>
         where TEntity : Entity
         where TParamter : new()
     {
-        public Guid UseCaseId => Guid.Parse(GetType().GetCustomAttribute<UseCaseAttribute>().Id);
+        public string UseCaseIdentifier => 
+            GetType().GetCustomAttribute<UseCaseAttribute>()?.UniqueIdentifier ?? 
+            GetType().Name;
 
         protected readonly EntityService<TEntity> _service;
 

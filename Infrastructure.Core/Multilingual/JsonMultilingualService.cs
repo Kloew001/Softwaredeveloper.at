@@ -6,7 +6,8 @@ using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
 {
-    public class JsonMultilingualService : MultilingualImportExportHandlerService, IScopedDependency
+    [ScopedDependency]
+    public class JsonMultilingualService : MultilingualImportExportHandlerService
     {
         public JsonMultilingualService(IDbContext context, IMemoryCache memoryCache, IServiceScopeFactory serviceScopeFactory, IApplicationSettings applicationSettings)
             : base(context, memoryCache, serviceScopeFactory, applicationSettings)

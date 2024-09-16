@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
-
 using TomLonghurst.ReadableTimeSpan;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core
@@ -57,8 +55,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
             Services.AddScoped<IEMailSender, NoEmailSender>();
 
             Services.AddScoped<IMonitorService, MonitorService>();
-
-            Services.AddScoped<IApplicationUserService>((sp) => sp.GetRequiredService<ApplicationUserService>());
 
             if (HostEnvironment == null || HostEnvironment.IsDevelopment())
                 Services.AddScoped<ICurrentUserService, CurrentUserService>();

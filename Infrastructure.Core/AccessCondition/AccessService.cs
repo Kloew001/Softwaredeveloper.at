@@ -7,7 +7,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
     public class SecurityFreeSection : Section
     {
     }
-    public class AccessService : IScopedDependency
+
+    [ScopedDependency]
+    public class AccessService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IMemoryCache _memoryCache;

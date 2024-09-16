@@ -5,7 +5,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity
 {
-    public class WebApplicationUserIdentityService : IApplicationUserIdentityService, ITypedScopedDependency<IApplicationUserIdentityService>
+    [ScopedDependency<IApplicationUserIdentityService>]
+    public class WebApplicationUserIdentityService : IApplicationUserIdentityService
     {
         protected readonly SignInManager<ApplicationUser> _signInManager;
         protected readonly UserManager<ApplicationUser> _userManager;

@@ -9,7 +9,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed
         public Type DataSeedType { get; set; }
     }
 
-    public class DataSeedService : IScopedDependency
+    [ScopedDependency]
+    public class DataSeedService
     {
         private readonly ILogger<DataSeedService> _logger;
         private readonly IServiceProvider _serviceProvider;

@@ -11,7 +11,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
         Guid CurrentCultureId { get; }
     }
 
-    public class CurrentLanguageService : ICurrentLanguageService, ITypedScopedDependency<ICurrentLanguageService>
+    [ScopedDependency<ICurrentLanguageService>]
+    public class CurrentLanguageService : ICurrentLanguageService
     {
         public Guid CurrentCultureId => GetCurrentCultureId();
 

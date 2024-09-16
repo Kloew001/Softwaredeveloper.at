@@ -7,35 +7,53 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 {
     public static class TypeUtility
     {
-        public static IEnumerable<Type> GetAllTypesWithAttribute(Type attributeType)
+        public static IEnumerable<Type> GetAllTypesWithAttribute(Type attributeType, bool inherit = true)
         {
             return AssemblyUtils.AllLoadedTypes()
                 .Where(p => p.IsAbstract == false &&
                             p.IsInterface == false &&
-                            p.GetCustomAttributes(attributeType, true).Length > 0)
+                            p.GetCustomAttributes(attributeType, inherit).Length > 0)
                 .ToList();
         }
 
-        public static Attribute GetAttribute(this Type objType, Type attributeType)
+        public static Attribute GetAttribute(this Type objType, Type attributeType, bool inherit = true)
         {
-            return objType.GetCustomAttributes(attributeType, true)
+            return objType.GetCustomAttributes(attributeType, inherit)
                 .OfType<Attribute>()
                 .SingleOrDefault();
         }
-        public static TAttrbitute GetAttribute<TAttrbitute>(this Type objType)
+        public static TAttrbitute GetAttribute<TAttrbitute>(this Type objType, bool inherit = true)
             where TAttrbitute : Attribute
         {
-            return GetAttributes<TAttrbitute>(objType)
+            return GetAttributes<TAttrbitute>(objType, inherit)
                 .SingleOrDefault();
         }
 
-        public static IEnumerable<TAttribute> GetAttributes<TAttribute>(this Type objType)
+        public static bool HasAttribute<TAttrbitute>(this Type objType, bool inherit = true)
+            where TAttrbitute : Attribute
+        {
+            return GetAttributes<TAttrbitute>(objType, inherit).Any();
+        }
+
+        public static bool HasAttribute(this Type objType, Type attributeType, bool inherit = true)
+        {
+            return GetAttributes(objType, attributeType, inherit).Any();
+        }
+
+        public static IEnumerable<TAttribute> GetAttributes<TAttribute>(this Type objType, bool inherit = true)
             where TAttribute : Attribute
         {
-            return objType.GetCustomAttributes(typeof(TAttribute), true)
-                .OfType<TAttribute>()
+            return GetAttributes(objType, typeof(TAttribute), inherit)
+                .OfType<TAttribute>();
+        }
+
+        public static IEnumerable<Attribute> GetAttributes(this Type objType, Type attributeType, bool inherit = true)
+        {
+            return objType.GetCustomAttributes(attributeType, inherit)
+                .OfType<Attribute>()
                 .ToList();
         }
+
         public static Type UnProxy(this Type entityType)
         {
             if(entityType == null) 

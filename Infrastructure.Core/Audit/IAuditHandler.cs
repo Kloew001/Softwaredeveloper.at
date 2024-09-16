@@ -2,7 +2,8 @@
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
 {
-    public interface IAuditHandler : ITypedSingletonDependency<IAuditHandler>
+    [SingletonDependency<IAuditHandler>]
+    public interface IAuditHandler
     {
     }
 

@@ -10,6 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
     public class BinaryContent : ChangeTrackedEntity, IReferencedToEntity
     {
         public string Name { get; set; }
+        public string Description { get; set; }
 
         public Guid? ReferenceId { get; set; }
         public string ReferenceType { get; set; }
@@ -20,8 +21,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 
         public byte[] Content { get; set; }
         public long ContentSize { get; set; }
-        public string Description { get; set; }
 
+        public DateTime? ExtractionHandledAt { get; set; }
+        public string ExtractedText { get; set; }
     }
 
     public class BinaryContentConfiguration : IEntityTypeConfiguration<BinaryContent>

@@ -1,5 +1,6 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
+    [ScopedDependency<IAccessCondition>]
     public interface IAccessCondition
     {
         ValueTask<bool> CanReadAsync(IEntity entity);
@@ -11,7 +12,7 @@
         ValueTask<bool> CanSaveAsync(IEntity entity);
     }
 
-    public interface IAccessCondition<TEntity> : IAccessCondition, ITypedScopedDependency<IAccessCondition<TEntity>>
+    public interface IAccessCondition<TEntity> : IAccessCondition
         where TEntity : IEntity
     {
         ValueTask<bool> CanReadAsync(TEntity entity);

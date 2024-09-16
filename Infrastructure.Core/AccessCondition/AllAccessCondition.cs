@@ -1,6 +1,7 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    public class AllAccessCondition<TEntity> : IAccessCondition<TEntity>, IScopedDependency
+    [ScopedDependency]
+    public class AllAccessCondition<TEntity> : IAccessCondition<TEntity>
         where TEntity : Entity
     {
         public ValueTask<bool> CanReadAsync(TEntity entity) => ValueTask.FromResult(true);

@@ -59,12 +59,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             {
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(ChangeTrackedEntity.DateCreated))
-                    .HasDefaultValueSql("getdate()")
-                    .ValueGeneratedOnAdd();
+                    .HasDefaultValueSql("getdate()");
+                //.ValueGeneratedOnAdd();
+
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(ChangeTrackedEntity.DateModified))
-                    .HasDefaultValueSql("getdate()")
-                    .ValueGeneratedOnAddOrUpdate();
+                    .HasDefaultValueSql("getdate()");
+                //.ValueGeneratedOnAddOrUpdate();
 
                 modelBuilder.Entity(entityType.ClrType)
                     .HasOne(nameof(ChangeTrackedEntity.CreatedBy))

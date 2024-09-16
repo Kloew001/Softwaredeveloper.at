@@ -6,11 +6,12 @@ using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 {
-    public class UseCaseServiceResolver : ISingletonDependency, IAppStatupInit
+    [SingletonDependency]
+    public class UseCaseServiceResolver : IAppStatupInit
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public Dictionary<Guid, Type> UseCases { get; set; } = new Dictionary<Guid, Type>();
+        public Dictionary<string, Type> UseCases { get; set; } = new Dictionary<string, Type>();
 
         public UseCaseServiceResolver(IServiceScopeFactory serviceScopeFactory)
         {
@@ -33,8 +34,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
 
                     if (useCaseAttribute != null)
                     {
-                        var useCaseId = Guid.Parse(useCaseAttribute.Id);
-                        UseCases.Add(useCaseId, useCaseType);
+                        var uniqueIdentifier = useCaseAttribute.UniqueIdentifier;
+                        UseCases.Add(uniqueIdentifier, useCaseType);
                     }
                 }
             }

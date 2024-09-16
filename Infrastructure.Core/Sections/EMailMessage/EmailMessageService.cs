@@ -94,7 +94,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage
         }
     }
 
-    public class EmailMessageService : IScopedDependency
+    [ScopedDependency]
+    public class EmailMessageService
     {
         private readonly IDbContext _context;
         private readonly EmailMessageIgnoreSection _emailMessageIgnoreSection;
