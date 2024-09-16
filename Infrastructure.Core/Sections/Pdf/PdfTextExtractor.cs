@@ -19,7 +19,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Pdf
             try
             {
                 using (var memoryStream = new MemoryStream(content))
-                using (var pdfReader = new PdfReader(memoryStream))
+                using (
+                    var pdfReader = new PdfReader(memoryStream))
                 using (var pdfDoc = new PdfDocument(pdfReader))
                 {
                     string extractedText = "";
