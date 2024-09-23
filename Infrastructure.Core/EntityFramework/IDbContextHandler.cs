@@ -20,6 +20,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -27,13 +28,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 {
     public static class ServiceCollectionExtensions
     {
-        public static void RegisterDBContext<TDBContext>(this IServiceCollection services)
+        public static void RegisterDBContext<TDBContext>(this IServiceCollection services, string connectionStringKey = "DbContextConnection")
             where TDBContext : DbContext
         {
             services.AddDbContext<TDBContext>((serviceProvider, options) =>
             {
                 var dbContextHandler = serviceProvider.GetRequiredService<IDbContextHandler>();
-                dbContextHandler.DBContextOptions(serviceProvider, options);
+                dbContextHandler.DBContextOptions(serviceProvider, options, connectionStringKey);
             });
         }
     }
@@ -42,7 +43,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
     {
         Task UpdateDatabaseAsync(DbContext context);
 
-        void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options);
+        void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection");
 
         void OnModelCreating(ModelBuilder modelBuilder);
 
@@ -69,7 +70,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             await context.Database.MigrateAsync();
         }
 
-        public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+        protected string GetConnectionString(IServiceProvider serviceProvider, string connectionStringKey)
+        {
+            var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings[connectionStringKey];
+
+            return connectionString;
+        }
+
+        public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
         {
             /* 
              * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());

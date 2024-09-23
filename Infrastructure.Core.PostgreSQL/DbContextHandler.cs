@@ -22,10 +22,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
     public class PostgreSQLDbContextHandler : BaseDbContextHandler
     {
-        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
         {
-            var connectionString = serviceProvider.GetService<IApplicationSettings>()
-                .ConnectionStrings["DbContextConnection"];
+            var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
 
             options.UseNpgsql(connectionString, options =>
             {

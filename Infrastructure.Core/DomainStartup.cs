@@ -56,8 +56,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
 
             Services.AddScoped<IMonitorService, MonitorService>();
 
-            if (HostEnvironment == null || HostEnvironment.IsDevelopment())
-                Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            //if (HostEnvironment == null || HostEnvironment.IsDevelopment())
+            //    Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             Services.AddScoped<IDateTimeService, DateTimeService>();
         }

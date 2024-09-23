@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <Configurations>Debug;Release;TEST</Configurations>
   </PropertyGroup>
   <!--
   <ItemGroup>

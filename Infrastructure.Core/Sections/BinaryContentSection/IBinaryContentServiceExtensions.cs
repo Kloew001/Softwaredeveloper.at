@@ -8,13 +8,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
             this EntityService<TEntity> service, 
             IReferencedToBinaryContent referencedEntity, 
             string name, 
-            byte[] content)
+            byte[] content,
+            string mimeType = null)
             where TEntity : Entity, IReferencedToBinaryContent
         {
             var serviceProvider = service.EntityServiceDependency.ServiceProvider;
             var binaryContentService = serviceProvider.GetService<BinaryContentService>();
 
-            await binaryContentService.ApplyContentAsync(referencedEntity, name, content);
+            await binaryContentService.ApplyContentAsync(referencedEntity, name, content, mimeType);
         }
     }
 

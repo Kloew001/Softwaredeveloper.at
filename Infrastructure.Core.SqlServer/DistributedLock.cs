@@ -67,6 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
             using (SqlCommand createCmd = _connection.CreateCommand())
             {
                 createCmd.Transaction = _transaction;
+                createCmd.CommandTimeout = _lockTimeout;
                 createCmd.CommandType = System.Data.CommandType.Text;
 
                 StringBuilder sbCreateCommand = new StringBuilder();

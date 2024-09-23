@@ -19,11 +19,12 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
             _context = context;
         }
 
-        public async Task ApplyContentAsync(IReferencedToBinaryContent referencedEntity, string name, byte[] content)
+        public async Task ApplyContentAsync(IReferencedToBinaryContent referencedEntity, string name, byte[] content, string mimeType = null)
         {
             if (referencedEntity.BinaryContent == null)
             {
                 var binaryContent = await _context.CreateEntityAync<BinaryContent>();
+                referencedEntity.BinaryContentId = binaryContent.Id; 
                 referencedEntity.BinaryContent = binaryContent;
 
                 referencedEntity.BinaryContent.ReferenceType = referencedEntity.GetType().UnProxy().Name;
@@ -31,7 +32,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
             }
 
             referencedEntity.BinaryContent.Name = name;
-            referencedEntity.BinaryContent.MimeType = MimeTypes.GetMimeType(name);
+            referencedEntity.BinaryContent.MimeType = mimeType ?? MimeTypes.GetMimeType(name);
             referencedEntity.BinaryContent.Content = content;
             referencedEntity.BinaryContent.ContentSize = content.Length;
         }

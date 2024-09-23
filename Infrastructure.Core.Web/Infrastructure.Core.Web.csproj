@@ -6,6 +6,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <Configurations>Debug;Release;TEST</Configurations>
   </PropertyGroup>
 
 <PropertyGroup>

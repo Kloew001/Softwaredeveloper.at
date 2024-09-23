@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Pdf
 {
+
     [SingletonDependency<ITextExtractor>(Key = "application/pdf")]
     public class PdfTextExtractor : ITextExtractor
     {

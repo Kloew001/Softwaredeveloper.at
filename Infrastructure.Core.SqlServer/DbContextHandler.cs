@@ -22,16 +22,16 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
 
     public class SqlServerDbContextHandler : BaseDbContextHandler
     {
-        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
         {
-            var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings["DbContextConnection"];
+            var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
 
             options.UseSqlServer(connectionString, options =>
             {
 
             });
 
-            base.DBContextOptions(serviceProvider, options);
+            base.DBContextOptions(serviceProvider, options, connectionStringKey);
         }
 
         public override void ApplyBaseEntity(ModelBuilder modelBuilder)
