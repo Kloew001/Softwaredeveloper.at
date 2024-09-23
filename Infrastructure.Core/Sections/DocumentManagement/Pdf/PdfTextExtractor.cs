@@ -2,7 +2,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Pdf
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Pdf
 {
 
     [SingletonDependency<ITextExtractor>(Key = "application/pdf")]
@@ -17,11 +17,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Pdf
 
         public string ExtractText(byte[] content)
         {
+            if (content == null)
+                return null;
+
             try
             {
                 using (var memoryStream = new MemoryStream(content))
-                using (
-                    var pdfReader = new PdfReader(memoryStream))
+                using (var pdfReader = new PdfReader(memoryStream))
                 using (var pdfDoc = new PdfDocument(pdfReader))
                 {
                     string extractedText = "";

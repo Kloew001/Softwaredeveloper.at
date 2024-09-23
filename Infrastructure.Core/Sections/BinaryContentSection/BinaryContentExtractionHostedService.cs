@@ -67,7 +67,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 
                 if (textExtractor != null)
                     binaryContent.ExtractedText = textExtractor.ExtractText(binaryContent.Content);
-
+                
                 await context.SaveChangesAsync(ct);
             }
             catch (Exception ex)
