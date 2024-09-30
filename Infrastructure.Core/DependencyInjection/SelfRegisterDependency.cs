@@ -31,6 +31,34 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
     public class ScopedDependencyAttribute<TTypeRegisterFor> : ScopedDependencyAttribute
     { }
 
+    public interface ISelfRegisterDependency
+    {
+    }
+
+    public interface ITransientDependency : ISelfRegisterDependency
+    {
+    }
+    public interface IScopedDependency : ISelfRegisterDependency
+    {
+    }
+    public interface ISingletonDependency : ISelfRegisterDependency
+    {
+    }
+
+    public interface ITypedDependency<TTypeRegisterFor> : ISelfRegisterDependency
+    {
+    }
+    public interface ITypedTransientDependency<TTypeRegisterFor> : ITransientDependency, ITypedDependency<TTypeRegisterFor>
+    {
+    }
+    public interface ITypedScopedDependency<TTypeRegisterFor> : IScopedDependency, ITypedDependency<TTypeRegisterFor>
+    {
+    }
+    public interface ITypedSingletonDependency<TTypeRegisterFor> : ISingletonDependency, ITypedDependency<TTypeRegisterFor>
+    {
+    }
+
+
     public class SingletonDependencyAttribute<TTypeRegisterFor> : SingletonDependencyAttribute
     { }
 
@@ -49,8 +77,52 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                 services.AddSingleton(typeof(IAppStatupInit), (sp) => sp.GetRequiredService(appStatupInit));
             }
 
-
             var serviceTypes = AssemblyUtils.AllLoadedTypes()
+              .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
+              //.Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
+              .ToList();
+
+            foreach (var serviceType in serviceTypes)
+            {
+                if (typeof(ITransientDependency).IsAssignableFrom(serviceType))
+                    services.AddTransient(serviceType);
+
+                if (typeof(IScopedDependency).IsAssignableFrom(serviceType))
+                    services.AddScoped(serviceType);
+
+                if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
+                    services.AddSingleton(serviceType);
+
+                //if (typeof(ITypedService<>).IsAssignableFrom(serviceType))
+                var genericArguments = serviceType.GetInterfaces()
+                    .Where(_ => _.IsGenericType &&
+                                _.GetGenericTypeDefinition() == typeof(ITypedDependency<>))
+                    .SelectMany(_ => _.GetGenericArguments())
+                    .ToList();
+
+                foreach (var genericArgument in genericArguments)
+                {
+                    if (typeof(ITransientDependency).IsAssignableFrom(serviceType))
+                    {
+                        //services.AddTransient(genericArgument, serviceType);
+                        services.AddTransient(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
+
+                    if (typeof(IScopedDependency).IsAssignableFrom(serviceType))
+                    {
+                        //services.AddScoped(genericArgument, serviceType);
+                        services.AddScoped(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
+
+                    if (typeof(ISingletonDependency).IsAssignableFrom(serviceType))
+                    {
+                        //services.AddSingleton(genericArgument, serviceType);
+                        services.AddSingleton(genericArgument, (sp) => sp.GetRequiredService(serviceType));
+                    }
+                }
+            }
+
+            var serviceTypesAttributed = AssemblyUtils.AllLoadedTypes()
                .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
                .Where(_ => _.HasAttribute<SelfRegisterDependencyAttribute>() ||
                             _.GetInterfaces().Any(i => i.HasAttribute<SelfRegisterDependencyAttribute>()))
@@ -63,7 +135,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                })
                .ToList();
 
-            foreach (var serviceType in serviceTypes)
+            foreach (var serviceType in serviceTypesAttributed)
             {
                 if (serviceType.Attributes.OfType<TransientDependencyAttribute>().Any())
                     services.AddTransient(serviceType.ServiceType);
@@ -119,6 +191,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core
                     foreach (var attribute in scopedAttributes)
                     {
                         var registerForType = attribute.GetType().GetGenericArguments().First();
+                        var x = registerForType.FullName == typeof(IAccessCondition<IEntity>).FullName;
 
                         services.AddScoped(registerForType, (sp) => sp.GetRequiredService(serviceType.ServiceType));
 

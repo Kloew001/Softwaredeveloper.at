@@ -1,6 +1,5 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition
 {
-    [ScopedDependency]
     public class AllAccessCondition<TEntity> : IAccessCondition<TEntity>
         where TEntity : Entity
     {

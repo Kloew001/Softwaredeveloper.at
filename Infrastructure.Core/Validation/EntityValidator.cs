@@ -27,8 +27,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
         }
     }
 
-    [ScopedDependency]
-    public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>//, ITypedScopedDependency<EntityValidator<TEntity>>
+    public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>, ITypedScopedDependency<EntityValidator<TEntity>>
         where TEntity : Entity
     {
         public EntityValidatorDependency<TEntity> Dependency { get; private set; }
