@@ -1,10 +1,7 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate
+public interface ISupportValidDateRange
 {
-    public interface ISupportValidDateRange
-    {
-        DateTime? ValidFrom { get; set; }
-        DateTime? ValidTo { get; set; }
-    }
+    DateTime? ValidFrom { get; set; }
+    DateTime? ValidTo { get; set; }
 }

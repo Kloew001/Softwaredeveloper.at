@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -8,72 +6,71 @@ using SoftwaredeveloperDotAt.Infrastructure.Core;
 
 using System.Security.Claims;
 
-namespace Infrastructure.Core.Web
+namespace Infrastructure.Core.Web;
+
+public class WebCurrentUserService : ICurrentUserService
 {
-    public class WebCurrentUserService : ICurrentUserService
+    protected IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentLanguageService _currentLanguageService;
+
+    public WebCurrentUserService(
+        IHttpContextAccessor httpContextAccessor,
+        IServiceProvider serviceProvider)
     {
-        protected IHttpContextAccessor _httpContextAccessor;
-        private readonly ICurrentLanguageService _currentLanguageService;
+        _httpContextAccessor = httpContextAccessor;
+        _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
+    }
 
-        public WebCurrentUserService(
-            IHttpContextAccessor httpContextAccessor,
-            IServiceProvider serviceProvider)
+    public bool IsAuthenticated
+    {
+        get
         {
-            _httpContextAccessor = httpContextAccessor;
-            _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
-        }
-
-        public bool IsAuthenticated
-        {
-            get
+            if (_currentUserId.HasValue == false)
             {
-                if (_currentUserId.HasValue == false)
+                try
                 {
-                    try
-                    {
-                        GetCurrentUserId();
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        return false;
-                    }
+                    GetCurrentUserId();
                 }
-
-                return _currentUserId.HasValue;
+                catch (UnauthorizedAccessException)
+                {
+                    return false;
+                }
             }
+
+            return _currentUserId.HasValue;
         }
-        private Guid? _currentUserId;
+    }
+    private Guid? _currentUserId;
 
-        public Guid? GetCurrentUserId()
-        {
-            if (_currentUserId.HasValue)
-                return _currentUserId.Value;
+    public Guid? GetCurrentUserId()
+    {
+        if (_currentUserId.HasValue)
+            return _currentUserId.Value;
 
-            _currentUserId = ResolveCurrentUserId();
+        _currentUserId = ResolveCurrentUserId();
 
-            return _currentUserId;
-        }
+        return _currentUserId;
+    }
 
-        protected virtual Guid? ResolveCurrentUserId()
-        {
-            var user = _httpContextAccessor.HttpContext?.User;
+    protected virtual Guid? ResolveCurrentUserId()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
 
-            var claims = user?.Claims;
-            //var userClaims = user?.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        var claims = user?.Claims;
+        //var userClaims = user?.Claims.Select(c => new { c.Type, c.Value }).ToList();
 
-            var id = claims?.FirstOrDefault(_ =>
-                _.Type == JwtRegisteredClaimNames.Sub ||
-                _.Type == ClaimTypes.NameIdentifier)?.Value;
+        var id = claims?.FirstOrDefault(_ =>
+            _.Type == JwtRegisteredClaimNames.Sub ||
+            _.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            if (id != null)
-                return Guid.Parse(id);
+        if (id != null)
+            return Guid.Parse(id);
 
-            return null;
-        }
+        return null;
+    }
 
-        public void SetCurrentUserId(Guid? currentUserId)
-        {
-            _currentUserId = currentUserId;
-        }
+    public void SetCurrentUserId(Guid? currentUserId)
+    {
+        _currentUserId = currentUserId;
     }
 }

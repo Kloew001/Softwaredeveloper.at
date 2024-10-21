@@ -1,46 +1,43 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
+
+[SingletonDependency]
+public class UseCaseServiceResolver : IAppStatupInit
 {
-    [SingletonDependency]
-    public class UseCaseServiceResolver : IAppStatupInit
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    public Dictionary<string, Type> UseCases { get; set; } = new Dictionary<string, Type>();
+
+    public UseCaseServiceResolver(IServiceScopeFactory serviceScopeFactory)
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        _serviceScopeFactory = serviceScopeFactory;
+    }
 
-        public Dictionary<string, Type> UseCases { get; set; } = new Dictionary<string, Type>();
-
-        public UseCaseServiceResolver(IServiceScopeFactory serviceScopeFactory)
+    public Task Init()
+    {
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+            var useCaseTypes = AssemblyUtils.AllLoadedTypes()
+               .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
+               .Where(p => typeof(IUseCase).IsAssignableFrom(p))
+               .ToList();
 
-        public Task Init()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
+            foreach (var useCaseType in useCaseTypes)
             {
-                var useCaseTypes = AssemblyUtils.AllLoadedTypes()
-                   .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-                   .Where(p => typeof(IUseCase).IsAssignableFrom(p))
-                   .ToList();
+                var useCaseAttribute =
+                    useCaseType.GetCustomAttribute<UseCaseAttribute>();
 
-                foreach (var useCaseType in useCaseTypes)
+                if (useCaseAttribute != null)
                 {
-                    var useCaseAttribute =
-                        useCaseType.GetCustomAttribute<UseCaseAttribute>();
-
-                    if (useCaseAttribute != null)
-                    {
-                        var uniqueIdentifier = useCaseAttribute.UniqueIdentifier;
-                        UseCases.Add(uniqueIdentifier, useCaseType);
-                    }
+                    var uniqueIdentifier = useCaseAttribute.UniqueIdentifier;
+                    UseCases.Add(uniqueIdentifier, useCaseType);
                 }
             }
-
-            return Task.CompletedTask;
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -1,172 +1,167 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+
+public static class SqlServerDbContextHandlerExtensions
 {
-    public static class SqlServerDbContextHandlerExtensions
+    public static void UseSqlServerDbContextHandler(this IServiceCollection services, IConfiguration configuration)
     {
-        public static void UseSqlServerDbContextHandler(this IServiceCollection services, IConfiguration configuration)
+        services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
+        services.UseDistributedCache(configuration);
+    }
+}
+
+public class SqlServerDbContextHandler : BaseDbContextHandler
+{
+    public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
+    {
+        var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
+
+        options.UseSqlServer(connectionString, options =>
         {
-            services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
-            services.UseDistributedCache(configuration);
+
+        });
+
+        base.DBContextOptions(serviceProvider, options, connectionStringKey);
+    }
+
+    public override void ApplyBaseEntity(ModelBuilder modelBuilder)
+    {
+        //modelBuilder.Entity<BaseEntity>()
+        //       .Ignore(nameof(BaseEntity.RowVersion));
+
+        //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+        //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+        //{
+        //    modelBuilder.Entity(entityType.ClrType)
+        //           .Property(nameof(BaseEntity.Timestamp))
+        //           .IsConcurrencyToken()
+        //           .IsRowVersion();
+
+        //    modelBuilder.Entity(entityType.ClrType)
+        //           .Ignore(nameof(BaseEntity.RowVersion));
+        //}
+    }
+
+    public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            .Where(e => typeof(ChangeTrackedEntity).IsAssignableFrom(e.ClrType)))
+        {
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(ChangeTrackedEntity.DateCreated))
+                .HasDefaultValueSql("getdate()");
+            //.ValueGeneratedOnAdd();
+
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(ChangeTrackedEntity.DateModified))
+                .HasDefaultValueSql("getdate()");
+            //.ValueGeneratedOnAddOrUpdate();
+
+            modelBuilder.Entity(entityType.ClrType)
+                .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity(entityType.ClrType)
+                .HasOne(nameof(ChangeTrackedEntity.ModifiedBy))
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 
-    public class SqlServerDbContextHandler : BaseDbContextHandler
+    public override void ApplyApplicationUser(ModelBuilder modelBuilder)
     {
-        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
+        modelBuilder.Entity<ApplicationUserRole>(entity =>
         {
-            var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
+            entity.ToTable("ApplicationUserRole", "identity");
 
-            options.UseSqlServer(connectionString, options =>
-            {
+            entity.HasKey(_ => new { _.UserId, _.RoleId });
 
-            });
+            entity.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRole_RoleId");
 
-            base.DBContextOptions(serviceProvider, options, connectionStringKey);
-        }
+            entity.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired();
 
-        public override void ApplyBaseEntity(ModelBuilder modelBuilder)
+            entity.HasOne(ur => ur.User)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
         {
-            //modelBuilder.Entity<BaseEntity>()
-            //       .Ignore(nameof(BaseEntity.RowVersion));
+            entity.ToTable("ApplicationUser", "identity");
 
-            //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-            //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
-            //{
-            //    modelBuilder.Entity(entityType.ClrType)
-            //           .Property(nameof(BaseEntity.Timestamp))
-            //           .IsConcurrencyToken()
-            //           .IsRowVersion();
+            entity.HasKey(x => x.Id);
 
-            //    modelBuilder.Entity(entityType.ClrType)
-            //           .Ignore(nameof(BaseEntity.RowVersion));
-            //}
-        }
+            entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
 
-        public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
+            entity.HasIndex(e => e.NormalizedUserName, "UserNameIndex").IsUnique();
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Email).HasMaxLength(256);
+            entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
+            entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
+            entity.Property(e => e.UserName).HasMaxLength(256);
+        });
+
+        modelBuilder.Entity<ApplicationUserClaim>(entity =>
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(ChangeTrackedEntity).IsAssignableFrom(e.ClrType)))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(ChangeTrackedEntity.DateCreated))
-                    .HasDefaultValueSql("getdate()");
-                //.ValueGeneratedOnAdd();
+            entity.ToTable("ApplicationUserClaim", "identity");
 
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(ChangeTrackedEntity.DateModified))
-                    .HasDefaultValueSql("getdate()");
-                //.ValueGeneratedOnAddOrUpdate();
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaim_UserId");
 
-                modelBuilder.Entity(entityType.ClrType)
-                    .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
-                    .WithMany()
-                    .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
+        });
 
-                modelBuilder.Entity(entityType.ClrType)
-                    .HasOne(nameof(ChangeTrackedEntity.ModifiedBy))
-                    .WithMany()
-                    .OnDelete(DeleteBehavior.NoAction);
-            }
-        }
-
-        public override void ApplyApplicationUser(ModelBuilder modelBuilder)
+        modelBuilder.Entity<ApplicationUserLogin>(entity =>
         {
-            modelBuilder.Entity<ApplicationUserRole>(entity =>
-            {
-                entity.ToTable("ApplicationUserRole", "identity");
+            entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
 
-                entity.HasKey(_ => new { _.UserId, _.RoleId });
+            entity.ToTable("ApplicationUserLogin", "identity");
 
-                entity.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRole_RoleId");
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogin_UserId");
 
-                entity.HasOne(ur => ur.Role)
-                    .WithMany(r => r.UserRoles)
-                    .HasForeignKey(ur => ur.RoleId)
-                    .IsRequired();
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
+        });
 
-                entity.HasOne(ur => ur.User)
-                    .WithMany(r => r.UserRoles)
-                    .HasForeignKey(ur => ur.UserId)
-                    .IsRequired();
-            });
+        modelBuilder.Entity<ApplicationUserToken>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
 
-            modelBuilder.Entity<ApplicationUser>(entity =>
-            {
-                entity.ToTable("ApplicationUser", "identity");
+            entity.ToTable("ApplicationUserToken", "identity");
 
-                entity.HasKey(x => x.Id);
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
+        });
 
-                entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.ToTable("ApplicationRole", "identity");
 
-                entity.HasIndex(e => e.NormalizedUserName, "UserNameIndex").IsUnique();
+            entity.HasKey(x => x.Id);
 
-                entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.Email).HasMaxLength(256);
-                entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
-                entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
-                entity.Property(e => e.UserName).HasMaxLength(256);
-            });
+            entity.HasIndex(e => e.NormalizedName, "RoleNameIndex").IsUnique();
 
-            modelBuilder.Entity<ApplicationUserClaim>(entity =>
-            {
-                entity.ToTable("ApplicationUserClaim", "identity");
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Name).HasMaxLength(256);
+            entity.Property(e => e.NormalizedName).HasMaxLength(256);
+        });
 
-                entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaim_UserId");
+        modelBuilder.Entity<ApplicationRoleClaim>(entity =>
+        {
+            entity.ToTable("ApplicationRoleClaim", "identity");
 
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
-            });
+            entity.HasIndex(e => e.RoleId, "IX_ApplicationRoleClaim_RoleId");
 
-            modelBuilder.Entity<ApplicationUserLogin>(entity =>
-            {
-                entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
-
-                entity.ToTable("ApplicationUserLogin", "identity");
-
-                entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogin_UserId");
-
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
-            });
-
-            modelBuilder.Entity<ApplicationUserToken>(entity =>
-            {
-                entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
-
-                entity.ToTable("ApplicationUserToken", "identity");
-
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
-            });
-
-            modelBuilder.Entity<ApplicationRole>(entity =>
-            {
-                entity.ToTable("ApplicationRole", "identity");
-
-                entity.HasKey(x => x.Id);
-
-                entity.HasIndex(e => e.NormalizedName, "RoleNameIndex").IsUnique();
-
-                entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.Name).HasMaxLength(256);
-                entity.Property(e => e.NormalizedName).HasMaxLength(256);
-            });
-
-            modelBuilder.Entity<ApplicationRoleClaim>(entity =>
-            {
-                entity.ToTable("ApplicationRoleClaim", "identity");
-
-                entity.HasIndex(e => e.RoleId, "IX_ApplicationRoleClaim_RoleId");
-
-                entity.HasOne(d => d.Role).WithMany(p => p.ApplicationRoleClaims).HasForeignKey(d => d.RoleId);
-            });
-        }
+            entity.HasOne(d => d.Role).WithMany(p => p.ApplicationRoleClaims).HasForeignKey(d => d.RoleId);
+        });
     }
 }

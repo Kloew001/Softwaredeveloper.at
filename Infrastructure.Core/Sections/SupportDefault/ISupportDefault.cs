@@ -1,7 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
+
+public interface ISupportDefault
 {
-    public interface ISupportDefault
-    {
-        bool IsDefault { get; set; }
-    }
+    bool IsDefault { get; set; }
 }

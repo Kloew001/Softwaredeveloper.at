@@ -1,38 +1,37 @@
 ﻿using System.Collections.Concurrent;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
+
+[ScopedDependency]
+public class ScopedCache
 {
-    [ScopedDependency]
-    public class ScopedCache
+    //https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Caching.Memory/src/MemoryCache.cs
+    private readonly ConcurrentDictionary<string, object> _cache;
+
+    public ScopedCache()
     {
-        //https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Caching.Memory/src/MemoryCache.cs
-        private readonly ConcurrentDictionary<string, object> _cache;
+        _cache = new ConcurrentDictionary<string, object>();
+    }
 
-        public ScopedCache()
+    public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
+    {
+        if (!_cache.TryGetValue(key, out object result))
         {
-            _cache = new ConcurrentDictionary<string, object>();
+            result = await factory().ConfigureAwait(false);
+            _cache.TryAdd(key, result);
         }
 
-        public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
-        {
-            if (!_cache.TryGetValue(key, out object result))
-            {
-                result = await factory().ConfigureAwait(false);
-                _cache.TryAdd(key, result);
-            }
+        return (T)result;
+    }
 
-            return (T)result;
+    public T GetOrCreate<T>(string key, Func<T> factory)
+    {
+        if (!_cache.TryGetValue(key, out object result))
+        {
+            result = factory();
+            _cache.TryAdd(key, result);
         }
 
-        public T GetOrCreate<T>(string key, Func<T> factory)
-        {
-            if (!_cache.TryGetValue(key, out object result))
-            {
-                result = factory();
-                _cache.TryAdd(key, result);
-            }
-
-            return (T)result;
-        }
+        return (T)result;
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
+
+public interface ISupportPrePersistent
 {
-    public interface ISupportPrePersistent
-    {
-        bool PrePersitent { get; set; }
-    }
+    bool PrePersitent { get; set; }
 }

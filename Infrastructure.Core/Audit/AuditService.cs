@@ -1,9 +1,7 @@
 ﻿
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
-{
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
-    public class AuditService
-    {
-    }
+public class AuditService
+{
 }
 

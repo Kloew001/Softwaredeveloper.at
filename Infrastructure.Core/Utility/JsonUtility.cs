@@ -1,20 +1,19 @@
 ﻿using Newtonsoft.Json;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+public static class JsonUtility
 {
-    public static class JsonUtility
+    public static string ToJson<T>(this T obj, JsonSerializerSettings settings = null)
     {
-        public static string ToJson<T>(this T obj, JsonSerializerSettings settings = null)
-        {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
-        }
+        return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+    }
 
-        public static T FromJson<T>(this string json, JsonSerializerSettings settings = null)
-        {
-            if (json == null)
-                return default;
+    public static T FromJson<T>(this string json, JsonSerializerSettings settings = null)
+    {
+        if (json == null)
+            return default;
 
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, settings);
-        }
+        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, settings);
     }
 }

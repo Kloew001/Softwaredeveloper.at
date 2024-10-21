@@ -5,52 +5,50 @@ using Microsoft.Extensions.Logging;
 
 using System.Text;
 
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Word;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Word
+[SingletonDependency<ITextExtractor>(Key = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+public class WordTextExtractor : ITextExtractor
 {
-    [SingletonDependency<ITextExtractor>(Key = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
-    public class WordTextExtractor : ITextExtractor
+    protected readonly ILogger<WordTextExtractor> _logger;
+
+    public WordTextExtractor(ILogger<WordTextExtractor> logger)
     {
-        protected readonly ILogger<WordTextExtractor> _logger;
+        _logger = logger;
+    }
 
-        public WordTextExtractor(ILogger<WordTextExtractor> logger)
+    public string ExtractText(byte[] content)
+    {
+        try
         {
-            _logger = logger;
-        }
+            var fullText = new StringBuilder();
 
-        public string ExtractText(byte[] content)
-        {
-            try
+            using (var memoryStream = new MemoryStream(content))
+            using (var wordDoc = WordprocessingDocument.Open(memoryStream, false))
             {
-                var fullText = new StringBuilder();
+                Body body = wordDoc.MainDocumentPart.Document.Body;
+                fullText.Append(body.InnerText);
 
-                using (var memoryStream = new MemoryStream(content))
-                using (var wordDoc = WordprocessingDocument.Open(memoryStream, false))
+                var headers = wordDoc.MainDocumentPart.HeaderParts;
+                foreach (var header in headers)
                 {
-                    Body body = wordDoc.MainDocumentPart.Document.Body;
-                    fullText.Append(body.InnerText);
-
-                    var headers = wordDoc.MainDocumentPart.HeaderParts;
-                    foreach (var header in headers)
-                    {
-                        fullText.Append(header.Header.InnerText);
-                    }
-
-                    var footers = wordDoc.MainDocumentPart.FooterParts;
-                    foreach (var footer in footers)
-                    {
-                        fullText.Append(footer.Footer.InnerText);
-                    }
+                    fullText.Append(header.Header.InnerText);
                 }
 
-                return fullText.ToString();
+                var footers = wordDoc.MainDocumentPart.FooterParts;
+                foreach (var footer in footers)
+                {
+                    fullText.Append(footer.Footer.InnerText);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
 
-                return null;
-            }
+            return fullText.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+
+            return null;
         }
     }
 }

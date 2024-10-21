@@ -3,77 +3,76 @@ using Microsoft.Extensions.Hosting;
 
 using System.Diagnostics;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
+
+public interface IMonitorService
 {
-    public interface IMonitorService
+    Task<bool> IsAlive();
+    string GetEnvironmentName();
+    string GetApplicationName();
+    Task<DBConnectionInfo> DBConnectionInfo();
+}
+
+public class DBConnectionInfo
+{
+    public string CanConnect { get; set; }
+
+    public string SpeedTestAppToDB { get; set; }
+}
+
+public class MonitorService : IMonitorService
+{
+    protected readonly IDbContext _dbContext;
+    protected readonly IHostEnvironment _hostEnvironment;
+
+    public MonitorService(IDbContext dbContext, IHostEnvironment hostEnvironment)
     {
-        Task<bool> IsAlive();
-        string GetEnvironmentName();
-        string GetApplicationName();
-        Task<DBConnectionInfo> DBConnectionInfo();
+        _dbContext = dbContext;
+        _hostEnvironment = hostEnvironment;
     }
 
-    public class DBConnectionInfo
-    {
-        public string CanConnect { get; set; }
+    public Task<bool> IsAlive() => Task.FromResult(true);
 
-        public string SpeedTestAppToDB { get; set; }
+    public string GetEnvironmentName()
+    {
+        return _hostEnvironment.EnvironmentName;
+    }
+    public string GetApplicationName()
+    {
+        return _hostEnvironment.ApplicationName;
     }
 
-    public class MonitorService : IMonitorService
+    public async Task<DBConnectionInfo> DBConnectionInfo()
     {
-        protected readonly IDbContext _dbContext;
-        protected readonly IHostEnvironment _hostEnvironment;
+        var info = new DBConnectionInfo();
 
-        public MonitorService(IDbContext dbContext, IHostEnvironment hostEnvironment)
-        {
-            _dbContext = dbContext;
-            _hostEnvironment = hostEnvironment;
-        }
+        info.CanConnect = await CanConnect();
+        info.SpeedTestAppToDB = await SpeedTestAppToDB();
 
-        public Task<bool> IsAlive() => Task.FromResult(true);
-
-        public string GetEnvironmentName()
-        {
-            return _hostEnvironment.EnvironmentName;
-        }
-        public string GetApplicationName()
-        {
-            return _hostEnvironment.ApplicationName;
-        }
-
-        public async Task<DBConnectionInfo> DBConnectionInfo()
-        {
-            var info = new DBConnectionInfo();
-
-            info.CanConnect = await CanConnect();
-            info.SpeedTestAppToDB = await SpeedTestAppToDB();
-
-            return info;
-        }
-
-        protected virtual async Task<string> CanConnect()
-        {
-            try
-            {
-                return (await _dbContext.Database.CanConnectAsync()).ToString();
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-        }
-
-        protected virtual async Task<string> SpeedTestAppToDB()
-        {
-            var watch = Stopwatch.StartNew();
-
-            var result = await _dbContext.Set<ApplicationUser>().ToListAsync();
-
-            watch.Stop();
-
-            return $"rows: {result.Count}, time: {watch.ElapsedMilliseconds}ms";
-        }
-
+        return info;
     }
+
+    protected virtual async Task<string> CanConnect()
+    {
+        try
+        {
+            return (await _dbContext.Database.CanConnectAsync()).ToString();
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    protected virtual async Task<string> SpeedTestAppToDB()
+    {
+        var watch = Stopwatch.StartNew();
+
+        var result = await _dbContext.Set<ApplicationUser>().ToListAsync();
+
+        watch.Stop();
+
+        return $"rows: {result.Count}, time: {watch.ElapsedMilliseconds}ms";
+    }
+
 }

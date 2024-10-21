@@ -1,45 +1,43 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
+
+public static class ChronologyEntryServiceExtensions
 {
-    public static class ChronologyEntryServiceExtensions
+    public static Task<ChronologyEntry> CreateChronologyEntryInternalAsync<TEntity>(this EntityService<TEntity> service, Entity referenceEntity, string multilingualKey, params string[] textArgs)
+        where TEntity : Entity
     {
-        public static Task<ChronologyEntry> CreateChronologyEntryInternalAsync<TEntity>(this EntityService<TEntity> service, Entity referenceEntity, string multilingualKey, params string[] textArgs)
-            where TEntity : Entity
-        {
-            var chronologyEntryService =
-            service.EntityServiceDependency.ServiceProvider
-                .GetRequiredService<ChronologyEntryService>();
+        var chronologyEntryService =
+        service.EntityServiceDependency.ServiceProvider
+            .GetRequiredService<ChronologyEntryService>();
 
-            return chronologyEntryService.CreateInternalAsync(referenceEntity, multilingualKey, textArgs);
-        }
+        return chronologyEntryService.CreateInternalAsync(referenceEntity, multilingualKey, textArgs);
+    }
+}
+
+public class ChronologyEntryService : EntityService<ChronologyEntry>
+{
+    public ChronologyEntryService(EntityServiceDependency<ChronologyEntry> entityServiceDependency)
+        : base(entityServiceDependency)
+    {
     }
 
-    public class ChronologyEntryService : EntityService<ChronologyEntry>
+    public Task<ChronologyEntry> CreateInternalAsync<TEntity>(TEntity referenceEntity, string multilingualKey, params string[] textArgs)
+        where TEntity : Entity
     {
-        public ChronologyEntryService(EntityServiceDependency<ChronologyEntry> entityServiceDependency)
-            : base(entityServiceDependency)
+        return CreateAsync(c =>
         {
-        }
+            c.SetReference(referenceEntity);
 
-        public Task<ChronologyEntry> CreateInternalAsync<TEntity>(TEntity referenceEntity, string multilingualKey, params string[] textArgs)
-            where TEntity : Entity
-        {
-            return CreateAsync(c =>
-            {
-                c.SetReference(referenceEntity);
+            this.InitMultilingualProperty(c, c => c.Description, multilingualKey, textArgs);
 
-                this.InitMultilingualProperty(c, c => c.Description, multilingualKey, textArgs);
+            return ValueTask.CompletedTask;
+        });
+    }
 
-                return ValueTask.CompletedTask;
-            });
-        }
-
-        public async Task<IEnumerable<ChronologyEntryDto>> GetCollectionAsync(Guid referenceId)
-        {
-            return await GetCollectionAsync<ChronologyEntryDto>(query =>
-                   query.Where(_ => _.ReferenceId == referenceId));
-        }
+    public async Task<IEnumerable<ChronologyEntryDto>> GetCollectionAsync(Guid referenceId)
+    {
+        return await GetCollectionAsync<ChronologyEntryDto>(query =>
+               query.Where(_ => _.ReferenceId == referenceId));
     }
 }

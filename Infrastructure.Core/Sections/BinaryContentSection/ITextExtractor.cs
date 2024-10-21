@@ -1,8 +1,7 @@
 ﻿
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection;
+
+public interface ITextExtractor
 {
-    public interface ITextExtractor
-    {
-        string ExtractText(byte[] content);
-    }
+    string ExtractText(byte[] content);
 }

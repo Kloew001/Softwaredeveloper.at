@@ -1,24 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+
+public static class DistributedCacheExtensions
 {
-    public static class DistributedCacheExtensions
+    public static void UseDistributedCache(this IServiceCollection services, IConfiguration configuration)
     {
-        public static void UseDistributedCache(this IServiceCollection services, IConfiguration configuration)
+        services.AddDistributedSqlServerCache(options =>
         {
-            services.AddDistributedSqlServerCache(options =>
-            {
-                var connectionString = configuration.GetConnectionString("DbContextConnection");
+            var connectionString = configuration.GetConnectionString("DbContextConnection");
 
-                options.ConnectionString = connectionString;
-                options.SchemaName = "core";
-                options.TableName = "Cache";
+            options.ConnectionString = connectionString;
+            options.SchemaName = "core";
+            options.TableName = "Cache";
 
-                options.DefaultSlidingExpiration = TimeSpan.FromMinutes(15);
-            });
-        }
+            options.DefaultSlidingExpiration = TimeSpan.FromMinutes(15);
+        });
     }
 }

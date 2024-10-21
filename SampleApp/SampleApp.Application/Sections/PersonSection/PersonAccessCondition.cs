@@ -1,6 +1,5 @@
-﻿namespace SampleApp.Application.Sections.PersonSection
+﻿namespace SampleApp.Application.Sections.PersonSection;
+
+public class PersonAccessCondition : AllAccessCondition<Person>
 {
-    public class PersonAccessCondition : AllAccessCondition<Person>
-    {
-    }
 }

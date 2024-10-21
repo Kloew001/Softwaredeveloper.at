@@ -1,6 +1,5 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Word
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Word;
+
+public static class OpenXmlWordUtility
 {
-    public static class OpenXmlWordUtility
-    {
-    }
 }

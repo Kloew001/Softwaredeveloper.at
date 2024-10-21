@@ -1,12 +1,8 @@
-
-using DocumentFormat.OpenXml.Spreadsheet;
-
-using System;
 using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
-{
-	public static class AssemblyUtils
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+public static class AssemblyUtils
 	{
 		public static IEnumerable<Type> GetTypesWithAttribute<TAttribute>(this Assembly assembly)
 			where TAttribute : Attribute
@@ -14,7 +10,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 			return assembly.GetTypes()
 				.Where(type => type.GetCustomAttributes(typeof(TAttribute), true).Length > 0);
 		}
-
 
 		public static Type[] AllLoadedTypes()
 		{
@@ -47,7 +42,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 					types.Add(type);
 				}
 			}
-            catch (Exception)
+        catch (Exception)
 			{
 				// log
 			}
@@ -55,4 +50,3 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
 			return types;
 		}
 	}
-}

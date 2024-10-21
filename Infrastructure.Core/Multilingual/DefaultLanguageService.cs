@@ -1,42 +1,39 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 using System.Data;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
+
+public interface IDefaultLanguageService
 {
-    public interface IDefaultLanguageService
+    Guid CultureId => Culture.Id.Value;
+    MultilingualCultureDto Culture { get; }
+}
+
+[SingletonDependency<IDefaultLanguageService>]
+public class DefaultLanguageService : IDefaultLanguageService, IAppStatupInit
+{
+    public MultilingualCultureDto Culture { get; private set; }
+
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    public DefaultLanguageService(IServiceScopeFactory serviceScopeFactory)
     {
-        Guid CultureId => Culture.Id.Value;
-        MultilingualCultureDto Culture { get; }
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
-    [SingletonDependency<IDefaultLanguageService>]
-    public class DefaultLanguageService : IDefaultLanguageService, IAppStatupInit
+    public async Task Init()
     {
-        public MultilingualCultureDto Culture { get; private set; }
-
-
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        public DefaultLanguageService(IServiceScopeFactory serviceScopeFactory)
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+            var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
 
-        public async Task Init()
-        {
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+            var culture = await context.Set<MultilingualCulture>()
+                .Where(_ => _.IsDefault)
+                .SingleAsync();
 
-                var culture = await context.Set<MultilingualCulture>()
-                    .Where(_ => _.IsDefault)
-                    .SingleAsync();
-
-                Culture = culture.ConvertToDto<MultilingualCultureDto>();
-            }
+            Culture = culture.ConvertToDto<MultilingualCultureDto>();
         }
     }
 }

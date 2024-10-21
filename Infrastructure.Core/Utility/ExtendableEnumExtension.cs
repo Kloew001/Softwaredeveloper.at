@@ -2,24 +2,23 @@
 
 using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+public abstract class ExtendableEnumExtension<TEnum> : IAppStatupInit
+    where TEnum : ExtendableEnum<TEnum>
 {
-    public abstract class ExtendableEnumExtension<TEnum> : IAppStatupInit
-        where TEnum : ExtendableEnum<TEnum>
+    public virtual Task Init()
     {
-        public virtual Task Init()
-        {
-            var declaringTypesProperty =
-                typeof(TEnum)
-                .GetProperty("DeclaringTypes", BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty | BindingFlags.FlattenHierarchy);
+        var declaringTypesProperty =
+            typeof(TEnum)
+            .GetProperty("DeclaringTypes", BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty | BindingFlags.FlattenHierarchy);
 
-            var declaringTypes =
-                declaringTypesProperty.GetValue(null)
-                .As<IList<Type>>();
+        var declaringTypes =
+            declaringTypesProperty.GetValue(null)
+            .As<IList<Type>>();
 
-            declaringTypes.Add(this.GetType());
+        declaringTypes.Add(this.GetType());
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
     }
 }

@@ -1,5 +1,4 @@
 ﻿
-
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;

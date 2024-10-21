@@ -2,43 +2,41 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
+
+[TransientDependency]
+public class EntityValidatorDependency<TEntity>
+    where TEntity : Entity
 {
-    [TransientDependency]
-    public class EntityValidatorDependency<TEntity>
-        where TEntity : Entity
+    private readonly IServiceProvider _serviceProvider;
+
+    public IDbContext DbContext { get; private set; }
+    public MultilingualService MultilingualService { get; private set; }
+
+    public EntityValidatorDependency(IDbContext dbContext , IServiceProvider serviceProvider, MultilingualService multilingualService)
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public IDbContext DbContext { get; private set; }
-        public MultilingualService MultilingualService { get; private set; }
-
-
-        public EntityValidatorDependency(IDbContext dbContext , IServiceProvider serviceProvider, MultilingualService multilingualService)
-        {
-            DbContext = dbContext;
-            _serviceProvider = serviceProvider;
-            MultilingualService = multilingualService;
-        }
-
-        public T GetService<T>()
-        {
-            return _serviceProvider.GetService<T>();
-        }
+        DbContext = dbContext;
+        _serviceProvider = serviceProvider;
+        MultilingualService = multilingualService;
     }
 
-    public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>, ITypedScopedDependency<EntityValidator<TEntity>>
-        where TEntity : Entity
+    public T GetService<T>()
     {
-        public EntityValidatorDependency<TEntity> Dependency { get; private set; }
-
-        public MultilingualService MultilingualService => Dependency.MultilingualService;
-
-        public EntityValidator(EntityValidatorDependency<TEntity> dependency)
-        {
-            Dependency = dependency;
-        }
-
-        //TODO ctor mit zugriff auf EntityService
+        return _serviceProvider.GetService<T>();
     }
+}
+
+public abstract class EntityValidator<TEntity> : AbstractValidator<TEntity>, ITypedScopedDependency<EntityValidator<TEntity>>
+    where TEntity : Entity
+{
+    public EntityValidatorDependency<TEntity> Dependency { get; private set; }
+
+    public MultilingualService MultilingualService => Dependency.MultilingualService;
+
+    public EntityValidator(EntityValidatorDependency<TEntity> dependency)
+    {
+        Dependency = dependency;
+    }
+
+    //TODO ctor mit zugriff auf EntityService
 }

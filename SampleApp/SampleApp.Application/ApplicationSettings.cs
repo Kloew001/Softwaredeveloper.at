@@ -1,14 +1,12 @@
 ﻿
-namespace SampleApp.Application
+namespace SampleApp.Application;
+
+public class ApplicationSettings : CoreApplicationSettings
 {
-    public class ApplicationSettings : CoreApplicationSettings
-    {
-        public UrlConfiguration Url { get; set; }
-    }
+    public UrlConfiguration Url { get; set; }
+}
 
-
-    public class UrlConfiguration
-    {
-        public string BaseUrl { get; set; }
-    }
+public class UrlConfiguration
+{
+    public string BaseUrl { get; set; }
 }

@@ -19,9 +19,14 @@ Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "sampleapp.client", "SampleA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleApp.Application", "SampleApp\SampleApp.Application\SampleApp.Application.csproj", "{A17E079A-4715-4518-BF04-8509BBB76878}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Application.Tests", "SampleApp\SampleApp.Application.Tests\SampleApp.Application.Tests.csproj", "{EE964720-B2AF-41D3-A8B4-36BA187535F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleApp.Application.Tests", "SampleApp\SampleApp.Application.Tests\SampleApp.Application.Tests.csproj", "{EE964720-B2AF-41D3-A8B4-36BA187535F7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Core.Tests", "Infrastructure.Core.Tests\Infrastructure.Core.Tests.csproj", "{1ACAC7B3-2F4D-49A8-8BEC-1D455BE77301}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{30F6AAE2-B70E-46EF-9E7C-A8A14B4BC3D1}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

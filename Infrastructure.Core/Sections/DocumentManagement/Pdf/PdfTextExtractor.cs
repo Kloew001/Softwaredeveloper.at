@@ -2,45 +2,43 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Pdf
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Pdf;
+
+[SingletonDependency<ITextExtractor>(Key = "application/pdf")]
+public class PdfTextExtractor : ITextExtractor
 {
+    protected readonly ILogger<PdfTextExtractor> _logger;
 
-    [SingletonDependency<ITextExtractor>(Key = "application/pdf")]
-    public class PdfTextExtractor : ITextExtractor
+    public PdfTextExtractor(ILogger<PdfTextExtractor> logger)
     {
-        protected readonly ILogger<PdfTextExtractor> _logger;
+        _logger = logger;
+    }
 
-        public PdfTextExtractor(ILogger<PdfTextExtractor> logger)
+    public string ExtractText(byte[] content)
+    {
+        if (content == null)
+            return null;
+
+        try
         {
-            _logger = logger;
-        }
-
-        public string ExtractText(byte[] content)
-        {
-            if (content == null)
-                return null;
-
-            try
+            using (var memoryStream = new MemoryStream(content))
+            using (var pdfReader = new PdfReader(memoryStream))
+            using (var pdfDoc = new PdfDocument(pdfReader))
             {
-                using (var memoryStream = new MemoryStream(content))
-                using (var pdfReader = new PdfReader(memoryStream))
-                using (var pdfDoc = new PdfDocument(pdfReader))
+                string extractedText = "";
+                for (int page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
                 {
-                    string extractedText = "";
-                    for (int page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
-                    {
-                        extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
-                            .GetTextFromPage(pdfDoc.GetPage(page));
-                    }
-                    return extractedText;
+                    extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
+                        .GetTextFromPage(pdfDoc.GetPage(page));
                 }
+                return extractedText;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
 
-                return null;
-            }
+            return null;
         }
     }
 }

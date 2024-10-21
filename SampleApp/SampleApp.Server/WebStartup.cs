@@ -3,7 +3,6 @@
 using SampleApp.Application;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
 public class WebStartup : WebStartupCore<DomainStartup>

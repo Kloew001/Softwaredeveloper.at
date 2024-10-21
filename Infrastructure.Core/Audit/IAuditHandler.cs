@@ -1,10 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit
+[SingletonDependency<IAuditHandler>]
+public interface IAuditHandler
 {
-    [SingletonDependency<IAuditHandler>]
-    public interface IAuditHandler
-    {
-    }
-
 }

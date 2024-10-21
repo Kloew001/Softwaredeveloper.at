@@ -2,32 +2,29 @@ using Microsoft.Extensions.DependencyInjection;
 
 using SampleApp.Application.Sections.PersonSection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core;
+namespace SampleApp.Application.Tests;
 
-namespace SampleApp.Application.Tests
+public class PersonTests : SampleAppBaseTest
 {
-    public class PersonTests : SampleAppBaseTest
+    [Test]
+    public async Task CreatePerson()
     {
-        [Test]
-        public async Task CreatePerson()
+        var personService =
+            _serviceScope.ServiceProvider
+            .GetService<PersonService>();
+
+        var persons = await personService.GetAllAsync();
+        var countBefore = persons.Count();
+
+        var personId = await personService.CreateAsync(new PersonDto
         {
-            var personService =
-                _serviceScope.ServiceProvider
-                .GetService<PersonService>();
+            FirstName = "John",
+            LastName = "Doe"
+        });
 
-            var persons = await personService.GetAllAsync();
-            var countBefore = persons.Count();
+        persons = await personService.GetAllAsync();
 
-            var personId = await personService.CreateAsync(new PersonDto
-            {
-                FirstName = "John",
-                LastName = "Doe"
-            });
-
-            persons = await personService.GetAllAsync();
-
-            Assert.That(persons.Count() == countBefore + 1);
-            Assert.That(persons.Any(_ => _.Id == personId.Id));
-        }
+        Assert.That(persons.Count() == countBefore + 1);
+        Assert.That(persons.Any(_ => _.Id == personId.Id));
     }
 }

@@ -1,20 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core;
+
+public interface IOptionalDependency<T>
 {
-    public interface IOptionalDependency<T>
+    T Value { get; }
+}
+
+[TransientDependency]
+public class OptionalDependency<T> : IOptionalDependency<T>
+{
+    public OptionalDependency(IServiceProvider serviceProvider)
     {
-        T Value { get; }
+        Value = serviceProvider.GetService<T>();
     }
 
-    [TransientDependency]
-    public class OptionalDependency<T> : IOptionalDependency<T>
-    {
-        public OptionalDependency(IServiceProvider serviceProvider)
-        {
-            Value = serviceProvider.GetService<T>();
-        }
-
-        public T Value { get; }
-    }
+    public T Value { get; }
 }

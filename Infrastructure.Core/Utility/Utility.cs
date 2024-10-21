@@ -1,25 +1,24 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+public interface IRange<T>
 {
-    public interface IRange<T>
+    T Start { get; }
+    T End { get; }
+}
+
+public class Range<T> : IRange<T>
+{
+    public Range(T start, T end)
     {
-        T Start { get; }
-        T End { get; }
+        Start = start;
+        End = end;
     }
 
-    public class Range<T> : IRange<T>
+    public T Start { get; set; }
+    public T End { get; set; }
+
+    public override string ToString()
     {
-        public Range(T start, T end)
-        {
-            Start = start;
-            End = end;
-        }
-
-        public T Start { get; set; }
-        public T End { get; set; }
-
-        public override string ToString()
-        {
-            return $"{Start} - {End}";
-        }
+        return $"{Start} - {End}";
     }
 }

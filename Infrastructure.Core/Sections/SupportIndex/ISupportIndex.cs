@@ -1,22 +1,21 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
+
+public interface ISupportIndex
 {
-    public interface ISupportIndex
+    int Index { get; set; }
+}
+public static class ISupportIndexExtensions
+{
+    public static IEnumerable<T> OrderByIndex<T>(this IEnumerable<T> query)
+        where T : ISupportIndex
     {
-        int Index { get; set; }
+        return query.OrderBy(_ => _.Index);
     }
-    public static class ISupportIndexExtensions
+
+    public static IQueryable<T> OrderByIndex<T>(this IQueryable<T> query)
+        where T : ISupportIndex
     {
-        public static IEnumerable<T> OrderByIndex<T>(this IEnumerable<T> query)
-            where T : ISupportIndex
-        {
-            return query.OrderBy(_ => _.Index);
-        }
-
-        public static IQueryable<T> OrderByIndex<T>(this IQueryable<T> query)
-            where T : ISupportIndex
-        {
-            return query.OrderBy(_ => _.Index);
-        }
-
+        return query.OrderBy(_ => _.Index);
     }
+
 }

@@ -1,455 +1,440 @@
-﻿using DocumentFormat.OpenXml.Vml.Office;
-
-using ExtendableEnums.EntityFrameworkCore;
+﻿using ExtendableEnums.EntityFrameworkCore;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SoftDelete;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
-
-using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static void RegisterDBContext<TDBContext>(this IServiceCollection services, string connectionStringKey = "DbContextConnection")
+        where TDBContext : DbContext
     {
-        public static void RegisterDBContext<TDBContext>(this IServiceCollection services, string connectionStringKey = "DbContextConnection")
-            where TDBContext : DbContext
+        services.AddDbContext<TDBContext>((serviceProvider, options) =>
         {
-            services.AddDbContext<TDBContext>((serviceProvider, options) =>
+            var dbContextHandler = serviceProvider.GetRequiredService<IDbContextHandler>();
+            dbContextHandler.DBContextOptions(serviceProvider, options, connectionStringKey);
+        });
+    }
+}
+
+public interface IDbContextHandler
+{
+    Task UpdateDatabaseAsync(DbContext context);
+
+    void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection");
+
+    void OnModelCreating(ModelBuilder modelBuilder);
+
+    void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime);
+    void HandleEntityAudit(DbContext context, DateTime transactionDateTime);
+}
+
+public abstract class BaseDbContextHandler : IDbContextHandler
+{
+    public virtual async Task UpdateDatabaseAsync(DbContext context)
+    {
+        var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+
+        if (!await databaseCreator.ExistsAsync())
+        {
+            //scope.ServiceProvider
+            //.GetService<IApplicationSettings>()
+            //.HostedServices[
+            //nameof(DataSeedHostedService)].Enabled = true;
+
+            await databaseCreator.CreateAsync();
+        }
+
+        await context.Database.MigrateAsync();
+    }
+
+    protected string GetConnectionString(IServiceProvider serviceProvider, string connectionStringKey)
+    {
+        var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings[connectionStringKey];
+
+        return connectionString;
+    }
+
+    public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
+    {
+        /* 
+         * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
+        */
+
+        options.UseLazyLoadingProxies();
+
+        //.UseCamelCaseNamingConvention();
+
+        var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
+        if (hostEnvironment.IsDevelopment())
+        {
+            options.EnableDetailedErrors();
+            options.EnableSensitiveDataLogging();
+        }
+
+        options.ConfigureWarnings(warnings =>
+        {
+            warnings.Default(WarningBehavior.Ignore);
+            warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
+        });
+
+        //options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+    }
+
+    public virtual void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyExtendableEnumConversions();
+
+        ApplyBaseEntity(modelBuilder);
+
+        ApplyEnumToStringValueConverter(modelBuilder);
+        ApplyDateTime(modelBuilder);
+        ApplyDecimal(modelBuilder);
+        ApplyChangeTrackedEntity(modelBuilder);
+        ApplyApplicationUser(modelBuilder);
+        ApplyAuditEntity(modelBuilder);
+        ApplyGlobalFilters(modelBuilder);
+        ApplyIndex(modelBuilder);
+        ApplyAutoInclude(modelBuilder);
+        ApplyRemoveForeignKeyAttribute(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoftwaredeveloperDotAtDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+    }
+
+    private void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var foreignKey in entityType.GetForeignKeys().ToList())
             {
-                var dbContextHandler = serviceProvider.GetRequiredService<IDbContextHandler>();
-                dbContextHandler.DBContextOptions(serviceProvider, options, connectionStringKey);
-            });
+                var principalType = foreignKey.PrincipalEntityType.ClrType;
+                var declaringType = foreignKey.DeclaringEntityType.ClrType;
+
+                if (declaringType.GetCustomAttribute<VirtualRelationAttribute>() != null ||
+                    principalType.GetCustomAttribute<VirtualRelationAttribute>() != null)
+                {
+                    entityType.RemoveForeignKey(foreignKey);
+                }
+            }
         }
     }
 
-    public interface IDbContextHandler
+    public virtual void ApplyAutoInclude(ModelBuilder modelBuilder)
     {
-        Task UpdateDatabaseAsync(DbContext context);
-
-        void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection");
-
-        void OnModelCreating(ModelBuilder modelBuilder);
-
-        void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime);
-        void HandleEntityAudit(DbContext context, DateTime transactionDateTime);
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(IMultiLingualEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .Navigation(nameof(IMultiLingualEntity.Translations)).AutoInclude();
+            }
+        }
     }
 
-    public abstract class BaseDbContextHandler : IDbContextHandler
+    public virtual void ApplyIndex(ModelBuilder modelBuilder)
     {
-        public virtual async Task UpdateDatabaseAsync(DbContext context)
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
-
-            if (!await databaseCreator.ExistsAsync())
+            if (typeof(IReferencedToEntity).IsAssignableFrom(entityType.ClrType))
             {
-                //scope.ServiceProvider
-                //.GetService<IApplicationSettings>()
-                //.HostedServices[
-                //nameof(DataSeedHostedService)].Enabled = true;
-
-                await databaseCreator.CreateAsync();
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasIndex(
+                        nameof(IReferencedToEntity.ReferenceId),
+                        nameof(IReferencedToEntity.ReferenceType));
             }
 
-            await context.Database.MigrateAsync();
-        }
-
-        protected string GetConnectionString(IServiceProvider serviceProvider, string connectionStringKey)
-        {
-            var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings[connectionStringKey];
-
-            return connectionString;
-        }
-
-        public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
-        {
-            /* 
-             * options.AddInterceptors(serviceProvider.GetRequiredService<ChangeTrackedEntitySaveChangesInterceptor>());
-            */
-
-            options.UseLazyLoadingProxies();
-
-            //.UseCamelCaseNamingConvention();
-
-            var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
-            if (hostEnvironment.IsDevelopment())
+            if (typeof(IEntityTranslation).IsAssignableFrom(entityType.ClrType))
             {
-                options.EnableDetailedErrors();
-                options.EnableSensitiveDataLogging();
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasIndex(nameof(IEntityTranslation.CoreId), nameof(IEntityTranslation.CultureId))
+                    .IsUnique();
+            }
+            if (typeof(IEntityAudit).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasIndex(nameof(IEntityAudit.AuditId));
+
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasIndex(nameof(IEntityAudit.TransactionId));
             }
 
-            options.ConfigureWarnings(warnings =>
+            if (typeof(ISupportDefault).IsAssignableFrom(entityType.ClrType))
             {
-                warnings.Default(WarningBehavior.Ignore);
-                warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
-            });
-
-            //options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasIndex(nameof(ISupportDefault.IsDefault))
+                    .IsUnique();
+            }
         }
+    }
 
+    public abstract void ApplyBaseEntity(ModelBuilder modelBuilder);
 
-        public virtual void OnModelCreating(ModelBuilder modelBuilder)
+    public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
+
+    public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
+    {
+        const string auditPostfix = "Audit";
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            .Where(e => typeof(IEntityAudit).IsAssignableFrom(e.ClrType)))
         {
-            modelBuilder.ApplyExtendableEnumConversions();
+            var tableName = entityType.GetTableName() ?? entityType.Name;
 
-            ApplyBaseEntity(modelBuilder);
+            if (!entityType.Name.EndsWith(auditPostfix))
+                tableName = tableName + auditPostfix;
 
-            ApplyEnumToStringValueConverter(modelBuilder);
-            ApplyDateTime(modelBuilder);
-            ApplyDecimal(modelBuilder);
-            ApplyChangeTrackedEntity(modelBuilder);
-            ApplyApplicationUser(modelBuilder);
-            ApplyAuditEntity(modelBuilder);
-            ApplyGlobalFilters(modelBuilder);
-            ApplyIndex(modelBuilder);
-            ApplyAutoInclude(modelBuilder);
-            ApplyRemoveForeignKeyAttribute(modelBuilder);
-
-
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoftwaredeveloperDotAtDbContext).Assembly);
-            modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+            entityType.SetTableName(tableName);
+            entityType.SetSchema("audit");
         }
+    }
 
-        private void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)
+    public virtual void ApplyDateTime(ModelBuilder modelBuilder)
+    {
+
+    }
+
+    public virtual void ApplyDecimal(ModelBuilder modelBuilder)
+    {
+        foreach (var property in modelBuilder.Model.GetEntityTypes()
+            .SelectMany(t => t.GetProperties()))
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
             {
-                foreach (var foreignKey in entityType.GetForeignKeys().ToList())
-                {
-                    var principalType = foreignKey.PrincipalEntityType.ClrType;
-                    var declaringType = foreignKey.DeclaringEntityType.ClrType;
+                property.SetPrecision(18);
+                property.SetScale(2);
+            }
+        }
+    }
+    public bool UseEnumAsString { get; set; } = false;
+    public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
+    {
+        if (UseEnumAsString == false)
+            return;
+        foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+        {
+            var enumType = GetEnumType(property.ClrType);
+            if (enumType == null)
+                continue;
 
-                    if (declaringType.GetCustomAttribute<VirtualRelationAttribute>() != null ||
-                        principalType.GetCustomAttribute<VirtualRelationAttribute>() != null)
-                    {
-                        entityType.RemoveForeignKey(foreignKey);
-                    }
-                }
+            var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
+
+            var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
+            property.SetValueConverter(converter);
+        }
+    }
+
+    private static Type GetEnumType(Type type)
+    {
+        if (type.IsEnum)
+            return type;
+
+        var nullableUnderlyingType = Nullable.GetUnderlyingType(type);
+        if (nullableUnderlyingType?.IsEnum ?? false)
+            return nullableUnderlyingType;
+
+        return null;
+    }
+
+    public void HandleEntityAudit(DbContext context, DateTime transactionDateTime)
+    {
+        var entityEntries = context.ChangeTracker
+            .Entries()
+            .Where(e => e.Entity is IAuditableEntity)
+            .Where(e => e.State == EntityState.Added ||
+                        e.State == EntityState.Modified ||
+                        e.State == EntityState.Deleted)
+            .ToList();
+
+        if (!entityEntries.Any())
+            return;
+
+        var transactionId = Guid.NewGuid();
+        var idbContext = context.As<IDbContext>();
+
+        foreach (var entityEntry in entityEntries)
+        {
+            var entity = entityEntry.Entity;
+            var auditableEntity = entity.To<IAuditableEntity>();
+
+            if (auditableEntity == null)
+                continue;
+
+            //if(entityEntry.State == EntityState.Modified)
+            //{
+            //    var changes = new List<string>();
+            //    foreach (var property in entityEntry.OriginalValues.Properties)
+            //    {
+            //        var original = entityEntry.OriginalValues[property];
+            //        var current = entityEntry.CurrentValues[property];
+
+            //        if (!object.Equals(original, current))
+            //        {
+            //            changes.Add($"Property: {property}, Original value: {original}, New value: {current}");
+            //        }
+            //    }
+            //}
+
+            auditableEntity
+                .CreateEntityAudit(idbContext, entityEntry.GetAuditActionType(), transactionDateTime, transactionId);
+        }
+    }
+
+    public void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime)
+    {
+        var currentUserService = context.GetService<ICurrentUserService>();
+
+        var changedEntries = context.ChangeTracker
+            .Entries()
+            .Where(e => e.Entity is ChangeTrackedEntity)
+            .Where(e => e.State == EntityState.Added ||
+                        e.State == EntityState.Modified)
+            .ToList();
+
+        //var deletedEntries = context.ChangeTracker
+        //    .Entries()
+        //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
+        //    .ToList();
+
+        foreach (var entityEntry in changedEntries)
+        {
+            var currentUserId = currentUserService?.GetCurrentUserId();
+            if (currentUserId == null)
+                throw new InvalidOperationException("CurrentUser not set.");
+
+            var baseEntity = (ChangeTrackedEntity)entityEntry.Entity;
+
+            baseEntity.DateModified = transactionDateTime;
+            baseEntity.ModifiedById = currentUserId.Value;
+
+            if (entityEntry.State == EntityState.Added)
+            {
+                baseEntity.DateCreated = transactionDateTime;
+                baseEntity.CreatedById = currentUserId.Value;
+            }
+            else if (entityEntry.State == EntityState.Modified)
+            {
+                var originalDateCreated = entityEntry.OriginalValues.GetValue<DateTime>(nameof(ChangeTrackedEntity.DateCreated));
+                var originalCreatedById = entityEntry.OriginalValues.GetValue<Guid>(nameof(ChangeTrackedEntity.CreatedById));
+
+                baseEntity.DateCreated = originalDateCreated;
+                baseEntity.CreatedById = originalCreatedById;
+            }
+        }
+    }
+
+    public abstract void ApplyApplicationUser(ModelBuilder modelBuilder);
+
+    private void ApplyGlobalFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            this.GetType()
+                .GetMethod(nameof(ConfigureGlobalFilters),
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                .MakeGenericMethod(entityType.ClrType)
+                .Invoke(this, new object[] { modelBuilder, entityType, null });
+        }
+    }
+
+    protected void ConfigureGlobalFilters<TEntity>(ModelBuilder modelBuilder, IMutableEntityType entityType, IMutableNavigation mutableNavigation = null)
+        where TEntity : class
+    {
+        var shoudlFilterEntity = (bool)this.GetType()
+            .GetMethod(nameof(ShouldFilterEntity),
+                               BindingFlags.Instance | BindingFlags.NonPublic)
+            .MakeGenericMethod(mutableNavigation?.ClrType ?? entityType.ClrType)
+            .Invoke(this, null);
+
+        if (entityType.BaseType == null && shoudlFilterEntity)
+        {
+            var filterExpression = CreateFilterExpression<TEntity>(mutableNavigation);
+            if (filterExpression != null)
+            {
+                modelBuilder.Entity<TEntity>()
+                    .HasQueryFilter(filterExpression);
             }
         }
 
-        public virtual void ApplyAutoInclude(ModelBuilder modelBuilder)
+        if (mutableNavigation == null)
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            foreach (var navigation in entityType.GetNavigations().ToList())
             {
-                if (typeof(IMultiLingualEntity).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .Navigation(nameof(IMultiLingualEntity.Translations)).AutoInclude();
-                }
-            }
-        }
-
-        public virtual void ApplyIndex(ModelBuilder modelBuilder)
-        {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                if (typeof(IReferencedToEntity).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(
-                            nameof(IReferencedToEntity.ReferenceId),
-                            nameof(IReferencedToEntity.ReferenceType));
-                }
-
-                if (typeof(IEntityTranslation).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(IEntityTranslation.CoreId), nameof(IEntityTranslation.CultureId))
-                        .IsUnique();
-                }
-                if (typeof(IEntityAudit).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(IEntityAudit.AuditId));
-
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(IEntityAudit.TransactionId));
-                }
-
-                if (typeof(ISupportDefault).IsAssignableFrom(entityType.ClrType))
-                {
-                    modelBuilder.Entity(entityType.ClrType)
-                        .HasIndex(nameof(ISupportDefault.IsDefault))
-                        .IsUnique();
-                }
-            }
-        }
-
-        public abstract void ApplyBaseEntity(ModelBuilder modelBuilder);
-
-        public abstract void ApplyChangeTrackedEntity(ModelBuilder modelBuilder);
-
-        public virtual void ApplyAuditEntity(ModelBuilder modelBuilder)
-        {
-            const string auditPostfix = "Audit";
-
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(IEntityAudit).IsAssignableFrom(e.ClrType)))
-            {
-                var tableName = entityType.GetTableName() ?? entityType.Name;
-
-                if (!entityType.Name.EndsWith(auditPostfix))
-                    tableName = tableName + auditPostfix;
-
-                entityType.SetTableName(tableName);
-                entityType.SetSchema("audit");
-            }
-        }
-
-        public virtual void ApplyDateTime(ModelBuilder modelBuilder)
-        {
-
-        }
-
-        public virtual void ApplyDecimal(ModelBuilder modelBuilder)
-        {
-            foreach (var property in modelBuilder.Model.GetEntityTypes()
-                .SelectMany(t => t.GetProperties()))
-            {
-                if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
-                {
-                    property.SetPrecision(18);
-                    property.SetScale(2);
-                }
-            }
-        }
-        public bool UseEnumAsString { get; set; } = false;
-        public virtual void ApplyEnumToStringValueConverter(ModelBuilder modelBuilder)
-        {
-            if (UseEnumAsString == false)
-                return;
-            foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
-            {
-                var enumType = GetEnumType(property.ClrType);
-                if (enumType == null)
+                if (!navigation.IsOnDependent || navigation.IsCollection)
                     continue;
 
-                var type = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
-
-                var converter = Activator.CreateInstance(type, new ConverterMappingHints()) as ValueConverter;
-                property.SetValueConverter(converter);
-            }
-        }
-
-        private static Type GetEnumType(Type type)
-        {
-            if (type.IsEnum)
-                return type;
-
-            var nullableUnderlyingType = Nullable.GetUnderlyingType(type);
-            if (nullableUnderlyingType?.IsEnum ?? false)
-                return nullableUnderlyingType;
-
-            return null;
-        }
-
-
-        public void HandleEntityAudit(DbContext context, DateTime transactionDateTime)
-        {
-            var entityEntries = context.ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is IAuditableEntity)
-                .Where(e => e.State == EntityState.Added ||
-                            e.State == EntityState.Modified ||
-                            e.State == EntityState.Deleted)
-                .ToList();
-
-            if (!entityEntries.Any())
-                return;
-
-            var transactionId = Guid.NewGuid();
-            var idbContext = context.As<IDbContext>();
-
-            foreach (var entityEntry in entityEntries)
-            {
-                var entity = entityEntry.Entity;
-                var auditableEntity = entity.To<IAuditableEntity>();
-
-                if (auditableEntity == null)
-                    continue;
-
-                //if(entityEntry.State == EntityState.Modified)
-                //{
-                //    var changes = new List<string>();
-                //    foreach (var property in entityEntry.OriginalValues.Properties)
-                //    {
-                //        var original = entityEntry.OriginalValues[property];
-                //        var current = entityEntry.CurrentValues[property];
-
-                //        if (!object.Equals(original, current))
-                //        {
-                //            changes.Add($"Property: {property}, Original value: {original}, New value: {current}");
-                //        }
-                //    }
-                //}
-
-                auditableEntity
-                    .CreateEntityAudit(idbContext, entityEntry.GetAuditActionType(), transactionDateTime, transactionId);
-            }
-        }
-
-        public void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime)
-        {
-            var currentUserService = context.GetService<ICurrentUserService>();
-
-            var changedEntries = context.ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is ChangeTrackedEntity)
-                .Where(e => e.State == EntityState.Added ||
-                            e.State == EntityState.Modified)
-                .ToList();
-
-            //var deletedEntries = context.ChangeTracker
-            //    .Entries()
-            //    .Where(e => e.Entity is ChangeTrackedEntity && e.State == EntityState.Deleted)
-            //    .ToList();
-
-            foreach (var entityEntry in changedEntries)
-            {
-                var currentUserId = currentUserService?.GetCurrentUserId();
-                if (currentUserId == null)
-                    throw new InvalidOperationException("CurrentUser not set.");
-
-                var baseEntity = (ChangeTrackedEntity)entityEntry.Entity;
-
-                baseEntity.DateModified = transactionDateTime;
-                baseEntity.ModifiedById = currentUserId.Value;
-
-                if (entityEntry.State == EntityState.Added)
+                if (typeof(IEntity).IsAssignableFrom(navigation.ClrType))
                 {
-                    baseEntity.DateCreated = transactionDateTime;
-                    baseEntity.CreatedById = currentUserId.Value;
-                }
-                else if (entityEntry.State == EntityState.Modified)
-                {
-                    var originalDateCreated = entityEntry.OriginalValues.GetValue<DateTime>(nameof(ChangeTrackedEntity.DateCreated));
-                    var originalCreatedById = entityEntry.OriginalValues.GetValue<Guid>(nameof(ChangeTrackedEntity.CreatedById));
-
-                    baseEntity.DateCreated = originalDateCreated;
-                    baseEntity.CreatedById = originalCreatedById;
+                    this.GetType()
+                       .GetMethod(nameof(ConfigureGlobalFilters), BindingFlags.Instance | BindingFlags.NonPublic)
+                       .MakeGenericMethod(entityType.ClrType)
+                       .Invoke(this, new object[] {
+                 modelBuilder,
+                   entityType,
+                   navigation
+                       });
                 }
             }
-        }
-
-        public abstract void ApplyApplicationUser(ModelBuilder modelBuilder);
-
-
-        private void ApplyGlobalFilters(ModelBuilder modelBuilder)
-        {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                this.GetType()
-                    .GetMethod(nameof(ConfigureGlobalFilters),
-                            BindingFlags.Instance | BindingFlags.NonPublic)
-                    .MakeGenericMethod(entityType.ClrType)
-                    .Invoke(this, new object[] { modelBuilder, entityType, null });
-            }
-        }
-
-        protected void ConfigureGlobalFilters<TEntity>(ModelBuilder modelBuilder, IMutableEntityType entityType, IMutableNavigation mutableNavigation = null)
-            where TEntity : class
-        {
-            var shoudlFilterEntity = (bool)this.GetType()
-                .GetMethod(nameof(ShouldFilterEntity),
-                                   BindingFlags.Instance | BindingFlags.NonPublic)
-                .MakeGenericMethod(mutableNavigation?.ClrType ?? entityType.ClrType)
-                .Invoke(this, null);
-
-            if (entityType.BaseType == null && shoudlFilterEntity)
-            {
-                var filterExpression = CreateFilterExpression<TEntity>(mutableNavigation);
-                if (filterExpression != null)
-                {
-                    modelBuilder.Entity<TEntity>()
-                        .HasQueryFilter(filterExpression);
-                }
-            }
-
-
-            if (mutableNavigation == null)
-            {
-                foreach (var navigation in entityType.GetNavigations().ToList())
-                {
-                    if (!navigation.IsOnDependent || navigation.IsCollection)
-                        continue;
-
-                    if (typeof(IEntity).IsAssignableFrom(navigation.ClrType))
-                    {
-                        this.GetType()
-                           .GetMethod(nameof(ConfigureGlobalFilters), BindingFlags.Instance | BindingFlags.NonPublic)
-                           .MakeGenericMethod(entityType.ClrType)
-                           .Invoke(this, new object[] {
-                     modelBuilder,
-                       entityType,
-                       navigation
-                           });
-                    }
-                }
-            }
-        }
-
-        protected virtual bool ShouldFilterEntity<TEntity>()
-            where TEntity : class
-        {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool IsSoftDeleteFilterEnabled { get; set; } = true;
-
-        protected virtual Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>(IMutableNavigation mutableNavigation = null)
-            where TEntity : class
-        {
-            if (typeof(ISoftDelete).IsAssignableFrom(mutableNavigation?.ClrType ?? typeof(TEntity)))
-            {
-                if (mutableNavigation != null)
-                {
-                    Expression<Func<TEntity, bool>> softDeleteFilter =
-                        e => !IsSoftDeleteFilterEnabled || !EF.Property<ISoftDelete>(e, mutableNavigation.Name).IsDeleted;
-
-                    return softDeleteFilter;
-                }
-                else
-                {
-                    Expression<Func<TEntity, bool>> softDeleteFilter =
-                        e => !IsSoftDeleteFilterEnabled || !((ISoftDelete)e).IsDeleted;
-
-                    return softDeleteFilter;
-                }
-            }
-
-
-            /*
-             * 
-             *  modelBuilder.Entity<EventCategory>()
-                    .HasQueryFilter(t => !t.Event.IsDeleted);*/
-            return null;
         }
     }
 
-    [AttributeUsage(AttributeTargets.Property)]
-    public class VirtualRelationAttribute : Attribute
+    protected virtual bool ShouldFilterEntity<TEntity>()
+        where TEntity : class
     {
+        if (typeof(ISoftDelete).IsAssignableFrom(typeof(TEntity)))
+        {
+            return true;
+        }
+
+        return false;
     }
+
+    public bool IsSoftDeleteFilterEnabled { get; set; } = true;
+
+    protected virtual Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>(IMutableNavigation mutableNavigation = null)
+        where TEntity : class
+    {
+        if (typeof(ISoftDelete).IsAssignableFrom(mutableNavigation?.ClrType ?? typeof(TEntity)))
+        {
+            if (mutableNavigation != null)
+            {
+                Expression<Func<TEntity, bool>> softDeleteFilter =
+                    e => !IsSoftDeleteFilterEnabled || !EF.Property<ISoftDelete>(e, mutableNavigation.Name).IsDeleted;
+
+                return softDeleteFilter;
+            }
+            else
+            {
+                Expression<Func<TEntity, bool>> softDeleteFilter =
+                    e => !IsSoftDeleteFilterEnabled || !((ISoftDelete)e).IsDeleted;
+
+                return softDeleteFilter;
+            }
+        }
+
+        /*
+         * 
+         *  modelBuilder.Entity<EventCategory>()
+                .HasQueryFilter(t => !t.Event.IsDeleted);*/
+        return null;
+    }
+}
+
+[AttributeUsage(AttributeTargets.Property)]
+public class VirtualRelationAttribute : Attribute
+{
 }

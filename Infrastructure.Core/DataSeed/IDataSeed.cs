@@ -1,11 +1,10 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed
-{
-    [ScopedDependency<IDataSeed>]
-    public interface IDataSeed
-    {
-        decimal Priority { get; }
-        bool AutoExecute { get; }
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 
-        Task SeedAsync(CancellationToken cancellationToken);
-    }
+[ScopedDependency<IDataSeed>]
+public interface IDataSeed
+{
+    decimal Priority { get; }
+    bool AutoExecute { get; }
+
+    Task SeedAsync(CancellationToken cancellationToken);
 }

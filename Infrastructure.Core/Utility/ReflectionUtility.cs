@@ -1,7 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+public static class ReflectionUtility
 {
-    public static class ReflectionUtility
-    {
-       
-    }
+   
 }

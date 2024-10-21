@@ -1,103 +1,99 @@
-﻿using Irony.Parsing;
-
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility
-{
-    public class TokenResponse
-    {
-        [JsonProperty("access_token")]
-        public string AccessToken { get; set; }
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
-        // Add other properties if needed (e.g., refresh_token, expires_in)
+public class TokenResponse
+{
+    [JsonProperty("access_token")]
+    public string AccessToken { get; set; }
+
+    // Add other properties if needed (e.g., refresh_token, expires_in)
+}
+
+public class RestApiClient
+{
+    protected readonly HttpClient _httpClient;
+
+    public RestApiClient(string baseUrl, string token = null)
+    {
+        _httpClient = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+
+        SetAccessToken(token);
+     }
+
+    public void SetAccessToken(string token)
+    {
+        if (token.IsNotNullOrEmpty())
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
-    public class RestApiClient
+    public virtual async Task<TResponse> GetTokenAsync<TResponse>(string endpoint, string username, string password)
+        where TResponse : class
     {
-        protected readonly HttpClient _httpClient;
-
-        public RestApiClient(string baseUrl, string token = null)
+        var requestBody = new
         {
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri(baseUrl)
-            };
+            Email = username,
+            Password = password
+        };
 
-            SetAccessToken(token);
-         }
+        var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
 
-        public void SetAccessToken(string token)
+        var response = await _httpClient.PostAsync(endpoint, jsonContent);
+
+        if (!response.IsSuccessStatusCode)
         {
-            if (token.IsNotNullOrEmpty())
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = 
-                    new AuthenticationHeaderValue("Bearer", token);
-            }
+            throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
         }
 
-        public virtual async Task<TResponse> GetTokenAsync<TResponse>(string endpoint, string username, string password)
-            where TResponse : class
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        if (response.Content.Headers.ContentType.MediaType == "application/json")
         {
-            var requestBody = new
-            {
-                Email = username,
-                Password = password
-            };
-
-            var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync(endpoint, jsonContent);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-            }
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.Content.Headers.ContentType.MediaType == "application/json")
-            {
-                var tokenResponse = JsonConvert.DeserializeObject<TResponse>(responseContent);
-                return tokenResponse;
-            }
-            else if (response.Content.Headers.ContentType.MediaType == "text/plain")
-            {
-                return responseContent as TResponse;
-            }
-
-            return null;
+            var tokenResponse = JsonConvert.DeserializeObject<TResponse>(responseContent);
+            return tokenResponse;
+        }
+        else if (response.Content.Headers.ContentType.MediaType == "text/plain")
+        {
+            return responseContent as TResponse;
         }
 
-        public async Task<TResponse> GetAsync<TResponse>(string endpoint)
+        return null;
+    }
+
+    public async Task<TResponse> GetAsync<TResponse>(string endpoint)
+    {
+        var response = await _httpClient.GetAsync(endpoint);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync(endpoint);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-            }
-
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TResponse>(content);
+            throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
         }
 
-        public async Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest content)
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<TResponse>(content);
+    }
+
+    public async Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest content)
+    {
+        var jsonContent = new StringContent(JsonConvert.SerializeObject(content), System.Text.Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PostAsync(endpoint, jsonContent);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var jsonContent = new StringContent(JsonConvert.SerializeObject(content), System.Text.Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync(endpoint, jsonContent);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-            }
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TResponse>(responseContent);
+            throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
         }
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<TResponse>(responseContent);
     }
 }

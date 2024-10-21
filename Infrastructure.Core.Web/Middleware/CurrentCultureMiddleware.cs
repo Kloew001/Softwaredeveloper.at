@@ -8,52 +8,51 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 using System.Globalization;
 
-namespace Infrastructure.Core.Web.Middleware
+namespace Infrastructure.Core.Web.Middleware;
+
+public static class UseCurrentCultureBuilderExtensions
 {
-    public static class UseCurrentCultureBuilderExtensions
+    public static IApplicationBuilder UseCurrentCulture(this IApplicationBuilder app)
     {
-        public static IApplicationBuilder UseCurrentCulture(this IApplicationBuilder app)
-        {
-            return app.UseMiddleware<CurrentCultureMiddleware>();
-        }
+        return app.UseMiddleware<CurrentCultureMiddleware>();
+    }
+}
+
+public class CurrentCultureMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly IMemoryCache _memoryCache;
+
+    public CurrentCultureMiddleware(RequestDelegate next,
+        IMemoryCache memoryCache)
+    {
+        _next = next;
+        _memoryCache = memoryCache;
     }
 
-    public class CurrentCultureMiddleware
+    public async Task InvokeAsync(HttpContext context)
     {
-        private readonly RequestDelegate _next;
-        private readonly IMemoryCache _memoryCache;
+        var currentLanguageService = context.RequestServices.GetService<ICurrentLanguageService>();
 
-        public CurrentCultureMiddleware(RequestDelegate next,
-            IMemoryCache memoryCache)
+        var currentCultureId = currentLanguageService.CurrentCultureId;
+
+        var cultureName =
+            _memoryCache.GetOrCreate(nameof(CurrentCultureMiddleware) + "_" + currentCultureId, (entry) =>
         {
-            _next = next;
-            _memoryCache = memoryCache;
-        }
+            var cultureName = context.RequestServices.GetService<IDbContext>()
+                .Set<MultilingualCulture>()
+                .Where(_ => _.Id == currentCultureId)
+                .Select(_ => _.Name)
+                .SingleOrDefault();
 
-        public async Task InvokeAsync(HttpContext context)
-        {
-            var currentLanguageService = context.RequestServices.GetService<ICurrentLanguageService>();
+            return cultureName;
+        });
 
-            var currentCultureId = currentLanguageService.CurrentCultureId;
+        var culture = new CultureInfo(cultureName);
 
-            var cultureName =
-                _memoryCache.GetOrCreate(nameof(CurrentCultureMiddleware) + "_" + currentCultureId, (entry) =>
-            {
-                var cultureName = context.RequestServices.GetService<IDbContext>()
-                    .Set<MultilingualCulture>()
-                    .Where(_ => _.Id == currentCultureId)
-                    .Select(_ => _.Name)
-                    .SingleOrDefault();
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
 
-                return cultureName;
-            });
-
-            var culture = new CultureInfo(cultureName);
-
-            CultureInfo.CurrentCulture = culture;
-            CultureInfo.CurrentUICulture = culture;
-
-            await _next(context);
-        }
+        await _next(context);
     }
 }

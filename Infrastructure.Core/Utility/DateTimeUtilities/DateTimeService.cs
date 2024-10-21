@@ -1,15 +1,14 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities
-{
-    public interface IDateTimeService
-    {
-        DateTime Now();
-    }
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
 
-    public class DateTimeService : IDateTimeService
+public interface IDateTimeService
+{
+    DateTime Now();
+}
+
+public class DateTimeService : IDateTimeService
+{
+    public DateTime Now()
     {
-        public DateTime Now()
-        {
-            return DateTime.Now;
-        }
+        return DateTime.Now;
     }
 }

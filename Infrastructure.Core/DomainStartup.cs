@@ -8,132 +8,130 @@ using Microsoft.Extensions.Options;
 
 using TomLonghurst.ReadableTimeSpan;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core
+namespace SoftwaredeveloperDotAt.Infrastructure.Core;
+
+public interface IDomainStartupCore
 {
-    public interface IDomainStartupCore
+    void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment);
+    void ConfigureApp(IHost host);
+}
+
+public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
+    where TApplicationSettings : class, IApplicationSettings, new()
+{
+    protected IConfiguration Configuration { get; set; }
+    protected IHostEnvironment HostEnvironment { get; set; }
+    protected IServiceCollection Services { get; set; }
+
+    public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment)
     {
-        void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment);
-        void ConfigureApp(IHost host);
+        Services = services;
+        Configuration = configuration;
+        HostEnvironment = hostEnvironment;
+
+        ApplicationUserIds.ServiceAdminId = Guid.Parse(Configuration.GetSection("ServiceUser").GetValue<string>("Id"));
+
+        if (ApplicationUserIds.ServiceAdminId == Guid.Empty)
+            throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
+
+        ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
+
+        ReadableTimeSpan.EnableConfigurationBinding();
+
+        ConfigureApplicationSettings();
+
+        Services.AddHttpClient();
+        Services.AddMemoryCache();
+
+        Services.RegisterSelfRegisterDependencies();
+        Services.RegisterAllHostedService();
+
+        Services.AddSingleton<ICacheService, CacheService>();
+
+        Services.AddSingleton<IEmailMessageGlobalBookmark, EmailMessageGlobalBookmark>();
+        Services.AddScoped<IEmailMessageBookmarkReplacer, EmailMessageBookmarkReplacer>();
+
+        Services.AddScoped<IEMailSendHandler, EMailSendHandler>();
+        Services.AddScoped<IEMailSender, NoEmailSender>();
+
+        Services.AddScoped<IMonitorService, MonitorService>();
+
+        //if (HostEnvironment == null || HostEnvironment.IsDevelopment())
+        //    Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        Services.AddScoped<IDateTimeService, DateTimeService>();
     }
 
-    public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
-        where TApplicationSettings : class, IApplicationSettings, new()
+    protected virtual void ConfigureApplicationSettings()
     {
-        protected IConfiguration Configuration { get; set; }
-        protected IHostEnvironment HostEnvironment { get; set; }
-        protected IServiceCollection Services { get; set; }
+        Services.Configure<TApplicationSettings>(Configuration);
 
-        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration, IHostEnvironment hostEnvironment)
+        Services.AddSingleton<IApplicationSettings>((sp) =>
         {
-            Services = services;
-            Configuration = configuration;
-            HostEnvironment = hostEnvironment;
-
-            ApplicationUserIds.ServiceAdminId = Guid.Parse(Configuration.GetSection("ServiceUser").GetValue<string>("Id"));
-
-            if (ApplicationUserIds.ServiceAdminId == Guid.Empty)
-                throw new InvalidOperationException("ApplicationUserIds.ServiceAdminId must be set in the DomainStartup.ConfigureServices method.");
-
-            ValidatorOptions.Global.LanguageManager = new ValidationLanguageManager();
-
-            ReadableTimeSpan.EnableConfigurationBinding();
-
-            ConfigureApplicationSettings();
-
-            Services.AddHttpClient();
-            Services.AddMemoryCache();
-
-            Services.RegisterSelfRegisterDependencies();
-            Services.RegisterAllHostedService();
-
-            Services.AddSingleton<ICacheService, CacheService>();
-
-            Services.AddSingleton<IEmailMessageGlobalBookmark, EmailMessageGlobalBookmark>();
-            Services.AddScoped<IEmailMessageBookmarkReplacer, EmailMessageBookmarkReplacer>();
-
-            Services.AddScoped<IEMailSendHandler, EMailSendHandler>();
-            Services.AddScoped<IEMailSender, NoEmailSender>();
-
-            Services.AddScoped<IMonitorService, MonitorService>();
-
-            //if (HostEnvironment == null || HostEnvironment.IsDevelopment())
-            //    Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-            Services.AddScoped<IDateTimeService, DateTimeService>();
-        }
-
-        protected virtual void ConfigureApplicationSettings()
+            return sp.GetRequiredService<IOptionsMonitor<TApplicationSettings>>().CurrentValue;
+        });
+        Services.AddSingleton((sp) =>
         {
-            Services.Configure<TApplicationSettings>(Configuration);
+            return sp.GetService<IApplicationSettings>().As<TApplicationSettings>();
+        });
 
-            Services.AddSingleton<IApplicationSettings>((sp) =>
+        typeof(TApplicationSettings)
+            .GetProperties()
+            .Where(p => p.PropertyType.GetAttribute<ApplicationConfigurationAttribute>() != null)
+            .ToList()
+        .ForEach(property =>
+        {
+            Services.AddSingleton(property.PropertyType, (sp) =>
             {
-                return sp.GetRequiredService<IOptionsMonitor<TApplicationSettings>>().CurrentValue;
+                var applicationSettings = sp.GetRequiredService<IApplicationSettings>();
+
+                return property.GetValue(applicationSettings);
             });
-            Services.AddSingleton((sp) =>
-            {
-                return sp.GetService<IApplicationSettings>().As<TApplicationSettings>();
-            });
+        });
+    }
 
-            typeof(TApplicationSettings)
-                .GetProperties()
-                .Where(p => p.PropertyType.GetAttribute<ApplicationConfigurationAttribute>() != null)
-                .ToList()
-            .ForEach(property =>
-            {
-                Services.AddSingleton(property.PropertyType, (sp) =>
-                {
-                    var applicationSettings = sp.GetRequiredService<IApplicationSettings>();
+    public virtual void ConfigureApp(IHost host)
+    {
+        host.UseDtoFactory();
 
-                    return property.GetValue(applicationSettings);
-                });
-            });
-        }
+        UpdateDatabase(host);
 
-        public virtual void ConfigureApp(IHost host)
+        AppStartInit(host);
+    }
+
+    protected virtual void AppStartInit(IHost host)
+    {
+        var startupInits =
+        host.Services.GetServices<IAppStatupInit>()
+            .ToList();
+
+        var tasks = new List<Task>();
+
+        foreach (var item in startupInits)
         {
-            host.UseDtoFactory();
-
-            UpdateDatabase(host);
-
-            AppStartInit(host);
+            tasks.Add(item.Init());
         }
 
-        protected virtual void AppStartInit(IHost host)
+        Task.WhenAll(tasks).GetAwaiter().GetResult();
+    }
+
+    protected virtual void UpdateDatabase(IHost host)
+    {
+        //try
+        //{
+        using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
         {
-            var startupInits =
-            host.Services.GetServices<IAppStatupInit>()
-                .ToList();
+            var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
+            var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
 
-            var tasks = new List<Task>();
-
-            foreach (var item in startupInits)
-            {
-                tasks.Add(item.Init());
-            }
-
-            Task.WhenAll(tasks).GetAwaiter().GetResult();
+            handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
+                .GetAwaiter()
+                .GetResult();
         }
-
-        protected virtual void UpdateDatabase(IHost host)
-        {
-            //try
-            //{
-            using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
-                var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
-
-
-                handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
-                    .GetAwaiter()
-                    .GetResult();
-            }
-            //}
-            //catch(Exception ex)
-            //{
-            //    //ignore
-            //}
-        }
+        //}
+        //catch(Exception ex)
+        //{
+        //    //ignore
+        //}
     }
 }

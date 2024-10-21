@@ -2,67 +2,66 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
+
+/* 
+HOW TO USE:
+
+public class MultilingualDataSeedHostedService : BaseMultilingualDataSeedHostedService
 {
-    /* 
-    HOW TO USE:
-
-    public class MultilingualDataSeedHostedService : BaseMultilingualDataSeedHostedService
+    public MultilingualDataSeedHostedService(IServiceScopeFactory serviceScopeFactory, ILogger<BaseMultilingualDataSeedHostedService> logger, IApplicationSettings applicationSettings, IHostApplicationLifetime appLifetime) : base(serviceScopeFactory, logger, applicationSettings, appLifetime)
     {
-        public MultilingualDataSeedHostedService(IServiceScopeFactory serviceScopeFactory, ILogger<BaseMultilingualDataSeedHostedService> logger, IApplicationSettings applicationSettings, IHostApplicationLifetime appLifetime) : base(serviceScopeFactory, logger, applicationSettings, appLifetime)
-        {
-        }
-
-        protected override string GetFileName()
-        {
-            return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
-        }
     }
-     */
 
-    public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
+    protected override string GetFileName()
     {
-        public BaseMultilingualDataSeedHostedService(
-            IServiceScopeFactory serviceScopeFactory,
-            ILogger<BaseMultilingualDataSeedHostedService> logger,
-            IApplicationSettings applicationSettings,
-            IHostApplicationLifetime appLifetime)
-            : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
+        return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
+    }
+}
+ */
+
+public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
+{
+    public BaseMultilingualDataSeedHostedService(
+        IServiceScopeFactory serviceScopeFactory,
+        ILogger<BaseMultilingualDataSeedHostedService> logger,
+        IApplicationSettings applicationSettings,
+        IHostApplicationLifetime appLifetime)
+        : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
+    {
+        BackgroundServiceInfoEnabled = false;
+
+        string filePath = GetFileName();
+
+        _watcher = new FileSystemWatcher(System.IO.Path.GetDirectoryName(filePath));
+
+        _watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
+        _watcher.Filter = "*.json";
+        _watcher.EnableRaisingEvents = true;
+
+        _watcher.Changed += (sender, e) =>
         {
-            BackgroundServiceInfoEnabled = false;
+            _reloadJson = true;
+        };
+    }
 
-            string filePath = GetFileName();
+    private FileSystemWatcher _watcher;
+    private bool _reloadJson = true;
 
-            _watcher = new FileSystemWatcher(System.IO.Path.GetDirectoryName(filePath));
+    //return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
+    protected abstract string GetFileName();
 
-            _watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
-            _watcher.Filter = "*.json";
-            _watcher.EnableRaisingEvents = true;
+    protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
+    {
+        if (_reloadJson == false)
+            return;
 
-            _watcher.Changed += (sender, e) =>
-            {
-                _reloadJson = true;
-            };
-        }
+        string filePath = GetFileName();
 
-        private FileSystemWatcher _watcher;
-        private bool _reloadJson = true;
+        var multilingualService = scope.ServiceProvider.GetService<JsonMultilingualService>();
 
-        //return $"{Path.GetDirectoryName(typeof(MultilingualDataSeedHostedService).Assembly.Location)}\\Sections\\MultilingualSection\\Content\\{"Multilingual.json"}";
-        protected abstract string GetFileName();
+        await multilingualService.ImportAsync(FileUtiltiy.GetContent(filePath));
 
-        protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
-        {
-            if (_reloadJson == false)
-                return;
-
-            string filePath = GetFileName();
-
-            var multilingualService = scope.ServiceProvider.GetService<JsonMultilingualService>();
-
-            await multilingualService.ImportAsync(FileUtiltiy.GetContent(filePath));
-
-            _reloadJson = false;
-        }
+        _reloadJson = false;
     }
 }

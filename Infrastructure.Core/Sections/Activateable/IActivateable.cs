@@ -1,7 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
+
+public interface IActivateable
 {
-    public interface IActivateable
-    {
-        bool IsActive { get; set; }
-    }
+    bool IsActive { get; set; }
 }

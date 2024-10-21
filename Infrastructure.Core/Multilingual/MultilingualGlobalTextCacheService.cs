@@ -1,105 +1,103 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 
 using System.Data;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
+
+public class MultilingualCultureDto : Dto
 {
-    public class MultilingualCultureDto : Dto
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; }
+    public string Name { get; set; }
+}
+
+public class MultilingualGlobalTextDto : Dto
+{
+    public int Index { get; set; }
+
+    public MultilingualProtectionLevel ViewLevel { get; set; }
+    public MultilingualProtectionLevel EditLevel { get; set; }
+
+    public string Key { get; set; }
+
+    public string Text { get; set; }
+}
+
+[SingletonDependency]
+public class MultilingualGlobalTextCacheService : IAppStatupInit
+{
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    public MultilingualGlobalTextCacheService(IServiceScopeFactory serviceScopeFactory)
     {
-        public bool IsDefault { get; set; }
-        public bool IsActive { get; set; }
-        public string Name { get; set; }
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
-    public class MultilingualGlobalTextDto : Dto
+    public async Task ResetCache()
     {
-        public int Index { get; set; }
-
-        public MultilingualProtectionLevel ViewLevel { get; set; }
-        public MultilingualProtectionLevel EditLevel { get; set; }
-
-        public string Key { get; set; }
-
-        public string Text { get; set; }
+        await Init();
     }
 
-    [SingletonDependency]
-    public class MultilingualGlobalTextCacheService : IAppStatupInit
+    private IEnumerable<MultilingualCultureDto> _cacheCulture;
+
+    private IDictionary<Guid, IEnumerable<MultilingualGlobalTextDto>> _cache;
+
+    public IEnumerable<MultilingualCultureDto> Cultures => _cacheCulture;
+
+    public async Task Init()
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        var cache = new Dictionary<Guid, IEnumerable<MultilingualGlobalTextDto>>();
 
-        public MultilingualGlobalTextCacheService(IServiceScopeFactory serviceScopeFactory)
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+            var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
 
-        public async Task ResetCache()
-        {
-            await Init();
-        }
+            var cultures = await context.Set<MultilingualCulture>()
+                .IsActive()
+                .ToListAsync();
 
-        private IEnumerable<MultilingualCultureDto> _cacheCulture;
+            var cultureDtos = cultures.ConvertToDtos<MultilingualCultureDto>();
 
-        private IDictionary<Guid, IEnumerable<MultilingualGlobalTextDto>> _cache;
+            _cacheCulture = cultureDtos;
 
-        public IEnumerable<MultilingualCultureDto> Cultures => _cacheCulture;
-
-        public async Task Init()
-        {
-            var cache = new Dictionary<Guid, IEnumerable<MultilingualGlobalTextDto>>();
-
-            using (var scope = _serviceScopeFactory.CreateScope())
+            foreach (var cultureDto in cultureDtos)
             {
-                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
-                var cultures = await context.Set<MultilingualCulture>()
-                    .IsActive()
+                var texts = await context.Set<MultilingualGlobalText>()
+                    .Where(_ => _.CultureId == cultureDto.Id)
+                    .OrderBy(_ => _.ViewLevel)
+                    .ThenBy(_ => _.Index)
                     .ToListAsync();
 
-                var cultureDtos = cultures.ConvertToDtos<MultilingualCultureDto>();
+                var textDtos = texts.ConvertToDtos<MultilingualGlobalTextDto>();
 
-                _cacheCulture = cultureDtos;
-
-                foreach (var cultureDto in cultureDtos)
-                {
-                    var texts = await context.Set<MultilingualGlobalText>()
-                        .Where(_ => _.CultureId == cultureDto.Id)
-                        .OrderBy(_ => _.ViewLevel)
-                        .ThenBy(_ => _.Index)
-                        .ToListAsync();
-
-                    var textDtos = texts.ConvertToDtos<MultilingualGlobalTextDto>();
-
-                    cache.Add(cultureDto.Id.Value, textDtos);
-                }
+                cache.Add(cultureDto.Id.Value, textDtos);
             }
-
-            _cache = cache;
         }
 
-        public IEnumerable<MultilingualGlobalTextDto> GetTexts(string cultureName, MultilingualProtectionLevel protectionLevel = MultilingualProtectionLevel.Public)
-        {
-            var cultureId = _cacheCulture.Single(_ => _.Name == cultureName).Id.Value;
+        _cache = cache;
+    }
 
-            return GetTexts(cultureId, protectionLevel);
-        }
+    public IEnumerable<MultilingualGlobalTextDto> GetTexts(string cultureName, MultilingualProtectionLevel protectionLevel = MultilingualProtectionLevel.Public)
+    {
+        var cultureId = _cacheCulture.Single(_ => _.Name == cultureName).Id.Value;
 
-        public IEnumerable<MultilingualGlobalTextDto> GetTexts(Guid cultureId, MultilingualProtectionLevel protectionLevel = MultilingualProtectionLevel.Public)
-        {
-            return _cache[cultureId]
-                .Where(_ => _.ViewLevel == protectionLevel);
-        }
+        return GetTexts(cultureId, protectionLevel);
+    }
 
-        public string GetText(string key, Guid cultureId)
-        {
-            var text = _cache[cultureId]
-                    .SingleOrDefault(_ => _.Key == key)?
-                    .Text;
+    public IEnumerable<MultilingualGlobalTextDto> GetTexts(Guid cultureId, MultilingualProtectionLevel protectionLevel = MultilingualProtectionLevel.Public)
+    {
+        return _cache[cultureId]
+            .Where(_ => _.ViewLevel == protectionLevel);
+    }
 
-            return text;
-        }
+    public string GetText(string key, Guid cultureId)
+    {
+        var text = _cache[cultureId]
+                .SingleOrDefault(_ => _.Key == key)?
+                .Text;
+
+        return text;
     }
 }

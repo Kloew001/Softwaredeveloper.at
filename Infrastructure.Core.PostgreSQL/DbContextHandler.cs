@@ -1,198 +1,194 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+
+public static class PostgreSQLDbContextHandlerExtensions
 {
-    public static class PostgreSQLDbContextHandlerExtensions
+    public static void UsePostgreSQLDbContextHandler(this IServiceCollection services, IConfiguration configuration)
     {
-        public static void UsePostgreSQLDbContextHandler(this IServiceCollection services, IConfiguration configuration)
+        services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
+        services.UseDistributedCache(configuration);
+    }
+}
+
+public class PostgreSQLDbContextHandler : BaseDbContextHandler
+{
+    public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
+    {
+        var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
+
+        options.UseNpgsql(connectionString, options =>
         {
-            services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
-            services.UseDistributedCache(configuration);
+        });
+        //.UseCamelCaseNamingConvention();
+
+        base.DBContextOptions(serviceProvider, options);
+    }
+
+    public override void ApplyBaseEntity(ModelBuilder modelBuilder)
+    {
+        //modelBuilder.Entity<BaseEntity>()
+        //       .Ignore(nameof(BaseEntity.Timestamp));
+
+        //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+        //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
+        //{
+        //    modelBuilder.Entity(entityType.ClrType)
+        //           .Property(nameof(BaseEntity.RowVersion))
+        //           .IsConcurrencyToken()
+        //           .HasColumnName("xmin")
+        //           .HasColumnType("xid");
+        //}
+    }
+
+    public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            .Where(e => typeof(ChangeTrackedEntity).IsAssignableFrom(e.ClrType)))
+        {
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(ChangeTrackedEntity.DateCreated))
+                .HasDefaultValueSql("NOW()");
+            //.ValueGeneratedOnAdd();
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(ChangeTrackedEntity.DateModified))
+                .HasDefaultValueSql("NOW()");
+            //.ValueGeneratedOnAddOrUpdate();
+
+            modelBuilder.Entity(entityType.ClrType)
+                .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity(entityType.ClrType)
+                .HasOne(nameof(ChangeTrackedEntity.ModifiedBy))
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 
-    public class PostgreSQLDbContextHandler : BaseDbContextHandler
+    public override void ApplyDateTime(ModelBuilder modelBuilder)
     {
-        public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
-        {
-            var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
+        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+            v => v.ToLocalTime(),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified));
 
-            options.UseNpgsql(connectionString, options =>
+        var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
+            v => v.HasValue ? v.Value.ToLocalTime() : null,
+            v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Unspecified) : null);
+
+        foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+        {
+            if (property.ClrType == typeof(DateTime))
             {
-            });
-            //.UseCamelCaseNamingConvention();
-
-            base.DBContextOptions(serviceProvider, options);
-        }
-
-        public override void ApplyBaseEntity(ModelBuilder modelBuilder)
-        {
-            //modelBuilder.Entity<BaseEntity>()
-            //       .Ignore(nameof(BaseEntity.Timestamp));
-
-            //foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-            //    .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
-            //{
-            //    modelBuilder.Entity(entityType.ClrType)
-            //           .Property(nameof(BaseEntity.RowVersion))
-            //           .IsConcurrencyToken()
-            //           .HasColumnName("xmin")
-            //           .HasColumnType("xid");
-            //}
-        }
-
-        public override void ApplyChangeTrackedEntity(ModelBuilder modelBuilder)
-        {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(ChangeTrackedEntity).IsAssignableFrom(e.ClrType)))
+                property.SetValueConverter(dateTimeConverter);
+                property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
+            }
+            else if (property.ClrType == typeof(DateTime?))
             {
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(ChangeTrackedEntity.DateCreated))
-                    .HasDefaultValueSql("NOW()");
-                //.ValueGeneratedOnAdd();
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(ChangeTrackedEntity.DateModified))
-                    .HasDefaultValueSql("NOW()");
-                //.ValueGeneratedOnAddOrUpdate();
-
-                modelBuilder.Entity(entityType.ClrType)
-                    .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
-                    .WithMany()
-                    .OnDelete(DeleteBehavior.NoAction);
-
-                modelBuilder.Entity(entityType.ClrType)
-                    .HasOne(nameof(ChangeTrackedEntity.ModifiedBy))
-                    .WithMany()
-                    .OnDelete(DeleteBehavior.NoAction);
+                property.SetValueConverter(nullableDateTimeConverter);
+                property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
+            }
+            else if (property.ClrType == typeof(TimeSpan) || property.ClrType == typeof(TimeSpan?))
+            {
+                property.SetColumnType("bigint");
             }
         }
+    }
 
-        public override void ApplyDateTime(ModelBuilder modelBuilder)
+    public override void ApplyApplicationUser(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ApplicationUserRole>(entity =>
         {
-            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
-                v => v.ToLocalTime(),
-                v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified));
+            entity.ToTable("ApplicationUserRole", "identity");
 
-            var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
-                v => v.HasValue ? v.Value.ToLocalTime() : null,
-                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Unspecified) : null);
+            entity.HasKey(_ => new { _.UserId, _.RoleId });
 
-            foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
-            {
-                if (property.ClrType == typeof(DateTime))
-                {
-                    property.SetValueConverter(dateTimeConverter);
-                    property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
-                }
-                else if (property.ClrType == typeof(DateTime?))
-                {
-                    property.SetValueConverter(nullableDateTimeConverter);
-                    property.SetColumnType("TIMESTAMP WITHOUT TIME ZONE");
-                }
-                else if (property.ClrType == typeof(TimeSpan) || property.ClrType == typeof(TimeSpan?))
-                {
-                    property.SetColumnType("bigint");
-                }
-            }
-        }
+            entity.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRole_RoleId");
 
-        public override void ApplyApplicationUser(ModelBuilder modelBuilder)
+            entity.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired();
+
+            entity.HasOne(ur => ur.User)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
         {
-            modelBuilder.Entity<ApplicationUserRole>(entity =>
-            {
-                entity.ToTable("ApplicationUserRole", "identity");
+            entity.ToTable("ApplicationUser", "identity");
 
-                entity.HasKey(_ => new { _.UserId, _.RoleId });
+            entity.HasKey(x => x.Id);
 
-                entity.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRole_RoleId");
+            entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
 
-                entity.HasOne(ur => ur.Role)
-                    .WithMany(r => r.UserRoles)
-                    .HasForeignKey(ur => ur.RoleId)
-                    .IsRequired();
+            entity.HasIndex(e => e.NormalizedUserName, "UserNameIndex").IsUnique();
 
-                entity.HasOne(ur => ur.User)
-                    .WithMany(r => r.UserRoles)
-                    .HasForeignKey(ur => ur.UserId)
-                    .IsRequired();
-            });
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Email).HasMaxLength(256);
+            entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
+            entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
+            entity.Property(e => e.UserName).HasMaxLength(256);
+        });
 
-            modelBuilder.Entity<ApplicationUser>(entity =>
-            {
-                entity.ToTable("ApplicationUser", "identity");
+        modelBuilder.Entity<ApplicationUserClaim>(entity =>
+        {
+            entity.ToTable("ApplicationUserClaim", "identity");
 
-                entity.HasKey(x => x.Id);
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaim_UserId");
 
-                entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
+        });
 
-                entity.HasIndex(e => e.NormalizedUserName, "UserNameIndex").IsUnique();
+        modelBuilder.Entity<ApplicationUserLogin>(entity =>
+        {
+            entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
 
-                entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.Email).HasMaxLength(256);
-                entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
-                entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
-                entity.Property(e => e.UserName).HasMaxLength(256);
-            });
+            entity.ToTable("ApplicationUserLogin", "identity");
 
-            modelBuilder.Entity<ApplicationUserClaim>(entity =>
-            {
-                entity.ToTable("ApplicationUserClaim", "identity");
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogin_UserId");
 
-                entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaim_UserId");
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
+        });
 
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
-            });
+        modelBuilder.Entity<ApplicationUserToken>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
 
-            modelBuilder.Entity<ApplicationUserLogin>(entity =>
-            {
-                entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
+            entity.ToTable("ApplicationUserToken", "identity");
 
-                entity.ToTable("ApplicationUserLogin", "identity");
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
+        });
 
-                entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogin_UserId");
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.ToTable("ApplicationRole", "identity");
 
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
-            });
+            entity.HasKey(x => x.Id);
 
-            modelBuilder.Entity<ApplicationUserToken>(entity =>
-            {
-                entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
+            entity.HasIndex(e => e.NormalizedName, "RoleNameIndex").IsUnique();
 
-                entity.ToTable("ApplicationUserToken", "identity");
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Name).HasMaxLength(256);
+            entity.Property(e => e.NormalizedName).HasMaxLength(256);
+        });
 
-                entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
-            });
+        modelBuilder.Entity<ApplicationRoleClaim>(entity =>
+        {
+            entity.ToTable("ApplicationRoleClaim", "identity");
 
-            modelBuilder.Entity<ApplicationRole>(entity =>
-            {
-                entity.ToTable("ApplicationRole", "identity");
+            entity.HasIndex(e => e.RoleId, "IX_ApplicationRoleClaim_RoleId");
 
-                entity.HasKey(x => x.Id);
-
-                entity.HasIndex(e => e.NormalizedName, "RoleNameIndex").IsUnique();
-
-                entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.Name).HasMaxLength(256);
-                entity.Property(e => e.NormalizedName).HasMaxLength(256);
-            });
-
-            modelBuilder.Entity<ApplicationRoleClaim>(entity =>
-            {
-                entity.ToTable("ApplicationRoleClaim", "identity");
-
-                entity.HasIndex(e => e.RoleId, "IX_ApplicationRoleClaim_RoleId");
-
-                entity.HasOne(d => d.Role).WithMany(p => p.ApplicationRoleClaims).HasForeignKey(d => d.RoleId);
-            });
-        }
+            entity.HasOne(d => d.Role).WithMany(p => p.ApplicationRoleClaims).HasForeignKey(d => d.RoleId);
+        });
     }
 }
