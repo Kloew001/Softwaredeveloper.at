@@ -208,7 +208,6 @@ public static class ServiceCollectionExtensions
                         services.AddKeyedSingleton(registerForType, attribute.Key, (sp, o) => sp.GetRequiredService(serviceType.ServiceType));
                 }
             }
-
         }
     }
 

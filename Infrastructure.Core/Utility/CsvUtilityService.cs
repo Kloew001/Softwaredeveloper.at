@@ -13,7 +13,7 @@ public class CsvUtilityService
         where TMap : ClassMap
     {
         if (encoding == null)
-            encoding = new UTF8Encoding(true); //.UTF8;
+            encoding = EncodingUtility.DetectEncoding(content);
 
         var configuration = DefaultConfiguration(encoding);
 
