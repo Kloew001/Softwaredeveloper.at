@@ -31,5 +31,4 @@ public static class ObjectExtensions
     {
         return boolean == true;
     }
-
 }

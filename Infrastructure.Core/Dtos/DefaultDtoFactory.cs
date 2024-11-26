@@ -110,7 +110,6 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                         }
                     }
                 }
-
             });
 
             //if (typeof(IMultiLingualEntity<>).IsAssignableFrom(sourceType))

@@ -140,7 +140,6 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
             {
             }
         }
-
     }
 
     private bool _disposed;

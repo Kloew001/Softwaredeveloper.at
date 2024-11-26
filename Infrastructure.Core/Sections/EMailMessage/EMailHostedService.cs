@@ -117,5 +117,4 @@ public class EMailHostedService : HandleBatchTimeHostedService
             _logger.LogError(ex, ex.Message);
         }
     }
-
 }

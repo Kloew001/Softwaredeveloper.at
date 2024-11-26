@@ -50,5 +50,4 @@ public static class OpenXmlExcelUtility
         cell.CellValue = new CellValue(value);
         cell.DataType = new DocumentFormat.OpenXml.EnumValue<CellValues>(CellValues.String);
     }
-
 }

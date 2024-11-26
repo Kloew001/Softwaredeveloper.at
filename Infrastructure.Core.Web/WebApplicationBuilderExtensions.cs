@@ -1,27 +1,26 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.OpenApi.Models;
-
-using System.Threading.RateLimiting;
-using Infrastructure.Core.Web.Middleware;
+﻿using Infrastructure.Core.Web.Middleware;
 using Infrastructure.Core.Web.Utility;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
-using System.IO.Compression;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Text;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
+using System.IO.Compression;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
 
 namespace Infrastructure.Core.Web;
 
@@ -30,6 +29,9 @@ public static class WebApplicationBuilderExtensions
     public static WebApplicationBuilder AddDefaultServices(this WebApplicationBuilder builder)
     {
         builder.ConfigureHosting();
+
+        builder.Configuration
+            .AddEnvironmentVariables();
 
         builder.Services.AddLogging(options =>
         {

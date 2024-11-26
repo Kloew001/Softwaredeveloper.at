@@ -93,7 +93,6 @@ public class EmailMessageGlobalBookmark : IEmailMessageGlobalBookmark
 
         return configuration;
     }
-
 }
 
 public interface IEmailMessageBookmarkReplacer

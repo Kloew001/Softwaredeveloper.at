@@ -91,5 +91,4 @@ public static class HtmlUtility
         public string Lastname { get; set; }
         public string Other { get; set; }
     }
-
 }

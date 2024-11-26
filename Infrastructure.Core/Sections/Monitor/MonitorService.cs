@@ -74,5 +74,4 @@ public class MonitorService : IMonitorService
 
         return $"rows: {result.Count}, time: {watch.ElapsedMilliseconds}ms";
     }
-
 }

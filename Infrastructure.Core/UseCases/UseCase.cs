@@ -6,7 +6,6 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 public class UseCaseAttribute : Attribute
 {
     public string UniqueIdentifier { get; set; }
-
 }
 
 [ScopedDependency<IUseCase>]

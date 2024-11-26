@@ -26,5 +26,4 @@ public class SampleAppContext : SoftwaredeveloperDotAtDbContext
     }
 
     public virtual DbSet<Person> Persons { get; set; }
-
 }

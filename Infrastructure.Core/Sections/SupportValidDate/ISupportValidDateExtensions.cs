@@ -88,5 +88,4 @@ public static class ISupportValidDateExtensions
         return service.GetQueryAsync(
             _ => _.IsValidDateIncluded(validDate));
     }
-
 }

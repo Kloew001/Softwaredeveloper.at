@@ -17,5 +17,4 @@ public static class ISupportIndexExtensions
     {
         return query.OrderBy(_ => _.Index);
     }
-
 }

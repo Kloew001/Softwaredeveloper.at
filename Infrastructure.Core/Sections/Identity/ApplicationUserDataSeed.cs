@@ -71,7 +71,6 @@ public abstract class ApplicationUserDataSeed : IDataSeed
                 await EnsureUserAsync(Guid.NewGuid(),
                                    "Test", role.DisplayName, role.Name, pw, [role.Name]);
             }
-
         }
     }
 
@@ -106,5 +105,4 @@ public abstract class ApplicationUserDataSeed : IDataSeed
             return user.Id;
         }
     }
-
 }

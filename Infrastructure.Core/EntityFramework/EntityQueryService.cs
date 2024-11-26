@@ -137,7 +137,6 @@ public class EntityQueryService<TEntity>
 
                 isFirst = false;
             }
-
         }
         else if (typeof(ISupportIndex).IsAssignableFrom(typeof(TEntity)))
         {

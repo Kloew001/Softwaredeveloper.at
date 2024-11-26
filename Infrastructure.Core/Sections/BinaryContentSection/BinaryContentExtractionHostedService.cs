@@ -86,5 +86,4 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
             await context.SaveChangesAsync(ct);
         }
     }
-
 }

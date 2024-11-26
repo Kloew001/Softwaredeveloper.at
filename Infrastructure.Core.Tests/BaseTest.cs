@@ -168,5 +168,4 @@ public abstract class BaseTest<TDomainStartup>
             }
         }, cancellationToken);
     }
-
 }
