@@ -1,12 +1,14 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
-public class CreateUseCase<TEntity, TDto> : UseCase<TEntity, TDto, TDto>
+public class CreateUseCase<TEntity, TDto> : UseCase<TDto, TDto>
     where TEntity : Entity
     where TDto : Dto, new()
 {
+    private readonly EntityService<TEntity> _service;
+
     public CreateUseCase(EntityService<TEntity> service)
-        : base(service)
     {
+        _service = service;
     }
 
     public override async ValueTask<bool> IsAvailableAsync(TDto dto)

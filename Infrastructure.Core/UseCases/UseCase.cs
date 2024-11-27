@@ -33,21 +33,13 @@ public interface IUseCase<TParamter, TResult> : IUseCase
     Task<TResult> ExecuteAsync(TParamter paramter, CancellationToken cancellationToken = default);
 }
 
-public abstract class UseCase<TEntity, TParamter, TResult> :
+public abstract class UseCase<TParamter, TResult> :
     IUseCase<TParamter, TResult>
-    where TEntity : Entity
     where TParamter : new()
 {
-    public string UseCaseIdentifier => 
-        GetType().GetCustomAttribute<UseCaseAttribute>()?.UniqueIdentifier ?? 
+    public string UseCaseIdentifier =>
+        GetType().GetCustomAttribute<UseCaseAttribute>()?.UniqueIdentifier ??
         GetType().Name;
-
-    protected readonly EntityService<TEntity> _service;
-
-    public UseCase(EntityService<TEntity> service)
-    {
-        _service = service;
-    }
 
     public virtual ValueTask<bool> IsAvailableAsync() => ValueTask.FromResult(true);
 
@@ -62,7 +54,7 @@ public abstract class UseCase<TEntity, TParamter, TResult> :
 
     async Task<object> IUseCase.ExecuteAsync(object paramter, CancellationToken cancellationToken)
     {
-        var result = await ExecuteAsync(CreateParamter(paramter), cancellationToken);
+        TResult result = await ExecuteAsync(CreateParamter(paramter), cancellationToken);
         return result;
     }
 
@@ -74,7 +66,7 @@ public abstract class UseCase<TEntity, TParamter, TResult> :
         if (paramter is TParamter paramterParamter)
             return paramterParamter;
 
-        var newParamter = new TParamter();
+        TParamter newParamter = new TParamter();
 
         paramter.CopyPropertiesTo(newParamter);
 
