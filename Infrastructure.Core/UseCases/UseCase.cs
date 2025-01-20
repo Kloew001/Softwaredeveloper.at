@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
@@ -66,11 +68,23 @@ public abstract class UseCase<TParamter, TResult> :
         if (paramter is TParamter paramterParamter)
             return paramterParamter;
 
-        TParamter newParamter = new TParamter();
+        var paramterJson = JsonConvert.SerializeObject(paramter);
+        var obj = JsonConvert.DeserializeObject<TParamter>(paramterJson);
 
+#if (DEBUG)
+
+        TParamter newParamter = new TParamter();
         paramter.CopyPropertiesTo(newParamter);
 
-        return newParamter;
+        var newParamterJson = JsonConvert.SerializeObject(newParamter);
+        var objJson = JsonConvert.SerializeObject(newParamter);
+        if (newParamterJson != objJson)
+        {
+            Debugger.Break();
+        }
+#endif
+
+        return obj;
     }
 
     public async Task<TResult> ExecuteAsync(TParamter paramter, CancellationToken cancellationToken = default)

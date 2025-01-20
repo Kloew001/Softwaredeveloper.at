@@ -5,9 +5,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public static class MappingUtility
 {
-    public static void CopyPropertiesTo(this object source, object destination)
+    public static void CopyPropertiesTo(this object source, object target)
     {
-        var destinationProperties = destination.GetType().GetProperties();
+        var destinationProperties = target.GetType().GetProperties();
 
         if (source is IDictionary dict)
         {
@@ -17,11 +17,11 @@ public static class MappingUtility
             {
                 var sourcePropertyValue = dict[sourcePropertyKey];
 
-                var destinationProperty = FindDestinationProperty(destinationProperties, sourcePropertyKey);
-                if (destinationProperty == null)
+                var targetProperty = FindTargetProperty(destinationProperties, sourcePropertyKey);
+                if (targetProperty == null)
                     continue;
 
-                SetDestinationPropertyValue(destination, destinationProperty, null, sourcePropertyValue);
+                SetTargetPropertyValue(target, targetProperty, null, sourcePropertyValue);
 
             }
         }
@@ -31,66 +31,100 @@ public static class MappingUtility
 
             foreach (var sourceProperty in sourceProperties)
             {
-                var destinationProperty = FindDestinationProperty(destinationProperties, sourceProperty.Name);
-                if (destinationProperty == null)
+                var targetProperty = FindTargetProperty(destinationProperties, sourceProperty.Name);
+                if (targetProperty == null)
                     continue;
 
                 var sourcePropertyValue = sourceProperty.GetValue(source);
 
-                SetDestinationPropertyValue(destination, destinationProperty, sourceProperty, sourcePropertyValue);
+                SetTargetPropertyValue(target, targetProperty, sourceProperty, sourcePropertyValue);
             }
         }
     }
 
-    private static PropertyInfo FindDestinationProperty(PropertyInfo[] destinationProperties, string sourcePropertyName)
+    private static PropertyInfo FindTargetProperty(PropertyInfo[] destinationProperties, string sourcePropertyName)
     {
         return destinationProperties.FirstOrDefault(x => x.Name.ToUpper() == sourcePropertyName.ToUpper());
     }
-
-    private static void SetDestinationPropertyValue(object destination, PropertyInfo destinationProperty, PropertyInfo sourceProperty, object sourcePropertyValue)
+    private static void SetTargetPropertyValue(object target, PropertyInfo targetProperty, PropertyInfo sourceProperty, object sourcePropertyValue)
     {
         if (sourcePropertyValue == null)
         {
-            destinationProperty.SetValue(destination, null);
+            if (IsNullableType(targetProperty))
+            {
+                targetProperty.SetValue(target, null);
+            }
+
             return;
         }
-        
-        var sourceType = sourceProperty?.PropertyType ?? sourcePropertyValue.GetType();
 
-        if (destinationProperty.PropertyType == sourceType)
+        var sourceType = sourceProperty?.PropertyType ?? sourcePropertyValue.GetType();
+        var targetType = targetProperty.PropertyType;
+
+        if (targetType == sourceType)
         {
-            destinationProperty.SetValue(destination, sourcePropertyValue);
+            targetProperty.SetValue(target, sourcePropertyValue);
+            return;
         }
-        else if (sourceType == typeof(string) &&
-                destinationProperty.PropertyType == typeof(Guid))
+
+        var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
+
+        if (underlyingTargetType == underlyingSourceType)
         {
-            if (sourcePropertyValue == null)
+            targetProperty.SetValue(target, Convert.ChangeType(sourcePropertyValue, underlyingTargetType));
+            return;
+        }
+
+        if (sourceType == typeof(string) && underlyingTargetType == typeof(Guid))
+        {
+            if (Guid.TryParse(sourcePropertyValue.ToString(), out var guidValue))
             {
-                destinationProperty.SetValue(destination, Guid.Empty);
-            }
-            else
-            {
-                destinationProperty.SetValue(destination, Guid.Parse((string)sourcePropertyValue));
+                targetProperty.SetValue(target, guidValue);
+                return;
             }
         }
-        else if (sourceType == typeof(string) &&
-                destinationProperty.PropertyType == typeof(Nullable<Guid>))
+
+        if (sourceType == typeof(string) && targetType == typeof(Guid?))
         {
-            if (sourcePropertyValue == null)
+            if (Guid.TryParse(sourcePropertyValue.ToString(), out var nullableGuidValue))
             {
-                destinationProperty.SetValue(destination, Guid.Empty);
+                targetProperty.SetValue(target, (Guid?)nullableGuidValue);
+                return;
             }
-            else
+        }
+
+        if (targetType.IsEnum)
+        {
+            if (sourceType == typeof(int) || sourceType == typeof(long))
             {
-                if (sourcePropertyValue == null)
+                targetProperty.SetValue(target, Enum.ToObject(targetType, sourcePropertyValue));
+                return;
+            }
+            else if (sourceType == typeof(string))
+            {
+                if (Enum.TryParse(targetType, sourcePropertyValue.ToString(), out var enumValue))
                 {
-                    destinationProperty.SetValue(destination, null);
-                }
-                else
-                {
-                    destinationProperty.SetValue(destination, Guid.Parse((string)sourcePropertyValue));
+                    targetProperty.SetValue(target, enumValue);
+                    return;
                 }
             }
         }
+
+        if (sourceType.IsEnum)
+        {
+            if (targetType == typeof(int) || targetType == typeof(long))
+            {
+                targetProperty.SetValue(target, sourcePropertyValue);
+                return;
+            }
+        }
+    }
+
+    private static bool IsNullableType(PropertyInfo property)
+    {
+        var propertyType = property.PropertyType;
+
+        return !propertyType.IsValueType || Nullable.GetUnderlyingType(propertyType) != null;
     }
 }

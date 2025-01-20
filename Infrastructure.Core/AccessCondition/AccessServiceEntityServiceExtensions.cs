@@ -14,15 +14,16 @@ public static class AccessServiceEntityServiceExtensions
     {
         try
         {
-            using (var tran = await service.EntityServiceDependency.DbContext.Database.BeginTransactionAsync())
+            using var childScope = service.EntityServiceDependency.ServiceProvider.CreateChildScope();
+            var childService = childScope.ServiceProvider.GetService(service.GetType()) as EntityService<TEntity>;
+
+            using var tran = await childService.EntityServiceDependency.DbContext.Database.BeginTransactionAsync();
+            using (childService.EntityServiceDependency.SectionManager
+                    .CreateSectionScope<SuppressSaveChangesSection>())
             {
-                using (service.EntityServiceDependency.SectionManager
-                        .CreateSectionScope<SuppressSaveChangesSection>())
-                {
-                    await service.QuickCreateAsync(dto);
-                }
-                await tran.RollbackAsync();
+                await childService.QuickCreateAsync(dto);
             }
+            await tran.RollbackAsync();
 
             return true;
         }
@@ -80,8 +81,8 @@ public static class AccessServiceEntityServiceExtensions
     public static async ValueTask<bool> CanUpdateAsync<TEntity>(this EntityService<TEntity> service, TEntity entity)
         where TEntity : Entity
     {
-        if(await service.CanReadAsync(entity) == false) 
-            return false; 
+        if (await service.CanReadAsync(entity) == false)
+            return false;
 
         var canUpdate = await service.EntityServiceDependency.AccessService
             .EvaluateAsync(entity, (accessCondition, securityEntity) =>

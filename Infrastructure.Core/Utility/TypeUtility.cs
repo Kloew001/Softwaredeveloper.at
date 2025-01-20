@@ -51,7 +51,7 @@ public static class TypeUtility
 
     public static Type UnProxy(this Type entityType)
     {
-        if(entityType == null) 
+        if (entityType == null)
             return null;
 
         if (entityType.Namespace == "Castle.Proxies")

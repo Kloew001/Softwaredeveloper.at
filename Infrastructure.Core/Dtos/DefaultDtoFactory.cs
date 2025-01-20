@@ -71,11 +71,11 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
                 if (sourceProperty != null)
                 {
-                        propertyMaps.Add(new PropertyMap
-                        {
-                            TargetProperty = targetProperty,
-                            SourceProperties = new[] { sourceProperty.Name }
-                        });
+                    propertyMaps.Add(new PropertyMap
+                    {
+                        TargetProperty = targetProperty,
+                        SourceProperties = new[] { sourceProperty.Name }
+                    });
                 }
 
                 if (AutoSubPropertyMapping &&
@@ -91,7 +91,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
                         var sourcePropertySecoundLevel = sourcePropertyFirstLevel.PropertyType.GetProperty(secondLevelPropertyName);
 
-                        if (targetProperty.PropertyType == sourcePropertySecoundLevel.PropertyType ||
+                        if (targetProperty.PropertyType == sourcePropertySecoundLevel?.PropertyType ||
                             targetProperty.Name == "Id")
                         {
                             propertyMaps.Add(new PropertyMap
