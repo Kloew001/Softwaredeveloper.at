@@ -1,8 +1,7 @@
 ﻿
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
@@ -50,7 +49,7 @@ public class ApplicationUser : Entity, IAuditableEntity<ApplicationUserAudit>
 
     public bool TwoFactorEnabled { get; set; }
 
-    public DateTime? LockoutEnd { get; set; }
+    public DateTimeOffset? LockoutEnd { get; set; }
 
     public bool LockoutEnabled { get; set; }
 

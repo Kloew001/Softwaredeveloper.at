@@ -14,10 +14,19 @@ public static class MemoryCacheExtensions
             .GetField("_coherentState", BindingFlags.NonPublic | BindingFlags.Instance)
             .GetValue(memoryCache);
 
+        var entriesField = _coherentState
+                    .GetType()
+                    .GetField("_stringEntries", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (entriesField == null)
+        {
+            entriesField = _coherentState
+                        .GetType()
+                        .GetField("_entries", BindingFlags.NonPublic | BindingFlags.Instance);
+        }
+
         var _entries = (IDictionary)
-            _coherentState
-            .GetType()
-            .GetField("_entries", BindingFlags.NonPublic | BindingFlags.Instance)
+            entriesField
             .GetValue(_coherentState);
 
         return _entries;
@@ -29,9 +38,11 @@ public static class MemoryCacheExtensions
     public static IEnumerable<T> GetKeys<T>(this IMemoryCache memoryCache) =>
         GetKeys(memoryCache).OfType<T>();
 
-    public static void RemoveStartsWith(this IMemoryCache memoryCache, string key) =>
+    public static void RemoveStartsWith(this IMemoryCache memoryCache, string key)
+    {
         memoryCache.GetKeys<string>()
             .Where(_ => _.StartsWith(key))
             .ToList()
             .ForEach(_ => memoryCache.Remove(_));
+    }
 }

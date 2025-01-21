@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
-
 using System.Data;
 using System.Diagnostics;
 
@@ -28,14 +27,14 @@ public class AsyncTaskExecutorTests : BaseTest<DomainStartup>
             //}
             //else
             //{
-                //await EnqueueAsync(new Random().Next(100, 1000), i, AsyncTaskOperationPriority.Critical);
-                await EnqueueAsync(0, i, AsyncTaskOperationPriority.Critical);
+            //await EnqueueAsync(new Random().Next(100, 1000), i, AsyncTaskOperationPriority.Critical);
+            await EnqueueAsync(0, i, AsyncTaskOperationPriority.Critical);
             //}
-            
-           // await Task.Delay(new Random().Next(1, 1));
+
+            // await Task.Delay(new Random().Next(1, 1));
         }
         await _context.SaveChangesAsync();
-        
+
         var watch = Stopwatch.StartNew();
 
         while (GetPendingOperationCount() > 0)

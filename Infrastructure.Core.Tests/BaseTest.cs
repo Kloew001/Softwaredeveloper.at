@@ -137,7 +137,7 @@ public abstract class BaseTest<TDomainStartup>
             {
                 await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, ct);
             }, cancellationToken);
-        
+
         //var asyncTaskExecutor = _serviceScope.ServiceProvider.GetRequiredService<AsyncTaskExecutor>();
 
         //return asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
@@ -153,19 +153,17 @@ public abstract class BaseTest<TDomainStartup>
     {
         return Task.Run(async () =>
         {
-            using (var childScope = _serviceScope.ServiceProvider.CreateChildScope())
-            {
-                var hostedService =
-                    childScope.ServiceProvider
-                    .GetService<THostedService>();
+            using var childScope = _serviceScope.ServiceProvider.CreateChildScope();
+            var hostedService =
+                childScope.ServiceProvider
+                .GetService<THostedService>();
 
-                var applicationSettings = childScope.ServiceProvider
-                    .GetService<IApplicationSettings>();
+            var applicationSettings = childScope.ServiceProvider
+                .GetService<IApplicationSettings>();
 
-                applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
+            applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
 
-                await hostedService.ExecuteAsync(cancellationToken);
-            }
+            await hostedService.ExecuteAsync(cancellationToken);
         }, cancellationToken);
     }
 }
