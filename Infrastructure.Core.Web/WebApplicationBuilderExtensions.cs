@@ -1,4 +1,5 @@
-﻿using Infrastructure.Core.Web.Middleware;
+﻿using ExtendableEnums.Microsoft.AspNetCore;
+using Infrastructure.Core.Web.Middleware;
 using Infrastructure.Core.Web.Utility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +43,8 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddControllers(options =>
         {
+            options.UseExtendableEnumModelBinding();
+
             //options.ModelBinderProviders.Remove
             //(options.ModelBinderProviders.Single(_ => _.GetType() == typeof(Microsoft.AspNetCore.Mvc.ModelBinding.Binders.DateTimeModelBinderProvider)));
 
@@ -76,7 +79,7 @@ public static class WebApplicationBuilderExtensions
         builder.AddRateLimiter();
 
         builder.AddDefaultHsts();
-        
+
         builder.Services.AddSingleton<ISecurityHeadersService, SecurityHeadersService>();
 
         return builder;

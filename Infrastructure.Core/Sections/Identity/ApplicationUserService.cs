@@ -81,8 +81,8 @@ public class ApplicationUserService : EntityService<ApplicationUser>, IApplicati
     public Task<ApplicationUserDetailDto> GetCurrentUserAsync()
     {
         var currentUserId = _currentUserService.GetCurrentUserId();
-        
-        if(currentUserId == null)
+
+        if (currentUserId == null)
             return null;
 
         return GetSingleByIdAsync<ApplicationUserDetailDto>(currentUserId.Value);
@@ -173,7 +173,7 @@ public class ApplicationUserService : EntityService<ApplicationUser>, IApplicati
 
         var currentUserId = _currentUserService.GetCurrentUserId();
 
-        if(!currentUserId.HasValue)
+        if (!currentUserId.HasValue)
             _currentUserService.SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
         var applicationUserId = await applicationUserIdentityService.CreateUserAsync(identity, ct);
