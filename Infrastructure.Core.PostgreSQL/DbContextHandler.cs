@@ -75,6 +75,9 @@ public class PostgreSQLDbContextHandler : BaseDbContextHandler
 
     public override void ApplyDateTime(ModelBuilder modelBuilder)
     {
+        //TODO can not store local without timezone,
+        // UTC with Timezone, switch or local with
+
         var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
             v => v.ToLocalTime(),
             v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified));

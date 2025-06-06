@@ -5,7 +5,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public static class MappingUtility
 {
-    public static void CopyPropertiesTo(this object source, object target)
+    public static object CopyPropertiesTo(this object source, object target)
     {
         var destinationProperties = target.GetType().GetProperties();
 
@@ -40,6 +40,8 @@ public static class MappingUtility
                 SetTargetPropertyValue(target, targetProperty, sourceProperty, sourcePropertyValue);
             }
         }
+
+        return target;
     }
 
     private static PropertyInfo FindTargetProperty(PropertyInfo[] destinationProperties, string sourcePropertyName)

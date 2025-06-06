@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using DocumentFormat.OpenXml.Drawing;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
-using DocumentFormat.OpenXml.Drawing;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 
@@ -52,6 +52,17 @@ public class EmailMessageConfiguration : IEntityTypeConfiguration<EmailMessage>
         {
             _.Status,
             _.SendAt
+        });
+
+        builder.HasIndex(_ => new
+        {
+            _.ReferenceId,
+            _.ReferenceType
+        });
+
+        builder.HasIndex(_ => new
+        {
+            _.TemplateId
         });
 
         builder.Navigation(_ => _.Attachments).AutoInclude();
