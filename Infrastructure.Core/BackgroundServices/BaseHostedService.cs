@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
@@ -36,6 +36,7 @@ public class BackgroundserviceInfo
     public DateTime? LastErrorAt { get; set; }
     public string LastErrorMessage { get; set; }
     public string LastErrorStack { get; set; }
+    public DateTime? LastHeartbeat { get; set; }
 }
 
 public class BackgroundserviceInfoConfiguration : IEntityTypeConfiguration<BackgroundserviceInfo>
@@ -131,37 +132,40 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         {
             _logger.LogInformation($"IHostedService execute for {Name}");
 
-            using (var scope = _serviceScopeFactory.CreateScope())
-            using (var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>())
+            using var scope = _serviceScopeFactory.CreateScope();
+            using var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>();
+
+            if (await distributedLock.TryAcquireLockAsync($"{nameof(BackgroundserviceInfo)}_{Name}", 3, cancellationToken) == false)
+                throw new InvalidOperationException();
+
+            try
             {
-                if (distributedLock.TryAcquireLock($"{nameof(BackgroundserviceInfo)}_{Name}", 3) == false)
-                    throw new InvalidOperationException();
+                if (await CanStartBackgroundServiceInfo() == false)
+                    return;
 
-                try
+                await StartBackgroundServiceInfoAsync(cancellationToken);
+
+                using var heartbeatCancellationTokenSource = new CancellationTokenSource();
+                var heartbeatTask = StartHeartbeatAsync(heartbeatCancellationTokenSource.Token);
+
+                using (var scopeInner = _serviceScopeFactory.CreateScope())
                 {
-                    if (await CanStartBackgroundServiceInfo() == false)
-                        return;
-
-                    await StartBackgroundServiceInfo();
-
-                    using (var scopeInner = _serviceScopeFactory.CreateScope())
-                    {
-                        await ExecuteInternalAsync(scopeInner, cancellationToken);
-                    }
-
-                    await FinishedBackgroundServiceInfo();
+                    await ExecuteInternalAsync(scopeInner, cancellationToken);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
+                heartbeatCancellationTokenSource.Cancel();
+                await heartbeatTask;
 
-                    await ErrorBackgroundServiceInfo(ex);
-                }
-                finally
-                {
-                    await CheckExecuting();
+                await FinishedBackgroundServiceInfoAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
 
-                }
+                await ErrorBackgroundServiceInfoAsync(ex, cancellationToken);
+            }
+            finally
+            {
+                await CheckExecutingAsync(cancellationToken);
             }
         }
         catch (Exception ex)
@@ -170,21 +174,19 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         }
     }
 
-    private async Task CheckExecuting()
+    private async Task CheckExecutingAsync(CancellationToken cancellationToken)
     {
         if (BackgroundServiceInfoEnabled == false)
             return;
 
-        using (var scope = _serviceScopeFactory.CreateScope())
+        using var scope = _serviceScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
+
+        if (IsExecuting(backgroundServiceInfo))
         {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
-
-            if (IsExecuting(backgroundServiceInfo))
-            {
-                await ErrorBackgroundServiceInfo(new TimeoutException());
-            }
+            await ErrorBackgroundServiceInfoAsync(new TimeoutException(), cancellationToken);
         }
     }
 
@@ -205,38 +207,60 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     {
     }
 
+    protected virtual TimeSpan HearthBeatInterval { get; set; } = TimeSpan.FromSeconds(10);
+
+    private async Task StartHeartbeatAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            do
+            {
+                await Task.Delay(HearthBeatInterval, cancellationToken);
+
+                await UpdateHeartbeatBackgroundServiceInfoAsync(cancellationToken);
+            }
+            while (!cancellationToken.IsCancellationRequested);
+        }
+        catch (TaskCanceledException)
+        {
+            //ignore
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Heartbeat error: {ex.Message}", ex);
+        }
+    }
+
     protected virtual async Task<bool> CanStartBackgroundServiceInfo()
     {
         if (BackgroundServiceInfoEnabled == false)
             return true;
 
-        using (var scope = _serviceScopeFactory.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
+        using var scope = _serviceScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
 
-            var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
 
-            if (_hostedServicesConfiguration.Enabled == false)
-                return false;
-
-            if (IsTimeouted(backgroundServiceInfo))
-                return true;
-
-            if (IsExecuting(backgroundServiceInfo))
-                return false;
-
-            var now = DateTime.Now;
-            if (backgroundServiceInfo == null || backgroundServiceInfo.NextExecuteAt == null)
-            {
-                var nextExecuteAt = CalcNextExecuteAt(now, backgroundServiceInfo);
-                return now >= nextExecuteAt;
-            }
-
-            if (backgroundServiceInfo?.NextExecuteAt <= now)
-                return true;
-
+        if (_hostedServicesConfiguration.Enabled == false)
             return false;
+
+        if (IsTimeouted(backgroundServiceInfo))
+            return true;
+
+        if (IsExecuting(backgroundServiceInfo))
+            return false;
+
+        var now = DateTime.Now;
+        if (backgroundServiceInfo == null || backgroundServiceInfo.NextExecuteAt == null)
+        {
+            var nextExecuteAt = CalcNextExecuteAt(now, backgroundServiceInfo);
+            return now >= nextExecuteAt;
         }
+
+        if (backgroundServiceInfo?.NextExecuteAt <= now)
+            return true;
+
+        return false;
     }
 
     protected bool IsExecuting(BackgroundserviceInfo backgroundServiceInfo)
@@ -244,96 +268,119 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         return backgroundServiceInfo?.State == BackgroundserviceInfoStateType.Executing;
     }
 
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(60);
-
     protected virtual bool IsTimeouted(BackgroundserviceInfo backgroundServiceInfo)
     {
-        if (IsExecuting(backgroundServiceInfo) &&
-            _hostedServicesConfiguration.Interval.IsNull())
+        if (IsExecuting(backgroundServiceInfo))
         {
             var now = DateTime.Now;
-            return now.Subtract(backgroundServiceInfo.ExecutedAt) > Timeout;
+
+            if (backgroundServiceInfo.LastHeartbeat == null)
+                return true;
+
+            var elapsed = now - backgroundServiceInfo.LastHeartbeat.Value;
+
+            if (elapsed > TimeSpan.FromSeconds(HearthBeatInterval.TotalSeconds * 3))
+            {
+                return true;
+            }
         }
 
         return false;
     }
 
-    protected virtual async Task StartBackgroundServiceInfo()
+    protected virtual async Task StartBackgroundServiceInfoAsync(CancellationToken cancellationToken)
     {
         if (BackgroundServiceInfoEnabled == false)
             return;
 
-        using (var scope = _serviceScopeFactory.CreateScope())
+        using var scope = _serviceScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+        var now = DateTime.Now;
+
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
+
+        if (backgroundServiceInfo == null)
         {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
-
-            if (backgroundServiceInfo == null)
-            {
-                backgroundServiceInfo = await context.CreateEntityAync<BackgroundserviceInfo>();
-                backgroundServiceInfo.Name = Name;
-            }
-
-            backgroundServiceInfo.State = BackgroundserviceInfoStateType.Executing;
-            backgroundServiceInfo.ExecutedAt = DateTime.Now;
-            backgroundServiceInfo.NextExecuteAt = null;
-            backgroundServiceInfo.Message = $"started";
-
-            await context.SaveChangesAsync();
+            backgroundServiceInfo = await context.CreateEntityAync<BackgroundserviceInfo>();
+            backgroundServiceInfo.Name = Name;
         }
+
+        backgroundServiceInfo.State = BackgroundserviceInfoStateType.Executing;
+        backgroundServiceInfo.ExecutedAt = now;
+        backgroundServiceInfo.NextExecuteAt = null;
+        backgroundServiceInfo.Message = $"executing";
+        backgroundServiceInfo.LastHeartbeat = now;
+
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    protected virtual async Task FinishedBackgroundServiceInfo()
+    protected virtual async Task FinishedBackgroundServiceInfoAsync(CancellationToken cancellationToken)
     {
         if (BackgroundServiceInfoEnabled == false)
             return;
 
-        using (var scope = _serviceScopeFactory.CreateScope())
+        using var scope = _serviceScopeFactory.CreateScope();
+        var now = DateTime.Now;
+
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
+
+        backgroundServiceInfo.State = BackgroundserviceInfoStateType.Queued;
+        backgroundServiceInfo.LastFinishedAt = now;
+        backgroundServiceInfo.LastHeartbeat = null;
+
+        backgroundServiceInfo.NextExecuteAt =
+            CalcNextExecuteAt(now, backgroundServiceInfo);
+
+        backgroundServiceInfo.Message = $"finished";
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    protected virtual async Task UpdateHeartbeatBackgroundServiceInfoAsync(CancellationToken cancellationToken)
+    {
+        if (BackgroundServiceInfoEnabled == false)
+            return;
+
+        using var scope = _serviceScopeFactory.CreateScope();
+
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
+
+        backgroundServiceInfo.LastHeartbeat = DateTime.Now;
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    protected virtual async Task ErrorBackgroundServiceInfoAsync(Exception ex, CancellationToken cancellationToken)
+    {
+        if (BackgroundServiceInfoEnabled == false)
+            return;
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var now = DateTime.Now;
+
+        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
+
+        backgroundServiceInfo.State = BackgroundserviceInfoStateType.Error;
+        backgroundServiceInfo.Message = $"error";
+        backgroundServiceInfo.LastFinishedAt = null;
+        backgroundServiceInfo.LastErrorAt = now;
+        backgroundServiceInfo.LastErrorMessage = ex.Message;
+        backgroundServiceInfo.LastErrorStack = ex.StackTrace;
+        backgroundServiceInfo.LastHeartbeat = null;
+
+        if (_hostedServicesConfiguration.Interval.HasValue)
         {
-            var now = DateTime.Now;
-
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
-
-            backgroundServiceInfo.State = BackgroundserviceInfoStateType.Queued;
-            backgroundServiceInfo.LastFinishedAt = now;
-
             backgroundServiceInfo.NextExecuteAt =
                 CalcNextExecuteAt(now, backgroundServiceInfo);
-
-            backgroundServiceInfo.Message = $"finished";
-
-            await context.SaveChangesAsync();
         }
-    }
 
-    protected virtual async Task ErrorBackgroundServiceInfo(Exception ex)
-    {
-        if (BackgroundServiceInfoEnabled == false)
-            return;
-
-        using (var scope = _serviceScopeFactory.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-            var backgroundServiceInfo = await GetBackgroundServiceInfo(context);
-
-            backgroundServiceInfo.State = BackgroundserviceInfoStateType.Error;
-            backgroundServiceInfo.Message = $"error";
-            backgroundServiceInfo.LastFinishedAt = null;
-            backgroundServiceInfo.LastErrorAt = DateTime.Now;
-            backgroundServiceInfo.LastErrorMessage = ex.Message;
-            backgroundServiceInfo.LastErrorStack = ex.StackTrace;
-
-            if (_hostedServicesConfiguration.Interval.HasValue)
-            {
-                backgroundServiceInfo.NextExecuteAt =
-                    CalcNextExecuteAt(DateTime.Now, backgroundServiceInfo);
-            }
-
-            await context.SaveChangesAsync();
-        }
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private IEnumerable<DateRange> GetEnabledDateRange(DateTime dateTime)
@@ -429,7 +476,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         //throw new InvalidOperationException();
     }
 
-    private async Task<BackgroundserviceInfo> GetBackgroundServiceInfo(IDbContext context)
+    private async Task<BackgroundserviceInfo> GetBackgroundServiceInfoAsync(IDbContext context)
     {
         return await
             context.Set<BackgroundserviceInfo>()

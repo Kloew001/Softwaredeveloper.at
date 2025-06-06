@@ -53,7 +53,7 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
         return true;
     }
 
-    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0)
+    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0, CancellationToken cancellationToken = default)
     {
         _lockId = lockId;
 
@@ -61,7 +61,7 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
             await _connection.OpenAsync();
 
         _transaction = (SqlTransaction)await _connection.BeginTransactionAsync();
-        
+
         using (SqlCommand createCmd = _connection.CreateCommand())
         {
             createCmd.Transaction = _transaction;
@@ -85,7 +85,7 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
 
             try
             {
-                await createCmd.ExecuteNonQueryAsync();
+                await createCmd.ExecuteNonQueryAsync(cancellationToken);
 
                 _lockCreated = true;
             }
@@ -106,14 +106,14 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
             {
                 await Task.Delay(100);
 
-                if (await TryAcquireLockAsync(lockId, 0))
+                if (await TryAcquireLockAsync(lockId, 0, cancellationToken))
                     return true;
             }
         }
 
         return _lockCreated;
     }
-    
+
     public bool TryAcquireLock(string lockId, int retry = 0)
     {
         return TryAcquireLockAsync(lockId, retry).GetAwaiter().GetResult();
@@ -121,24 +121,22 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
 
     private void ReleaseLock()
     {
-        using (SqlCommand releaseCmd = _connection.CreateCommand())
+        using SqlCommand releaseCmd = _connection.CreateCommand();
+        releaseCmd.Transaction = _transaction;
+        releaseCmd.CommandType = System.Data.CommandType.StoredProcedure;
+        releaseCmd.CommandText = "sp_releaseapplock";
+
+        releaseCmd.Parameters.AddWithValue("@Resource", _lockId);
+        releaseCmd.Parameters.AddWithValue("@LockOwner", _lockOwner);
+        releaseCmd.Parameters.AddWithValue("@DbPrincipal", _lockDbPrincipal);
+
+        try
         {
-            releaseCmd.Transaction = _transaction;
-            releaseCmd.CommandType = System.Data.CommandType.StoredProcedure;
-            releaseCmd.CommandText = "sp_releaseapplock";
-
-            releaseCmd.Parameters.AddWithValue("@Resource", _lockId);
-            releaseCmd.Parameters.AddWithValue("@LockOwner", _lockOwner);
-            releaseCmd.Parameters.AddWithValue("@DbPrincipal", _lockDbPrincipal);
-
-            try
-            {
-                releaseCmd.ExecuteNonQuery();
-                _transaction.Commit();
-            }
-            catch (Exception)
-            {
-            }
+            releaseCmd.ExecuteNonQuery();
+            _transaction.Commit();
+        }
+        catch (Exception)
+        {
         }
     }
 

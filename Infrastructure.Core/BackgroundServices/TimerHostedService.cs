@@ -17,7 +17,7 @@ public abstract class TimerHostedService : BaseHostedService
 
     protected override bool CanStart()
     {
-        if(!base.CanStart())
+        if (!base.CanStart())
             return false;
 
         //if (_hostedServicesConfiguration?.Interval.HasValue == false)

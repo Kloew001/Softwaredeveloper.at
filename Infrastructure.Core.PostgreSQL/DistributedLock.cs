@@ -48,21 +48,21 @@ public sealed class PostgreSQLDistributedLock : IDistributedLock, IDisposable
         return true;
     }
 
-    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0)
+    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0, CancellationToken cancellationToken = default)
     {
         _lockId = lockId;
 
-        if(_connection.State != ConnectionState.Open)
-            await _connection.OpenAsync();
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync(cancellationToken);
 
         var sessionLockCommand = $"SELECT pg_try_advisory_lock(hashtext('{lockId}'))";
-        
+
         _logger.LogDebug("Trying to acquire session lock for Lock Id {@LockId}", lockId);
-        
+
         var commandQuery = new NpgsqlCommand(sessionLockCommand, _connection);
-        
-        var result = await commandQuery.ExecuteScalarAsync();
-        
+
+        var result = await commandQuery.ExecuteScalarAsync(cancellationToken);
+
         if (result != null && bool.TryParse(result.ToString(), out var lockAcquired) && lockAcquired)
         {
             _logger.LogDebug("Lock {@LockId} acquired", lockId);
@@ -71,14 +71,14 @@ public sealed class PostgreSQLDistributedLock : IDistributedLock, IDisposable
 
         _logger.LogDebug("Lock {@LockId} rejected", lockId);
 
-        if(retry == -1)
+        if (retry == -1)
             retry = int.MaxValue;
 
         for (var r = 0; r < retry; r++)
         {
             await Task.Delay(100);
 
-            if (await TryAcquireLockAsync(lockId, 0))
+            if (await TryAcquireLockAsync(lockId, 0, cancellationToken))
                 return true;
         }
 

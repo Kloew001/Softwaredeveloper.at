@@ -37,6 +37,12 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Compile Remove="Exceptions\**" />
+    <EmbeddedResource Remove="Exceptions\**" />
+    <None Remove="Exceptions\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)\readme.md" Pack="true" PackagePath="" />
   </ItemGroup>
@@ -69,10 +75,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	
     <PackageReference Include="TomLonghurst.ReadableTimeSpan" Version="1.0.5" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
   </ItemGroup>
 
 </Project>
