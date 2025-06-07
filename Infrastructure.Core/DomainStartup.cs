@@ -119,15 +119,13 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
     {
         //try
         //{
-        using (var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
-            var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
+        using var scope = host.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IDbContext>();
+        var handler = scope.ServiceProvider.GetRequiredService<IDbContextHandler>();
 
-            handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
-                .GetAwaiter()
-                .GetResult();
-        }
+        handler.UpdateDatabaseAsync(dbContext.As<DbContext>())
+            .GetAwaiter()
+            .GetResult();
         //}
         //catch(Exception ex)
         //{

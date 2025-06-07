@@ -8,26 +8,10 @@ public abstract class SoftwaredeveloperDotAtDbContext : DbContext, IDbContext
 {
     public bool UseProxy { get; set; } = true;
 
-    protected SoftwaredeveloperDotAtDbContext()
+    public SoftwaredeveloperDotAtDbContext(DbContextOptions options)
+        : base(options)
     {
     }
-
-    protected SoftwaredeveloperDotAtDbContext(DbContextOptions options) : base(options)
-    {
-    }
-
-    //protected IServiceProvider ServiceProvider { get; }
-
-    //public BaseDbContext(IServiceProvider serviceProvider)
-    //{
-    //    ServiceProvider = serviceProvider;
-    //}
-
-    //public BaseDbContext(DbContextOptions options, IServiceProvider serviceProvider)
-    //    : base(options)
-    //{
-    //    ServiceProvider = serviceProvider;
-    //}
 
     public virtual DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
@@ -62,6 +46,8 @@ public abstract class SoftwaredeveloperDotAtDbContext : DbContext, IDbContext
 
         var dbContextHandler = this.GetService<IDbContextHandler>();
         dbContextHandler.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
     }
 
     public override int SaveChanges()
@@ -92,7 +78,7 @@ public abstract class SoftwaredeveloperDotAtDbContext : DbContext, IDbContext
 
         public void EnsureTime()
         {
-            if(TransactionTime == null)
+            if (TransactionTime == null)
                 TransactionTime = _dateTimeService.Now();
         }
     }
@@ -116,7 +102,7 @@ public abstract class SoftwaredeveloperDotAtDbContext : DbContext, IDbContext
     public TEntity CreateEntity<TEntity>()
         where TEntity : class
     {
-       return CreateEntityAync<TEntity>().GetAwaiter().GetResult();
+        return CreateEntityAync<TEntity>().GetAwaiter().GetResult();
     }
 
     public async Task<TEntity> CreateEntityAync<TEntity>()

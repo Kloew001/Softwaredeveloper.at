@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
-public class IdentitySoftwaredeveloperDotAtDbContext :
+public abstract class IdentitySoftwaredeveloperDotAtDbContext :
     IdentityDbContext<
         ApplicationUser,
         ApplicationRole,
@@ -15,9 +15,6 @@ public class IdentitySoftwaredeveloperDotAtDbContext :
         ApplicationRoleClaim,
         ApplicationUserToken>
 {
-    public IdentitySoftwaredeveloperDotAtDbContext()
-    {
-    }
 
     public IdentitySoftwaredeveloperDotAtDbContext(DbContextOptions options)
     : base(options)

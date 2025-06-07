@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.SoftwaredeveloperDotAtDbContext;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
@@ -294,7 +295,9 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             return;
 
         using var scope = _serviceScopeFactory.CreateScope();
+
         var context = scope.ServiceProvider.GetService<IDbContext>();
+        var DbContextTransaction = scope.ServiceProvider.GetService<DbContextTransaction>();
         var now = DateTime.Now;
 
         var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
