@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 using Microsoft.Extensions.Hosting;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
@@ -21,10 +21,10 @@ public static class DtoFactoryExtensions
         return _factory.ConvertToDto<TDto>(entitiy, default, dtoFactory, serviceProvider);
     }
 
-    public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
+    public static IEnumerable<TDto> ConvertToDtos<TDto>(this IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null, bool parallel = false)
         where TDto : IDto
     {
-        return _factory.ConvertToDtos<TDto>(entities, dtoFactory, serviceProvider);
+        return _factory.ConvertToDtos<TDto>(entities, dtoFactory, serviceProvider, parallel);
     }
 
     public static TEntity ConvertToEntity<TEntity>(this IDto dto, TEntity entity, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
@@ -200,15 +200,58 @@ public class DtoFactory
         return cachedfactory;
     }
 
-    public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities, IDtoFactory dtoFactory = null, IServiceProvider serviceProvider = null)
-        where TDto : IDto
+    public IEnumerable<TDto> ConvertToDtos<TDto>(
+     IEnumerable<IEntity> entities,
+     IDtoFactory dtoFactory = null,
+     IServiceProvider serviceProvider = null,
+     bool parallel = false)
+     where TDto : IDto
     {
         if (entities == null)
             return null;
 
-        var dtos = entities
-            .Select(_ => ConvertToDto(_, (TDto)Activator.CreateInstance(typeof(TDto)), dtoFactory, serviceProvider))
+        return parallel
+            ? ConvertToDtosInParallel<TDto>(entities, dtoFactory, serviceProvider)
+            : ConvertToDtosSequential<TDto>(entities, dtoFactory, serviceProvider);
+    }
+
+    private IEnumerable<TDto> ConvertToDtosSequential<TDto>(
+        IEnumerable<IEntity> entities,
+        IDtoFactory dtoFactory,
+        IServiceProvider serviceProvider)
+        where TDto : IDto
+    {
+        return entities
+            .Select(entity =>
+                ConvertToDto(entity, (TDto)Activator.CreateInstance(typeof(TDto)), dtoFactory, serviceProvider))
             .ToList();
+    }
+
+    private IEnumerable<TDto> ConvertToDtosInParallel<TDto>(
+        IEnumerable<IEntity> entities,
+        IDtoFactory dtoFactory,
+        IServiceProvider serviceProvider)
+        where TDto : IDto
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        var serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var indexedEntities = entities.Select((entity, index) => (Entity: entity, Index: index)).ToList();
+
+        var dtos = indexedEntities
+            .AsParallel()
+            .Select(item =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var scopedProvider = scope.ServiceProvider;
+                var dto = (TDto)Activator.CreateInstance(typeof(TDto));
+                var converted = ConvertToDto(item.Entity, dto, dtoFactory, scopedProvider);
+                return (Dto: converted, item.Index);
+            })
+            .ToList()
+            .OrderBy(item => item.Index)
+            .Select(item => item.Dto);
 
         return dtos;
     }
