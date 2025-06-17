@@ -15,7 +15,7 @@ public static class SecurityHeadersBuilderExtensions
     }
 }
 
-public interface ISecurityHeadersService 
+public interface ISecurityHeadersService
 {
     void HandleHeaders(HttpContext context);
 }
@@ -45,9 +45,6 @@ public class SecurityHeadersService : ISecurityHeadersService
 
         if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
             context.Response.Headers.Remove(HeaderNames.XPoweredBy);
-
-        if (context.Response.Headers.ContainsKey(HeaderNames.WWWAuthenticate))
-            context.Response.Headers.Remove(HeaderNames.WWWAuthenticate);
     }
 }
 

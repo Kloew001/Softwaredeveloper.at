@@ -31,8 +31,8 @@ public static class WebApplicationBuilderExtensions
     {
         builder.ConfigureHosting();
 
-        builder.Configuration
-            .AddEnvironmentVariables();
+        var environmentVariablesPrefix = builder.Configuration.GetSection("EnvironmentVariablesPrefix").Get<string>() ?? string.Empty;
+        builder.Configuration.AddEnvironmentVariables(environmentVariablesPrefix);
 
         builder.Services.AddLogging(options =>
         {
