@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -19,6 +20,7 @@ using Microsoft.OpenApi.Models;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using System.IO.Compression;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -40,6 +42,10 @@ public static class WebApplicationBuilderExtensions
         builder.Logging.AddLog4Net("log4net.config");
 
         builder.Services.AddHttpContextAccessor();
+
+        builder.AddForwardedHeaders();
+
+        builder.AddRateLimiter();
 
         builder.Services.AddControllers(options =>
         {
@@ -75,8 +81,6 @@ public static class WebApplicationBuilderExtensions
         builder.AddResponseCompression();
 
         builder.AddCors();
-
-        builder.AddRateLimiter();
 
         builder.AddDefaultHsts();
 
@@ -347,67 +351,207 @@ public static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions> configureOptions = null)
+    public static void AddForwardedHeaders(this WebApplicationBuilder builder)
     {
-        //https://devblogs.microsoft.com/dotnet/announcing-rate-limiting-for-dotnet/
+        var knownProxies = builder.Configuration.GetSection("KnownProxies").Get<string[]>() ?? [];
+        var knownNetworks = builder.Configuration.GetSection("KnownNetworks").Get<string[]>() ?? [];
 
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            if (knownProxies.Length > 0 || knownNetworks.Length > 0)
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+                foreach (var proxy in knownProxies)
+                    options.KnownProxies.Add(IPAddress.Parse(proxy));
+
+                foreach (var network in knownNetworks)
+                {
+                    var parts = network.Split('/');
+                    options.KnownNetworks.Add(
+                        new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
+                }
+            }
+            else
+            {
+                options.ForwardedHeaders = ForwardedHeaders.None;
+            }
+        });
+    }
+
+    public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions>? configureOptions = null)
+    {
         builder.Services.AddRateLimiter(options =>
         {
-            options.GlobalLimiter =
-                PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                {
-                    var ipAddress = httpContext.ResolveIpAddress();
-                    if (ipAddress == null)
-                        return RateLimitPartition.GetNoLimiter("none");
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                    return RateLimitPartition.GetTokenBucketLimiter(ipAddress, (key) =>
-                    {
-                        return new TokenBucketRateLimiterOptions
-                        {
-                            TokenLimit = 100,
-                            ReplenishmentPeriod = TimeSpan.FromSeconds(1),
-                            TokensPerPeriod = 1,
-                            AutoReplenishment = true,
-                            //QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-                            //QueueLimit = 3
-                        };
-                    });
-                });
-
-            options.AddPolicy("largeFileUpload", httpContext =>
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
-                var ipAddress = httpContext.ResolveIpAddress();
-                return RateLimitPartition.GetFixedWindowLimiter(ipAddress, (key) =>
-                {
-                    return new FixedWindowRateLimiterOptions()
+                return RateLimitPartition.GetTokenBucketLimiter(
+                    httpContext.ResolveIpOrAnon(), _ =>
+                    new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit = 100,
+                        TokensPerPeriod = 5,
+                        ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                        AutoReplenishment = true,
+                        QueueLimit = 10,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed2per10Sec, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions()
                     {
                         AutoReplenishment = true,
                         PermitLimit = 2,
                         QueueLimit = 1,
-                        Window = TimeSpan.FromSeconds(15)
-                    };
-                });
+                        Window = TimeSpan.FromSeconds(10)
+                    });
             });
 
-            options.OnRejected = async (context, token) =>
+            options.AddPolicy(RateLimitPolicy.Fixed5per10Sec, httpContext =>
             {
-                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests; ;
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions()
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 5,
+                        QueueLimit = 1,
+                        Window = TimeSpan.FromSeconds(10)
+                    });
+            });
 
-                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                {
-                    await context.HttpContext.Response.WriteAsync(
-                        $"You have reached the request limit. Try again in {{retryAfter.TotalMinutes}} minutes.", cancellationToken: token);
-                }
-                else
-                {
-                    await context.HttpContext.Response.WriteAsync(
-                        "You have reached the request limit. Try again later.", cancellationToken: token);
-                }
-            };
+            options.AddPolicy(RateLimitPolicy.Sliding60per1Min, httpContext =>
+            {
+                return RateLimitPartition.GetSlidingWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 6,
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed10per1Min, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed5per1Hour, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromHours(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed10per1Hour, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromHours(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed10per24Hours, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromHours(24),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Fixed100per24Hours, httpContext =>
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 100,
+                        Window = TimeSpan.FromHours(24),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
+            options.AddPolicy(RateLimitPolicy.Sliding1per1SecAnd100per24Hours, httpContext =>
+            {
+                return RateLimitPartition.Get(
+                    httpContext.ResolveAccountIdOrAnonBucketIdKey(),
+                    _ =>
+                    {
+                        var perSecond = new SlidingWindowRateLimiter(
+                            new SlidingWindowRateLimiterOptions
+                            {
+                                PermitLimit = 1,
+                                Window = TimeSpan.FromSeconds(1),
+                                SegmentsPerWindow = 5,
+                                QueueLimit = 2,
+                                AutoReplenishment = true
+                            });
+
+                        var perDay = new SlidingWindowRateLimiter(
+                            new SlidingWindowRateLimiterOptions
+                            {
+                                PermitLimit = 10,
+                                Window = TimeSpan.FromHours(24),
+                                QueueLimit = 0,
+                                SegmentsPerWindow = 1,
+                                AutoReplenishment = true
+                            });
+
+                        return RateLimiterCombine.AndAll(perSecond, perDay);
+                    });
+            });
 
             configureOptions?.Invoke(options);
         });
 
         return builder;
     }
+}
+
+public static class RateLimitPolicy
+{
+    public const string Fixed2per10Sec = "Fixed2per10Sec";
+    public const string Fixed5per10Sec = "Fixed5per10Sec";
+    public const string Fixed10per1Min = "Fixed10per1Min";
+    public const string Fixed5per1Hour = "Fixed5per1Hour";
+    public const string Fixed10per1Hour = "Fixed10per1Hour";
+    public const string Fixed10per24Hours = "Fixed10per24Hours";
+    public const string Fixed100per24Hours = "Fixed100per24Hours";
+    public const string Sliding1per1SecAnd100per24Hours = "Fixed1per1SecAnd100per24Hours";
+
+    public const string Sliding60per1Min = "Sliding60per1Min";
 }

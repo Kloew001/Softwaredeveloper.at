@@ -1,18 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-using System.Data;
+﻿using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public static class DataSetExtensions
 {
-    public static async Task<DataSet> ToDataSetAsync<T>(this IQueryable<T> query)
+    public static DataSet ToDataSet<T>(this IEnumerable<T> items)
     {
         var dataSet = new DataSet();
         var dataTable = new DataTable();
         bool schemaInitialized = false;
-
-        var items = await query.ToListAsync();
 
         foreach (var item in items)
         {
@@ -35,8 +31,14 @@ public static class DataSetExtensions
         var properties = record.GetType().GetProperties();
         foreach (var prop in properties)
         {
-            Type propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-            dataTable.Columns.Add(prop.Name, propType);
+            Type propertyType = prop.PropertyType;
+            if (Nullable.GetUnderlyingType(propertyType) != null)
+                propertyType = Nullable.GetUnderlyingType(propertyType);
+
+            if (propertyType.IsEnum)
+                dataTable.Columns.Add(prop.Name, typeof(string));
+            else
+                dataTable.Columns.Add(prop.Name, propertyType);
         }
     }
 
@@ -46,7 +48,23 @@ public static class DataSetExtensions
         var properties = record.GetType().GetProperties();
         foreach (var prop in properties)
         {
-            row[prop.Name] = prop.GetValue(record) ?? DBNull.Value;
+            object value = prop.GetValue(record, null) ?? DBNull.Value;
+
+            Type propertyType = prop.PropertyType;
+            if (Nullable.GetUnderlyingType(propertyType) != null)
+                propertyType = Nullable.GetUnderlyingType(propertyType);
+
+            if (propertyType.IsEnum && value != DBNull.Value)
+            {
+                value = value.ToString();
+            }
+
+            if (value is string strValue && strValue.Length > 1000)
+            {
+                value = strValue.Substring(0, 1000);
+            }
+
+            row[prop.Name] = value;
         }
         dataTable.Rows.Add(row);
     }

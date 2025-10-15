@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Infrastructure.Core.Web;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,7 +15,7 @@ public class MultilingualController : BaseApiController
         [FromServices] MultilingualGlobalTextCacheService cacheService,
         [FromRoute(Name = "culture")] string cultureName = "de")
         => cacheService.GetTexts(cultureName, MultilingualProtectionLevel.Public)
-            .ToDictionary(_=>_.Key, _=>_.Text);
+            .ToDictionary(_ => _.Key, _ => _.Text);
 
     [AllowAnonymous]
     [HttpGet]
@@ -27,7 +28,7 @@ public class MultilingualController : BaseApiController
 
     [AllowAnonymous]
     [HttpPost]
-    [EnableRateLimiting("largeFileUpload")]
+    [EnableRateLimiting(RateLimitPolicy.Sliding1per1SecAnd100per24Hours)]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task ImportExcel(IFormFile file, [FromServices] ExcelMultilingualService service)
     {
@@ -45,7 +46,7 @@ public class MultilingualController : BaseApiController
 
     [AllowAnonymous]
     [HttpPost]
-    [EnableRateLimiting("largeFileUpload")]
+    [EnableRateLimiting(RateLimitPolicy.Sliding1per1SecAnd100per24Hours)]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task ImportJson(IFormFile file, [FromServices] JsonMultilingualService service)
     {

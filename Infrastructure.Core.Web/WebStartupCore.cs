@@ -41,7 +41,11 @@ public class WebStartupCore<TDomainStartup>
     {
         DomainStartup.ConfigureApp(app);
 
-        app.Use(async (context, next) => {
+        app.UseForwardedHeaders();
+        app.UseRateLimiter();
+
+        app.Use(async (context, next) =>
+        {
             context.Request.EnableBuffering();
 
             await next();
@@ -63,12 +67,10 @@ public class WebStartupCore<TDomainStartup>
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
         }
 
-        app.UseRateLimiter();
-
         app.UseCors();
 
         app.UseResponseCompression();
-    
+
         app.UseHsts();
 
         app.UseAuthentication();
