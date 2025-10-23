@@ -68,7 +68,7 @@ public class MonitorService : IMonitorService
     {
         var watch = Stopwatch.StartNew();
 
-        var result = await _dbContext.Set<ApplicationUser>().ToListAsync();
+        var result = await _dbContext.Set<BackgroundserviceInfo>().ToListAsync();
 
         watch.Stop();
 

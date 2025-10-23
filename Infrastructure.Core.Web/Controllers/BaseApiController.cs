@@ -5,7 +5,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 [ApiController]
 [Authorize(policy: "api")]
-[Route("api/[controller]/[Action]")]
-public abstract class BaseApiController : Controller
+[Route("api/[controller]/[action]")]
+public abstract class BaseApiController : ControllerBase
 {
 }

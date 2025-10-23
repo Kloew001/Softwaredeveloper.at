@@ -111,10 +111,15 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     protected virtual bool CanStart()
     {
-        if (_hostedServicesConfiguration == null ||
-            _hostedServicesConfiguration?.Enabled != true)
+        if (_hostedServicesConfiguration == null)
         {
-            _logger.LogWarning($"IHostedService {Name} do not have configuration");
+            _logger.LogWarning($"IHostedService {Name} do not have configuration.");
+            return false;
+        }
+
+        if (_hostedServicesConfiguration?.Enabled != true)
+        {
+            _logger.LogInformation($"IHostedService {Name} is disabled.");
             return false;
         }
 
