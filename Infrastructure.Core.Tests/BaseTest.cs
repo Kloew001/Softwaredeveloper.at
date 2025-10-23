@@ -76,8 +76,6 @@ public abstract class BaseTest<TDomainStartup>
         _context = _serviceScope.ServiceProvider
                 .GetRequiredService<IDbContext>();
 
-        //_nadaContext = _serviceScope.ServiceProvider.GetService<NadaContext>();
-
         //if (UseDbTransactionMode == DbTransactionModeType.OnePerTest)
         //    _dbTransaction = _nadaContext.Database.BeginTransaction();
         //else
