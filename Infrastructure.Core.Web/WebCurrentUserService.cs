@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core;
@@ -11,14 +10,10 @@ namespace Infrastructure.Core.Web;
 public class WebCurrentUserService : ICurrentUserService
 {
     protected IHttpContextAccessor _httpContextAccessor;
-    private readonly ICurrentLanguageService _currentLanguageService;
 
-    public WebCurrentUserService(
-        IHttpContextAccessor httpContextAccessor,
-        IServiceProvider serviceProvider)
+    public WebCurrentUserService(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
-        _currentLanguageService = serviceProvider.GetService<ICurrentLanguageService>();
     }
 
     public bool IsAuthenticated

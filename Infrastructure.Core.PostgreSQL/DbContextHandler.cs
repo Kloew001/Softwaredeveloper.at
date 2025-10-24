@@ -86,7 +86,9 @@ public class PostgreSQLDbContextHandler : BaseDbContextHandler
             v => v.HasValue ? v.Value.ToLocalTime() : null,
             v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Unspecified) : null);
 
-        foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+        var models = modelBuilder.Model.GetEntityTypes().ToList();
+
+        foreach (var property in models.SelectMany(t => t.GetProperties()))
         {
             if (property.ClrType == typeof(DateTime))
             {

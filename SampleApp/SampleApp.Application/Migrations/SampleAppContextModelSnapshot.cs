@@ -42,7 +42,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Person");
+                    b.ToTable("Person", (string)null);
                 });
 
             modelBuilder.Entity("SampleApp.Application.Sections.PersonSection.PersonAudit", b =>
@@ -424,7 +424,7 @@ namespace SampleApp.Application.Migrations
 
                     b.HasIndex("ReferenceId", "ReferenceType");
 
-                    b.ToTable("ChronologyEntry");
+                    b.ToTable("ChronologyEntry", (string)null);
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntryTranslation", b =>
@@ -454,7 +454,7 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("CoreId", "CultureId")
                         .IsUnique();
 
-                    b.ToTable("ChronologyEntryTranslation");
+                    b.ToTable("ChronologyEntryTranslation", (string)null);
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailMessageAttachment", b =>
