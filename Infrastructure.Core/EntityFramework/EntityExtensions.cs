@@ -24,15 +24,22 @@ public static class EntityExtensions
 
     public static IDbContext ResolveDbContext(this IEntity entity)
     {
-        var lazyLoader = (ILazyLoader)entity.GetType()
-            .GetProperty("LazyLoader")
-            .GetValue(entity, null);
+        try
+        {
+            var lazyLoader = (ILazyLoader)entity.GetType()
+                .GetProperty("LazyLoader")
+                .GetValue(entity, null);
 
-        var dbContext = (IDbContext)lazyLoader.GetType()
-            .GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)
-            .GetValue(lazyLoader, null);
+            var dbContext = (IDbContext)lazyLoader.GetType()
+                .GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(lazyLoader, null);
 
-        return dbContext;
+            return dbContext;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static TProperty GetOriginalValue<TEntity, TProperty>(
@@ -170,6 +177,10 @@ public static class EntityExtensions
         where TEntity : Entity
     {
         var context = entity.ResolveDbContext();
+
+        if (context == null)
+            return;
+
         var entityEntry = context.Entry(entity);
 
         entityEntry.Reload();
