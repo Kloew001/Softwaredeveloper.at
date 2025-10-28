@@ -52,7 +52,12 @@ public abstract class ApplicationUserDataSeed : IDataSeed
         await EnsureUserAsync(ApplicationUserIds.ServiceAdminId,
                            "ServiceAdmin V", "ServiceAdmin N",
                            email, pw,
-                           ["Admin"]);
+                           GetServiceUserRoles());
+    }
+
+    protected virtual string[] GetServiceUserRoles()
+    {
+        return ["Admin"];
     }
 
     protected async Task EnsureDevUserForEachRole()
@@ -101,7 +106,7 @@ public abstract class ApplicationUserDataSeed : IDataSeed
                 }));
 
             }
-         
+
             return user.Id;
         }
     }

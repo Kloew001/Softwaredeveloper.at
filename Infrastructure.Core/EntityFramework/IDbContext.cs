@@ -1,12 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 public interface IDbContext
 {
     DatabaseFacade Database { get; }
+    IModel Model { get; }
 
     DbSet<TEntity> Set<TEntity>()
         where TEntity : class;
@@ -24,7 +26,7 @@ public interface IDbContext
 
     ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default)
        where TEntity : class;
-    
+
     void AddRange(IEnumerable<object> entities);
     Task AddRangeAsync(IEnumerable<object> entities, CancellationToken cancellationToken = default);
 

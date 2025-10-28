@@ -13,6 +13,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -24,13 +25,20 @@ public abstract class BaseDbContextHandler : IDbContextHandler
     {
         var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
 
-        if (!await databaseCreator.ExistsAsync())
-        {
-            //scope.ServiceProvider
-            //.GetService<IApplicationSettings>()
-            //.HostedServices[
-            //nameof(DataSeedHostedService)].Enabled = true;
+        var dbExists = false;
 
+        try
+        {
+            dbExists = await databaseCreator.ExistsAsync();
+        }
+        catch (DbException ex) when (ex.SqlState == "3D000") // '3D000: Datenbank XXX existiert nicht'
+
+        {
+            dbExists = false;
+        }
+
+        if (!dbExists)
+        {
             await databaseCreator.CreateAsync();
         }
 

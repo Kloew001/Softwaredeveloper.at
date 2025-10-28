@@ -1,14 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 public static class AuditExtensions
 {
-
     public static void CreateEntityAudit(this IAuditableEntity auditableEntity, IDbContext context, AuditActionType auditAction, DateTime now, Guid transactionId)
     {
         var entityAuditType = auditableEntity.GetEntityAuditType();
+
+        var entityType = context.Model.FindEntityType(entityAuditType);
+
+        if (entityType == null)
+            return;
 
         var entityAudit = context.As<IDbContext>()
                 .GetType()
@@ -31,9 +35,9 @@ public static class AuditExtensions
             .OrderBy(_ => _.ValidFrom)
             .LastOrDefault();
 
-        if(lastAudit != null)
+        if (lastAudit != null)
             lastAudit.ValidTo = now;
-        
+
         entityAudit.AuditAction = auditAction;
 
         //var entityFrameworkEvent = auditEvent?.GetEntityFrameworkEvent();
