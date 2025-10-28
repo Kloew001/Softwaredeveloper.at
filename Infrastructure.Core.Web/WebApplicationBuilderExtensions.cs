@@ -13,12 +13,14 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Security.Claims;
@@ -69,14 +71,33 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddEndpointsApiExplorer();
 
+        builder.Services.AddProblemDetails(options =>
+        {
+            options.CustomizeProblemDetails = context =>
+            {
+                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+                var problem = context.ProblemDetails;
+
+                problem.Instance ??= $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+                problem.Type ??= $"https://httpstatuses.com/{problem.Status}";
+
+                var traceId = Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
+                problem.Extensions["traceId"] = traceId;
+                problem.Extensions["timestamp"] = DateTimeOffset.UtcNow;
+
+                if (env.IsDevelopment() && context.Exception is not null)
+                {
+                    problem.Extensions["exception"] = new
+                    {
+                        type = context.Exception.GetType().Name,
+                        message = context.Exception.Message,
+                        stackTrace = context.Exception.StackTrace
+                    };
+                }
+            };
+        });
         builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-        builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
-        {
-            var problemCorrelationId = Guid.NewGuid().ToString();
-            //log problemCorrelationId into logging system
-            ctx.ProblemDetails.Instance = problemCorrelationId;
-        });
 
         builder.AddResponseCompression();
 

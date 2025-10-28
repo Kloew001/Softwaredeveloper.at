@@ -1,36 +1,87 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
-
 using System.Diagnostics;
+using SoftwareDeveloperDotATValidation = SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 namespace Infrastructure.Core.Web.Middleware;
 
 public class ValidationExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<ValidationExceptionHandler> _logger;
-    public ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger)
+    private readonly IProblemDetailsService _problemDetailsService;
+    private readonly IWebHostEnvironment _env;
+
+    public ValidationExceptionHandler(
+        ILogger<ValidationExceptionHandler> logger,
+        IProblemDetailsService problemDetailsService,
+        IWebHostEnvironment env)
     {
         _logger = logger;
+        _problemDetailsService = problemDetailsService;
+        _env = env;
     }
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        if (exception is ValidationException validationException)
+        if (httpContext.Response.HasStarted)
+        {
+            return true;
+        }
+
+        if (exception is SoftwareDeveloperDotATValidation.ValidationException validationException)
         {
             var problemDetails = new ValidationProblemDetails(validationException);
 
             httpContext.Response.StatusCode = problemDetails.Status.Value;
 
-            await httpContext.Response
-                .WriteAsJsonAsync(problemDetails, cancellationToken);
-
-            return true;
+            return await HandleProblemDetails(httpContext, exception, problemDetails, cancellationToken);
         }
+        if (exception is FluentValidation.ValidationException fluentValidationException)
+        {
+            var ex = new ValidationException(fluentValidationException.Message,
+            fluentValidationException.Errors.Select(e => new ValidationError
+            {
+                PropertyName = e.PropertyName,
+                ErrorMessage = e.ErrorMessage
+            }));
+
+            var problemDetails = new ValidationProblemDetails(ex);
+
+            return await HandleProblemDetails(httpContext, exception, problemDetails, cancellationToken);
+        }
+
         return false;
+    }
+
+    private async ValueTask<bool> HandleProblemDetails(HttpContext httpContext, Exception exception, ValidationProblemDetails problemDetails, CancellationToken cancellationToken)
+    {
+        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+
+        using (_logger.BeginScope(new Dictionary<string, object?> { ["TraceId"] = traceId }))
+        {
+            _logger.LogWarning(exception, "Validation failed. TraceId={TraceId}", traceId);
+        }
+
+        httpContext.Response.StatusCode = problemDetails.Status.Value;
+
+        var written = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            ProblemDetails = problemDetails,
+            Exception = exception
+        });
+
+        if (!written)
+        {
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        }
+
+        return true;
     }
 
     public class ValidationProblemDetails : ProblemDetails
@@ -50,37 +101,87 @@ public class ValidationExceptionHandler : IExceptionHandler
 public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    private readonly IProblemDetailsService _problemDetailsService;
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger,
+        IProblemDetailsService problemDetailsService)
     {
         _logger = logger;
+        _problemDetailsService = problemDetailsService;
     }
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(
-            exception, "Error: {Message}", exception.Message);
+        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+
+        using (_logger.BeginScope(new Dictionary<string, object?> { ["TraceId"] = traceId }))
+        {
+            _logger.LogError(exception, "Unhandled exception. TraceId={TraceId}", traceId);
+        }
 
 #if DEBUG
         Debugger.Break();
 #endif
 
-        var statusCode = httpContext.Response?.StatusCode == null
-            ? StatusCodes.Status500InternalServerError
-            : httpContext.Response.StatusCode;
+        var (status, clientTitle, clientDetail, typeUri) = MapException(exception);
+
+        if (httpContext.Response.HasStarted)
+        {
+            return true;
+        }
 
         var problemDetails = new ProblemDetails
         {
-            Status = statusCode,
-            Title = "An unexpected error occurred",
+            Status = status,
+            Title = exception.Message,
             Detail = exception.Message,
+            Type = typeUri,
             Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}"
         };
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
 
-        await httpContext.Response
-            .WriteAsJsonAsync(problemDetails, cancellationToken);
+        var written = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            ProblemDetails = problemDetails,
+            Exception = exception
+        });
 
+        if (!written)
+        {
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        }
         return true;
+    }
+
+    private static (int status, string title, string detail, string type) MapException(Exception ex)
+    {
+        return ex switch
+        {
+            KeyNotFoundException =>
+                (StatusCodes.Status404NotFound,
+                 "Ressource nicht gefunden.",
+                 "Die angeforderte Ressource existiert nicht.",
+                 "https://example.com/errors/not-found"),
+
+            UnauthorizedAccessException =>
+                (StatusCodes.Status403Forbidden,
+                 "Zugriff verweigert.",
+                 "Sie besitzen keine Berechtigung für diese Aktion.",
+                 "https://example.com/errors/forbidden"),
+
+            InvalidOperationException =>
+                (StatusCodes.Status409Conflict,
+                 "Konflikt.",
+                 "Die Anfrage konnte aufgrund eines Zustandskonflikts nicht verarbeitet werden.",
+                 "https://example.com/errors/conflict"),
+
+            _ =>
+                (StatusCodes.Status500InternalServerError,
+                 "Unerwarteter Fehler.",
+                 "Es ist ein unerwarteter Fehler aufgetreten. Versuchen Sie es später erneut.",
+                 "https://example.com/errors/internal-server-error")
+        };
     }
 }
