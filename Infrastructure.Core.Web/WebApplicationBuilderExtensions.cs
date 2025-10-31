@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SoftwaredeveloperDotAt.Infrastructure.Core;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using System.Diagnostics;
@@ -47,7 +48,14 @@ public static class WebApplicationBuilderExtensions
 
         builder.AddForwardedHeaders();
 
-        builder.AddRateLimiter();
+        var rateLimitingConfiguration = builder.Configuration
+            .GetSection("RateLimiting")
+            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
+
+        if (rateLimitingConfiguration.Enabled)
+        {
+            builder.AddRateLimiter();
+        }
 
         builder.Services.AddControllers(options =>
         {
@@ -374,14 +382,26 @@ public static class WebApplicationBuilderExtensions
 
     public static void AddForwardedHeaders(this WebApplicationBuilder builder)
     {
-        var knownProxies = builder.Configuration.GetSection("KnownProxies").Get<string[]>() ?? [];
-        var knownNetworks = builder.Configuration.GetSection("KnownNetworks").Get<string[]>() ?? [];
+        var config = builder.Configuration
+            .GetSection("ForwardedHeaders")
+            .Get<ForwardedHeadersConfiguration>();
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
-            if (knownProxies.Length > 0 || knownNetworks.Length > 0)
+            var knownProxies = config.KnownProxies ?? [];
+            var knownNetworks = config.KnownNetworks ?? [];
+
+            if (knownProxies.Any() || knownNetworks.Any())
             {
-                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+
+                options.ForwardedForHeaderName = config.ForwardedForHeaderName ??
+                    ForwardedHeadersDefaults.XForwardedForHeaderName;
+
+                options.ForwardedProtoHeaderName = config.ForwardedProtoHeaderName ??
+                    ForwardedHeadersDefaults.XForwardedProtoHeaderName;
 
                 foreach (var proxy in knownProxies)
                     options.KnownProxies.Add(IPAddress.Parse(proxy));

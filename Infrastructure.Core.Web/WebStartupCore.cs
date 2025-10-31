@@ -42,7 +42,15 @@ public class WebStartupCore<TDomainStartup>
         DomainStartup.ConfigureApp(app);
 
         app.UseForwardedHeaders();
-        app.UseRateLimiter();
+
+        var rateLimitingConfiguration = app.Configuration
+            .GetSection("RateLimiting")
+            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
+
+        if (rateLimitingConfiguration.Enabled)
+        {
+            app.UseRateLimiter();
+        }
 
         app.Use(async (context, next) =>
         {
