@@ -397,11 +397,13 @@ public static class WebApplicationBuilderExtensions
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
 
-                options.ForwardedForHeaderName = config.ForwardedForHeaderName ??
-                    ForwardedHeadersDefaults.XForwardedForHeaderName;
+                options.ForwardedForHeaderName = config.ForwardedForHeaderName.IsNullOrEmpty()
+                    ? ForwardedHeadersDefaults.XForwardedForHeaderName
+                    : config.ForwardedForHeaderName;
 
-                options.ForwardedProtoHeaderName = config.ForwardedProtoHeaderName ??
-                    ForwardedHeadersDefaults.XForwardedProtoHeaderName;
+                options.ForwardedProtoHeaderName = config.ForwardedProtoHeaderName.IsNullOrEmpty()
+                    ? ForwardedHeadersDefaults.XForwardedProtoHeaderName
+                    : config.ForwardedProtoHeaderName;
 
                 foreach (var proxy in knownProxies)
                     options.KnownProxies.Add(IPAddress.Parse(proxy));

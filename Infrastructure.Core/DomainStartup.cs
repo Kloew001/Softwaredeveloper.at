@@ -72,7 +72,7 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
         });
         Services.AddSingleton((sp) =>
         {
-            return sp.GetService<IApplicationSettings>().As<TApplicationSettings>();
+            return sp.GetRequiredService<IApplicationSettings>().As<TApplicationSettings>();
         });
 
         typeof(TApplicationSettings)
