@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
 using SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
@@ -23,7 +22,7 @@ public class UseCaseController : BaseApiController
     [HttpPost]
     public ValueTask<IEnumerable<UseCaseService.UseCaseInfo>> Evaluate(UseCaseParamter parameter)
         => _useCaseService.EvaluateAsync(parameter.UseCaseIdentifiers, parameter.Parameter);
-    
+
     [HttpPost]
     public Task<object> Execute(UseCaseParamter parameter)
         => _useCaseService.ExecuteAsync(parameter.UseCaseIdentifier, parameter.Parameter);

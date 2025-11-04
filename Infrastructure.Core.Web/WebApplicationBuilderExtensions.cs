@@ -567,7 +567,7 @@ public static class WebApplicationBuilderExtensions
                         var perDay = new SlidingWindowRateLimiter(
                             new SlidingWindowRateLimiterOptions
                             {
-                                PermitLimit = 10,
+                                PermitLimit = 100,
                                 Window = TimeSpan.FromHours(24),
                                 QueueLimit = 0,
                                 SegmentsPerWindow = 1,

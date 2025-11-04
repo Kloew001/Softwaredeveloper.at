@@ -32,9 +32,14 @@ public class WebStartupCore<TDomainStartup>
 
         builder.AddSwaggerGenWithBearer();
 
-        builder.AddJwtBearerAuthentication();
+        HandleAuthentication(builder);
 
         builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+    }
+
+    protected virtual void HandleAuthentication(WebApplicationBuilder builder)
+    {
+        builder.AddJwtBearerAuthentication();
     }
 
     public virtual void ConfigureApp(WebApplication app)
@@ -43,14 +48,7 @@ public class WebStartupCore<TDomainStartup>
 
         app.UseForwardedHeaders();
 
-        var rateLimitingConfiguration = app.Configuration
-            .GetSection("RateLimiting")
-            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
-
-        if (rateLimitingConfiguration.Enabled)
-        {
-            app.UseRateLimiter();
-        }
+        HandleRateLimiting(app);
 
         app.Use(async (context, next) =>
         {
@@ -84,8 +82,25 @@ public class WebStartupCore<TDomainStartup>
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.UseCurrentCulture();
+        HandleCurrentCulture(app);
 
         app.UseSecurityHeaders();
+    }
+
+    protected virtual void HandleRateLimiting(WebApplication app)
+    {
+        var rateLimitingConfiguration = app.Configuration
+            .GetSection("RateLimiting")
+            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
+
+        if (rateLimitingConfiguration.Enabled)
+        {
+            app.UseRateLimiter();
+        }
+    }
+
+    protected virtual void HandleCurrentCulture(WebApplication app)
+    {
+        app.UseCurrentCulture();
     }
 }

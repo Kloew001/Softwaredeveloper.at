@@ -14,30 +14,13 @@ public class WebStartup : WebStartupCore<DomainStartup>
 
     public override void ConfigureServices(WebApplicationBuilder builder)
     {
-        DomainStartup.ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
-
-        builder.AddDefaultServices();
+        base.ConfigureServices(builder);
 
         builder.Services.RegisterDBContext<SampleAppIdentityDbContext>();
-        builder.AddJwtBearerAuthentication();
-
-        //builder.AddJwtBearerAuthentication(authorizationBuilder =>
-        //{
-        //    authorizationBuilder
-        //        .AddPolicy("api", policy =>
-        //        {
-        //            policy.Requirements.Add(new AllowAnonymousAuthorizationRequirement());
-
-        //            //policy.RequireAuthenticatedUser();
-        //            //policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
-        //        });
-        //});
-
-        builder.AddSwaggerGenWithBearer();
 
         builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
 
-        //builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
-        builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+        builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
+        //builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
     }
 }

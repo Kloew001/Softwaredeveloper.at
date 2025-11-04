@@ -17,19 +17,19 @@ public class AccountController : BaseApiController
     [HttpPost]
     [AllowAnonymous]
     public Task<Results<
-        Ok<AccessTokenResponse>, 
-        EmptyHttpResult, 
-        UnauthorizedHttpResult, 
+        Ok<AccessTokenResponse>,
+        EmptyHttpResult,
+        UnauthorizedHttpResult,
         ProblemHttpResult>> AuthenticateToken
                ([FromBody] AuthenticatePasswordRequest request)
         => _authenticateService.AuthenticateTokenAsync(request);
 
     [HttpPost]
     [AllowAnonymous]
-    public Task<Results<Ok<AccessTokenResponse>,  BadRequest>> RefreshToken
+    public Task<Results<Ok<AccessTokenResponse>, BadRequest>> RefreshToken
         ([FromBody] RefreshRequest refreshRequest)
         => _authenticateService.RefreshToken(refreshRequest);
-   
+
     [HttpPost]
     public Task RevokeToken()
          => _authenticateService.RevokeToken();
