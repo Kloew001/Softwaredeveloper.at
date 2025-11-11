@@ -446,7 +446,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed2per10Sec, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions()
                     {
                         AutoReplenishment = true,
@@ -459,7 +459,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed5per10Sec, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions()
                     {
                         AutoReplenishment = true,
@@ -472,7 +472,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Sliding60per1Min, httpContext =>
             {
                 return RateLimitPartition.GetSlidingWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new SlidingWindowRateLimiterOptions
                     {
                         PermitLimit = 60,
@@ -486,7 +486,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed10per1Min, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 10,
@@ -499,7 +499,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed5per1Hour, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 5,
@@ -512,7 +512,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed10per1Hour, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 10,
@@ -525,7 +525,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed10per24Hours, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 10,
@@ -538,7 +538,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Fixed100per24Hours, httpContext =>
             {
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(), _ =>
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 100,
@@ -551,7 +551,7 @@ public static class WebApplicationBuilderExtensions
             options.AddPolicy(RateLimitPolicy.Sliding1per1SecAnd100per24Hours, httpContext =>
             {
                 return RateLimitPartition.Get(
-                    httpContext.ResolveAccountIdOrAnonBucketIdKey(),
+                    httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(),
                     _ =>
                     {
                         var perSecond = new SlidingWindowRateLimiter(
@@ -559,19 +559,17 @@ public static class WebApplicationBuilderExtensions
                             {
                                 PermitLimit = 1,
                                 Window = TimeSpan.FromSeconds(1),
-                                SegmentsPerWindow = 5,
+                                SegmentsPerWindow = 2,
                                 QueueLimit = 2,
                                 AutoReplenishment = true
                             });
 
-                        var perDay = new SlidingWindowRateLimiter(
-                            new SlidingWindowRateLimiterOptions
+                        var perDay = new FixedWindowRateLimiter(
+                            new FixedWindowRateLimiterOptions
                             {
                                 PermitLimit = 100,
                                 Window = TimeSpan.FromHours(24),
-                                QueueLimit = 0,
-                                SegmentsPerWindow = 1,
-                                AutoReplenishment = true
+                                QueueLimit = 0
                             });
 
                         return RateLimiterCombine.AndAll(perSecond, perDay);

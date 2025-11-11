@@ -30,6 +30,11 @@ public static class HttpContextExtension
 
         return null;
     }
+    public static string ResolveActionPath(this HttpContext ctx)
+        => ctx.Request.Path;
+
+    public static string ResolveAccountIdOrAnonBucketIdByActionKey(this HttpContext ctx)
+        => $"{ResolveActionPath(ctx)}:{ResolveAccountIdOrAnonBucketIdKey(ctx)}";
 
     public static string ResolveAccountIdOrAnonBucketIdKey(this HttpContext ctx)
         => ResolveAccountId(ctx) ?? $"anon:{ResolveBucketIp(ctx)}";
