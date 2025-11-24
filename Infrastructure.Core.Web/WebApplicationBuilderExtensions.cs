@@ -388,8 +388,8 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
-            var knownProxies = config.KnownProxies ?? [];
-            var knownNetworks = config.KnownNetworks ?? [];
+            var knownProxies = config?.KnownProxies ?? [];
+            var knownNetworks = config?.KnownNetworks ?? [];
 
             if (knownProxies.Any() || knownNetworks.Any())
             {
@@ -397,11 +397,11 @@ public static class WebApplicationBuilderExtensions
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
 
-                options.ForwardedForHeaderName = config.ForwardedForHeaderName.IsNullOrEmpty()
+                options.ForwardedForHeaderName = config == null || config.ForwardedForHeaderName.IsNullOrEmpty()
                     ? ForwardedHeadersDefaults.XForwardedForHeaderName
                     : config.ForwardedForHeaderName;
 
-                options.ForwardedProtoHeaderName = config.ForwardedProtoHeaderName.IsNullOrEmpty()
+                options.ForwardedProtoHeaderName = config == null || config.ForwardedProtoHeaderName.IsNullOrEmpty()
                     ? ForwardedHeadersDefaults.XForwardedProtoHeaderName
                     : config.ForwardedProtoHeaderName;
 

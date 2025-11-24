@@ -19,8 +19,8 @@ public interface IApplicationSettings
 public abstract class CoreApplicationSettings : IApplicationSettings
 {
     public Dictionary<string, string> ConnectionStrings { get; set; }
-    public RateLimitingConfiguration RateLimiting { get; set; }
-    public ForwardedHeadersConfiguration ForwardedHeaders { get; set; }
+    public RateLimitingConfiguration RateLimiting { get; set; } = new RateLimitingConfiguration();
+    public ForwardedHeadersConfiguration ForwardedHeaders { get; set; } = new ForwardedHeadersConfiguration();
     public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
     public UrlConfiguration Url { get; set; }
     public SmtpServerConfiguration SmtpServer { get; set; }
@@ -54,8 +54,8 @@ public class RateLimitingConfiguration
 [ApplicationConfiguration]
 public class ForwardedHeadersConfiguration
 {
-    public string[] KnownProxies { get; set; }
-    public string[] KnownNetworks { get; set; }
+    public string[] KnownProxies { get; set; } = [];
+    public string[] KnownNetworks { get; set; } = [];
     public string ForwardedForHeaderName { get; set; }
     public string ForwardedProtoHeaderName { get; set; }
 }

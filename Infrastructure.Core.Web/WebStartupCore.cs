@@ -48,6 +48,20 @@ public class WebStartupCore<TDomainStartup>
 
         app.UseForwardedHeaders();
 
+        app.UseExceptionHandler();
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHsts();
+        }
+
+        app.UseHttpsRedirection();
+
+        app.UseResponseCompression();
+
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+
         HandleRateLimiting(app);
 
         app.Use(async (context, next) =>
@@ -57,14 +71,14 @@ public class WebStartupCore<TDomainStartup>
             await next();
         });
 
-        app.UseHttpsRedirection();
+        app.UseCors();
 
-        app.UseExceptionHandler();
+        HandleAuthentication(app);
+        HandleAuthorization(app);
 
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
+        HandleCurrentCulture(app);
 
-        app.MapControllers();
+        app.UseSecurityHeaders();
 
         if (app.Environment.IsDevelopment())
         {
@@ -73,18 +87,17 @@ public class WebStartupCore<TDomainStartup>
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
         }
 
-        app.UseCors();
+        app.MapControllers();
+    }
 
-        app.UseResponseCompression();
-
-        app.UseHsts();
-
-        app.UseAuthentication();
+    protected virtual void HandleAuthorization(WebApplication app)
+    {
         app.UseAuthorization();
+    }
 
-        HandleCurrentCulture(app);
-
-        app.UseSecurityHeaders();
+    protected virtual void HandleAuthentication(WebApplication app)
+    {
+        app.UseAuthentication();
     }
 
     protected virtual void HandleRateLimiting(WebApplication app)

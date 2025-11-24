@@ -1,9 +1,6 @@
-﻿using Infrastructure.Core.Web;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
-
 using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
@@ -19,7 +16,6 @@ public class MonitorController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    [EnableRateLimiting(RateLimitPolicy.Fixed5per1Hour)]
     public string Version() => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
     [HttpGet]
