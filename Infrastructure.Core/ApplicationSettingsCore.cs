@@ -14,6 +14,8 @@ public interface IApplicationSettings
 
     SmtpServerConfiguration SmtpServer { get; set; }
     MultilingualConfiguration Multilingual { get; set; }
+
+    FeatureToggles FeatureToggles { get; set; }
 }
 
 public abstract class CoreApplicationSettings : IApplicationSettings
@@ -24,7 +26,8 @@ public abstract class CoreApplicationSettings : IApplicationSettings
     public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
     public UrlConfiguration Url { get; set; }
     public SmtpServerConfiguration SmtpServer { get; set; }
-    public MultilingualConfiguration Multilingual { get; set; }
+    public MultilingualConfiguration Multilingual { get; set; } = new MultilingualConfiguration();
+    public FeatureToggles FeatureToggles { get; set; } = new FeatureToggles();
 }
 
 [ApplicationConfiguration]
@@ -58,4 +61,10 @@ public class ForwardedHeadersConfiguration
     public string[] KnownNetworks { get; set; } = [];
     public string ForwardedForHeaderName { get; set; }
     public string ForwardedProtoHeaderName { get; set; }
+}
+
+[ApplicationConfiguration]
+public class FeatureToggles
+{
+    public bool MonitorDetails { get; set; } = false;
 }

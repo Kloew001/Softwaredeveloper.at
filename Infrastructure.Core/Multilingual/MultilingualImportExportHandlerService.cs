@@ -15,7 +15,7 @@ public interface IMultilingualImportExportHandlerService
 [ApplicationConfiguration]
 public class MultilingualConfiguration
 {
-    public bool EnabledAdministration { get; set; } = true;
+    public bool EnabledAdministration { get; set; } = false;
 }
 
 public abstract class MultilingualImportExportHandlerService : IMultilingualImportExportHandlerService
@@ -101,25 +101,23 @@ public abstract class MultilingualImportExportHandlerService : IMultilingualImpo
             var i = 0;
             foreach (var rowBatch in dataTable.Rows.Convert<DataRow>().Batch(100))
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
+                using var scope = _serviceScopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+
+                var multilingualService = scope.ServiceProvider.GetRequiredService(this.GetType()) as MultilingualImportExportHandlerService;
+
+                foreach (var row in rowBatch)
                 {
-                    var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
-                    var multilingualService = scope.ServiceProvider.GetRequiredService(this.GetType()) as MultilingualImportExportHandlerService;
-
-                    foreach (var row in rowBatch)
+                    await multilingualService.HandleRowImport(new MultilingualRow()
                     {
-                        await multilingualService.HandleRowImport(new MultilingualRow()
-                        {
-                            cultureName = dataTable.TableName,
-                            TextKey = row.Field<string>("TextKey"),
-                            Text = row.Field<string>("Text"),
-                            Index = i++,
-                        });
-                    }
-
-                    await context.SaveChangesAsync();
+                        cultureName = dataTable.TableName,
+                        TextKey = row.Field<string>("TextKey"),
+                        Text = row.Field<string>("Text"),
+                        Index = i++,
+                    });
                 }
+
+                await context.SaveChangesAsync();
             }
         }
 
@@ -167,7 +165,7 @@ public abstract class MultilingualImportExportHandlerService : IMultilingualImpo
 
         multilingualText.Text = row.Text;
         multilingualText.Index = row.Index;
-        multilingualText.ViewLevel =  MultilingualProtectionLevel.Public;
+        multilingualText.ViewLevel = MultilingualProtectionLevel.Public;
         multilingualText.EditLevel = MultilingualProtectionLevel.Public;
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 
 using System.Diagnostics;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 
@@ -10,6 +11,7 @@ public interface IMonitorService
     Task<bool> IsAlive();
     string GetEnvironmentName();
     string GetApplicationName();
+    string GetApplicationVersion();
     Task<DBConnectionInfo> DBConnectionInfo();
 }
 
@@ -42,6 +44,10 @@ public class MonitorService : IMonitorService
         return _hostEnvironment.ApplicationName;
     }
 
+    public string GetApplicationVersion()
+    {
+        return Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+    }
     public async Task<DBConnectionInfo> DBConnectionInfo()
     {
         var info = new DBConnectionInfo();

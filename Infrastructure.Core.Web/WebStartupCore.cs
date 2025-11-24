@@ -50,6 +50,13 @@ public class WebStartupCore<TDomainStartup>
 
         app.UseExceptionHandler();
 
+        app.Use(async (context, next) =>
+        {
+            context.Request.EnableBuffering();
+
+            await next();
+        });
+
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
@@ -62,16 +69,9 @@ public class WebStartupCore<TDomainStartup>
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
-        HandleRateLimiting(app);
-
-        app.Use(async (context, next) =>
-        {
-            context.Request.EnableBuffering();
-
-            await next();
-        });
-
         app.UseCors();
+
+        HandleRateLimiting(app);
 
         HandleAuthentication(app);
         HandleAuthorization(app);
@@ -83,7 +83,6 @@ public class WebStartupCore<TDomainStartup>
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            //app.UseSwaggerUI();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
         }
 

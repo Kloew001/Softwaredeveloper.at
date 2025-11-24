@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Infrastructure.Core.Web.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
-using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
@@ -16,7 +16,7 @@ public class MonitorController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public string Version() => Assembly.GetEntryAssembly().GetName().Version.ToString();
+    public string Version() => _monitoreService.GetApplicationVersion();
 
     [HttpGet]
     [AllowAnonymous]
@@ -36,5 +36,51 @@ public class MonitorController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo();
+    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo(); [AllowAnonymous]
+
+    [HttpGet("detail")]
+    public IActionResult Detail([FromServices] IApplicationSettings applicationSettings)
+    {
+        if (applicationSettings.FeatureToggles.MonitorDetails != true)
+            return Forbid();
+
+        var request = HttpContext.Request;
+        var headers = HttpContext.Request.Headers
+                .ToDictionary(h => h.Key, h => h.Value.ToString());
+
+        return Ok(new
+        {
+            Ip = HttpContext.ResolveIpOrAnon(),
+            BucketIp = HttpContext.ResolveBucketIp(),
+            AccountId = HttpContext.ResolveAccountId(),
+            ApplicationName = _monitoreService.GetApplicationName(),
+
+            Server = new
+            {
+                Environment = _monitoreService.GetEnvironmentName(),
+                AppVersion = _monitoreService.GetApplicationVersion()
+            },
+
+            Request = new
+            {
+                Method = request.Method,
+                Path = request.Path,
+                QueryString = request.QueryString.ToString(),
+                Scheme = request.Scheme,
+                Protocol = request.Protocol,
+                Host = request.Host.ToString(),
+                Headers = headers
+            },
+
+            Auth = new
+            {
+                IsAuthenticated = HttpContext.User?.Identity?.IsAuthenticated ?? false,
+                UserName = HttpContext.User?.Identity?.Name,
+                Claims = HttpContext.User?.Claims?.Select(c => new { c.Type, c.Value })
+            },
+
+            TimestampUtc = DateTime.UtcNow,
+            Timestamp = DateTime.Now,
+        });
+    }
 }
