@@ -46,7 +46,7 @@ public class MonitorService : IMonitorService
 
     public string GetApplicationVersion()
     {
-        return Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+        return Assembly.GetEntryAssembly().GetName().Version?.ToString();
     }
     public async Task<DBConnectionInfo> DBConnectionInfo()
     {
