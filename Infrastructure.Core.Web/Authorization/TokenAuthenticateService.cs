@@ -84,14 +84,19 @@ public class TokenAuthenticateService : ITokenAuthenticateService
         if (user == null)
             return TypedResults.Unauthorized();
 
+        if (!await CanUserAuthenticateAsync(user))
+        {
+            return TypedResults.Unauthorized();
+        }
+
         if (!await _signInManager.CanSignInAsync(user))
         {
-            return TypedResults.Problem("Login für den Benutzer nicht möglich.", statusCode: StatusCodes.Status401Unauthorized);
+            return TypedResults.Unauthorized();
         }
 
         if (_userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
         {
-            return TypedResults.Problem("Der Benutzer ist gesperrt.", statusCode: StatusCodes.Status401Unauthorized);
+            return TypedResults.Unauthorized();
         }
 
         var accessTokenResponse = GetAccessTokenResponse(user);

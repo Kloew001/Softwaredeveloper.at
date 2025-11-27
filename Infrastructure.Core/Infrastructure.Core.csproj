@@ -56,7 +56,6 @@
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="itext7" />
-    <PackageReference Include="itext7.bouncy-castle-fips-adapter" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
