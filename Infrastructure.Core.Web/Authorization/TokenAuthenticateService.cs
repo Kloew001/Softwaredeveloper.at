@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication.BearerToken;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using static Infrastructure.Core.Web.WebApplicationBuilderExtensions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
@@ -40,7 +38,7 @@ public class RefreshRequest
 }
 
 //https://github.com/dotnet/aspnetcore/blob/main/src/Identity/Core/src/IdentityApiEndpointRouteBuilderExtensions.cs
-public class TokenAuthenticateService
+public class TokenAuthenticateService : ITokenAuthenticateService
 {
     public const string TokenProviderName = "TokenProvider";
     private const string RefreshTokenName = "RefreshToken";
@@ -122,12 +120,22 @@ public class TokenAuthenticateService
         if (request.Password.IsNullOrEmpty())
             return TypedResults.Unauthorized();
 
+        if (!await CanUserAuthenticateAsync(user))
+        {
+            return TypedResults.Unauthorized();
+        }
+
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 
         if (!result.Succeeded)
             return TypedResults.Unauthorized();
 
         return await AuthenticateTokenAsync(new AuthenticateTokenRequest() { UserName = request.UserName, Email = request.Email });
+    }
+
+    protected virtual ValueTask<bool> CanUserAuthenticateAsync(ApplicationUser user)
+    {
+        return ValueTask.FromResult(user.IsEnabled);
     }
 
     private static List<Claim> GetClaims(ApplicationUser user)
@@ -225,7 +233,7 @@ public class TokenAuthenticateService
         var expires = DateTime.UtcNow.AddMinutes(_jwtSettings.RefreshTokenExpirationMinutes);
 
         expiryClaim = new Claim(RefreshTokenExpiryClaim, expires.ToString("o")); // "o" formats DateTime as ISO 8601
-        
+
         await _userManager.AddClaimAsync(user, expiryClaim);
     }
 
@@ -251,80 +259,5 @@ public class TokenAuthenticateService
     private async Task<Claim> GetRefreshTokenExpiryClaimAsync(ApplicationUser user)
     {
         return (await _userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == RefreshTokenExpiryClaim);
-    }
-}
-
-public interface ITokenService
-{
-    string GenerateAccessToken(IEnumerable<Claim> claims, DateTime expires);
-    string GenerateRefreshToken();
-    ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
-}
-public class JwtTokenService : ITokenService
-{
-    private readonly JwtSettings _jwtSettings;
-    private readonly JwtBearerOptions _jwtBearearOptions;
-
-    public JwtTokenService(JwtSettings jwtSettings, IOptionsMonitor<JwtBearerOptions> options)
-    {
-        _jwtSettings = jwtSettings;
-        _jwtBearearOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
-    }
-
-    public string GenerateAccessToken(IEnumerable<Claim> claims, DateTime expires)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = expires,
-            SigningCredentials = new SigningCredentials(_jwtBearearOptions.TokenValidationParameters.IssuerSigningKey, SecurityAlgorithms.HmacSha256Signature),
-            Issuer = _jwtBearearOptions.TokenValidationParameters.ValidIssuer,
-            Audience = _jwtBearearOptions.TokenValidationParameters.ValidAudience
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
-
-    public string GenerateRefreshToken()
-    {
-        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-    }
-
-    public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-    {
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var tokenValidationParameters = _jwtBearearOptions.TokenValidationParameters.Clone();
-            tokenValidationParameters.ValidateLifetime = false;
-            
-            //new TokenValidationParameters
-            //{
-            //    ValidateAudience = false,
-            //    ValidateIssuer = false,
-            //    ValidateIssuerSigningKey = true,
-            //    IssuerSigningKey = _jwtBearearOptions.TokenValidationParameters.IssuerSigningKey,
-            //    ValidateLifetime = false // here we are saying that we don't care about the token's expiration date
-            //};
-
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-
-            var jwtSecurityToken = securityToken as JwtSecurityToken;
-
-            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-            {
-                throw new SecurityTokenException("Invalid token");
-            }
-
-            return principal;
-        }
-        catch (SecurityTokenExpiredException)
-        {
-            throw new ApplicationException("Token has expired.");
-        }
     }
 }

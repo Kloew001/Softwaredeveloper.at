@@ -7,9 +7,9 @@ namespace RWA.Server.Controllers;
 
 public class AccountController : BaseApiController
 {
-    private readonly TokenAuthenticateService _authenticateService;
+    private readonly ITokenAuthenticateService _authenticateService;
 
-    public AccountController(TokenAuthenticateService authenticateService)
+    public AccountController(ITokenAuthenticateService authenticateService)
     {
         _authenticateService = authenticateService;
     }
