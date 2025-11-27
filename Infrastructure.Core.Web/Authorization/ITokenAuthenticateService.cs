@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
+
 public interface ITokenAuthenticateService
 {
     Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, UnauthorizedHttpResult, ProblemHttpResult>> AuthenticateTokenAsync(AuthenticatePasswordRequest request);
