@@ -221,7 +221,7 @@ public static class WebApplicationBuilderExtensions
         var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
         builder.Services.AddSingleton<JwtSettings>(jwtSettings);
         builder.Services.AddTransient<ITokenService, JwtTokenService>();
-        builder.Services.AddTransient<TokenAuthenticateService, TokenAuthenticateService>();
+        builder.Services.AddTransient<ITokenAuthenticateService, TokenAuthenticateService>();
 
         builder.Services.AddAuthentication(options =>
         {
