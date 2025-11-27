@@ -33,7 +33,7 @@ public class CreateApplicationUserIdentity
 
 public interface IApplicationUserIdentityService
 {
-    Task<Guid> CreateRoleAsync(Guid id, string roleName);
+    Task<Guid> EnsureRoleAsync(Guid id, string roleName);
     Task<Guid> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
     Task DeleteUserAsync(Guid userId);
 }
@@ -48,7 +48,7 @@ public interface IApplicationUserService
     Task<ApplicationUser> GetUserByEMailAsync(string email);
     Task<ApplicationUser> GetUserByUserNameAsync(string username);
     Task<ApplicationUser> CreateUserAsync(CreateApplicationUserIdentity identity, CancellationToken ct = default);
-    Task<Guid> CreateRoleAsync(Guid id, string roleName);
+    Task<Guid> EnsureRoleAsync(Guid id, string roleName);
     Task SetPreferedCultureAsync(string cultureName);
 }
 
@@ -157,12 +157,12 @@ public class ApplicationUserService : EntityService<ApplicationUser>, IApplicati
         return query.OrderBy(_ => _.Email);
     }
 
-    public virtual async Task<Guid> CreateRoleAsync(Guid id, string roleName)
+    public virtual async Task<Guid> EnsureRoleAsync(Guid id, string roleName)
     {
         var applicationUserIdentityService = EntityServiceDependency.ServiceProvider.GetRequiredService<IApplicationUserIdentityService>();
 
         id = await applicationUserIdentityService
-            .CreateRoleAsync(id, roleName);
+            .EnsureRoleAsync(id, roleName);
 
         return id;
     }

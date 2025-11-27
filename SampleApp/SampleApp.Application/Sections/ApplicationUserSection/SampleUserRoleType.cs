@@ -7,6 +7,4 @@ public class SampleUserRoleType : ExtendableEnumExtension<UserRoleType>
 
     public static readonly UserRoleType User =
         new(1, "User", Guid.Parse("51B48311-1067-4C4C-BBBB-96F2F29188E2"), "User");
-
-    public static IList<Type> DeclaringTypes { get; } = new List<Type>();
 }

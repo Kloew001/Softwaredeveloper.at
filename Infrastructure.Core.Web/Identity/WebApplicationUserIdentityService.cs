@@ -23,7 +23,7 @@ public class WebApplicationUserIdentityService : IApplicationUserIdentityService
         _dateTimeService = serviceProvider.GetService<IDateTimeService>();
     }
 
-    public async Task<Guid> CreateRoleAsync(Guid id, string roleName)
+    public async Task<Guid> EnsureRoleAsync(Guid id, string roleName)
     {
         if (!await _roleManager.RoleExistsAsync(roleName))
         {

@@ -19,7 +19,7 @@ public class ApplicationRoleDataSeed : IDataSeed
         var userRoleTypes = UserRoleType.GetAll();
         foreach (var userRoleType in userRoleTypes)
         {
-            await _applicationUserService.CreateRoleAsync(
+            await _applicationUserService.EnsureRoleAsync(
                 userRoleType.Id,
                 userRoleType.Name);
         }

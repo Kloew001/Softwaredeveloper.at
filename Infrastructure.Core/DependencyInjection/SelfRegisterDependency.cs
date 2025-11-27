@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core;
 
@@ -60,6 +61,38 @@ public class SingletonDependencyAttribute<TTypeRegisterFor> : SingletonDependenc
 
 public static class ServiceCollectionExtensions
 {
+    public static void RegisterExtendableEnumExtensions(this IServiceCollection services)
+    {
+        var extendableEnumExtensionsTypes = AssemblyUtils.AllLoadedTypes()
+           .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
+           .Where(p => typeof(IExtendableEnumExtension).IsAssignableFrom(p))
+           .ToList();
+
+        foreach (var extendableEnumExtensionType in extendableEnumExtensionsTypes)
+        {
+            var baseType = extendableEnumExtensionType.BaseType;
+
+            while (baseType != null &&
+                   (!baseType.IsGenericType ||
+                    baseType.GetGenericTypeDefinition() != typeof(ExtendableEnumExtension<>)))
+            {
+                baseType = baseType.BaseType;
+            }
+
+            var enumType = baseType.GetGenericArguments().Single();
+
+            var declaringTypesProperty =
+           enumType
+           .GetProperty("DeclaringTypes", BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty | BindingFlags.FlattenHierarchy);
+
+            var declaringTypes =
+                declaringTypesProperty.GetValue(null)
+                .As<IList<Type>>();
+
+            declaringTypes.Add(extendableEnumExtensionType);
+        }
+    }
+
     public static void RegisterSelfRegisterDependencies(this IServiceCollection services)
     {
         var appStatupInits = AssemblyUtils.AllLoadedTypes()

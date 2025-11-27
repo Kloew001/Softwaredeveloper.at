@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
@@ -31,6 +32,18 @@ public class ApplicationRoleConfiguration : IEntityTypeConfiguration<Application
     public void Configure(EntityTypeBuilder<ApplicationRole> builder)
     {
         builder.ToTable("ApplicationRole", "identity");
+
+        var userRoleTypes = UserRoleType.GetAll();
+
+        foreach (var userRoleType in userRoleTypes)
+        {
+            builder.HasData(new ApplicationRole()
+            {
+                Id = userRoleType.Id,
+                Name = userRoleType.Name,
+                NormalizedName = userRoleType.Name.ToUpper()
+            });
+        }
     }
 }
 

@@ -62,7 +62,7 @@ public abstract class ApplicationUserDataSeed : IDataSeed
 
     protected async Task EnsureDevUserForEachRole()
     {
-        if (!_environment.IsProduction())
+        if (_environment.IsDevelopment())
         {
             var serviceUser = _configuration.GetSection("ServiceUser");
 

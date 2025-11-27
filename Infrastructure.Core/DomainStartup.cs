@@ -45,6 +45,7 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
 
         Services.RegisterSelfRegisterDependencies();
         Services.RegisterAllHostedService();
+        Services.RegisterExtendableEnumExtensions();
 
         Services.AddSingleton<ICacheService, CacheService>();
 
