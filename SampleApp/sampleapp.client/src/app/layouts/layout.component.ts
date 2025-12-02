@@ -8,9 +8,10 @@ import { NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject, Observable, delay, filter, map, of } from 'rxjs';
 
 @Component({
-  selector: 'app-layout',
-  templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.scss']
+    selector: 'app-layout',
+    templateUrl: './layout.component.html',
+    styleUrls: ['./layout.component.scss'],
+    standalone: false
 })
 export class LayoutComponent {
 

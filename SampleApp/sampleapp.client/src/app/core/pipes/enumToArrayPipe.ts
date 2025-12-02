@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
 @Pipe({
-  name: 'enumToArray'
+    name: 'enumToArray',
+    standalone: false
 })
 export class EnumToArrayPipe implements PipeTransform {
   transform(value): Object {
@@ -15,7 +16,8 @@ export class EnumToArrayPipe implements PipeTransform {
 
 
 @Pipe({
-  name: 'enumMetadataToArray'
+    name: 'enumMetadataToArray',
+    standalone: false
 })
 export class EnumMetadataToArrayPipe implements PipeTransform {
   transform(value: Record<any, any>): Object {
