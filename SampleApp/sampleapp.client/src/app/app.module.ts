@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -9,21 +9,12 @@ import { LayoutsModule } from './layouts/module';
 import { CoreModule } from './core/module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    HttpClientModule,
-    AppRoutingModule,
-
-    CoreModule,
-
-    LayoutsModule,
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        CoreModule,
+        LayoutsModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule { }
