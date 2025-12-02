@@ -24,8 +24,9 @@ export const personEditResolver: ResolveFn<PersonDto> =
   };
 
 @Component({
-  selector: 'person-edit',
-  templateUrl: './edit.component.html'
+    selector: 'person-edit',
+    templateUrl: './edit.component.html',
+    standalone: false
 })
 export class PersonEditComponent implements OnInit {
 

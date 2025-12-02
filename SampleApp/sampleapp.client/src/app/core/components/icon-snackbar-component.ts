@@ -3,8 +3,8 @@ import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar'
 // ...
 
 @Component({
-  selector: 'icon-snackBar',
-  template: `
+    selector: 'icon-snackBar',
+    template: `
   <div fxLayout="row" fxLayoutAlign="start center"  fxLayoutGap="5px">
     @if(data?.icon != null) {
       <mat-icon>{{data?.icon}}</mat-icon>
@@ -15,7 +15,8 @@ import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar'
       <mat-icon>close</mat-icon>
     </button>
   </div>
-`
+`,
+    standalone: false
 })
 export class IconSnackBarComponent {
   constructor(

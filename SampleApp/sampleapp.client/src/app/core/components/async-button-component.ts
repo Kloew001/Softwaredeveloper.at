@@ -5,8 +5,8 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
 //[mat-stroked-button]="buttonStyle == 'stroked'"
 
 @Component({
-  selector: 'async-button',
-  template: `<button mat-raised-button
+    selector: 'async-button',
+    template: `<button mat-raised-button
 
                     [color]="color"
 
@@ -24,8 +24,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
                                  *ngIf="isloading"
                                  [class.loading]="isloading"></mat-spinner>
                </button>`,
-
-  styles: [`  :host 
+    styles: [`  :host 
                 {
                     position: relative;
                 }
@@ -72,9 +71,9 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
                     justify-content: center;
                 }
              `
-  ],
-
-  changeDetection: ChangeDetectionStrategy.OnPush
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class AsyncButtonComponent {
 
