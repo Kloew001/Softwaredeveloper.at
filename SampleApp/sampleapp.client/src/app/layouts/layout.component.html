@@ -1,23 +1,29 @@
 <div fxLayout="column"
-     fxLayoutAlign="space-between stretch"
-     fxFill>
+  fxLayoutAlign="space-between stretch"
+  fxFill>
   <mat-toolbar #headerToolbar>
     <div fxLayout="row" fxFill fxLayoutAlign="space-between center">
-      <button mat-icon-button
-              (click)="sidenav.toggle()"
-              *ngIf="useSidebar && sidenav?.mode === 'over'">
-        <mat-icon *ngIf="!sidenav.opened">menu</mat-icon>
-        <mat-icon *ngIf="sidenav.opened">close</mat-icon>
-      </button>
+      @if (useSidebar && sidenav?.mode === 'over') {
+        <button mat-icon-button
+          (click)="sidenav.toggle()"
+          >
+          @if (!sidenav.opened) {
+            <mat-icon>menu</mat-icon>
+          }
+          @if (sidenav.opened) {
+            <mat-icon>close</mat-icon>
+          }
+        </button>
+      }
 
       <span [routerLink]="'/'"
-            style="cursor: pointer;"
-            fxLayout="row"
-            fxLayoutAlign="start center"
-            fxLayoutGap="2">
+        style="cursor: pointer;"
+        fxLayout="row"
+        fxLayoutAlign="start center"
+        fxLayoutGap="2">
         <img src='/assets/logo.png'
-                  style="width: 50px;"/> 
-        <!--<mat-icon svgIcon="app-logo">
+          style="width: 50px;"/>
+          <!--<mat-icon svgIcon="app-logo">
         </mat-icon>-->
         <span class="apptitle">
           {{appTitle | async}}
@@ -28,30 +34,32 @@
   </mat-toolbar>
 
   @if(useSidebar){
-  <div fxFlex>
-    <mat-sidenav-container autosize>
-      <mat-sidenav #sidenav="matSidenav">
-        <mat-nav-list>
+    <div fxFlex>
+      <mat-sidenav-container autosize>
+        <mat-sidenav #sidenav="matSidenav">
+          <mat-nav-list>
 
-          <button mat-button class="menu-button" routerLink="/home">
-            <mat-icon>home</mat-icon>
-            <span>Home</span>
-          </button>
+            <button mat-button class="menu-button" routerLink="/home">
+              <mat-icon>home</mat-icon>
+              <span>Home</span>
+            </button>
 
-          <mat-divider></mat-divider>
+            <mat-divider></mat-divider>
 
-          <a mat-list-item>
-            <span class="entry">
-              <mat-icon>house</mat-icon>
-              <span *ngIf="!isCollapsed">Dashboard</span>
-            </span>
-          </a>
-        </mat-nav-list>
-      </mat-sidenav>
-      <mat-sidenav-content>
-        <div fxLayout="column"
-             fxLayoutAlign="space-between stretch"
-             fxFill>
+            <a mat-list-item>
+              <span class="entry">
+                <mat-icon>house</mat-icon>
+                @if (!isCollapsed) {
+                  <span>Dashboard</span>
+                }
+              </span>
+            </a>
+          </mat-nav-list>
+        </mat-sidenav>
+        <mat-sidenav-content>
+          <div fxLayout="column"
+            fxLayoutAlign="space-between stretch"
+            fxFill>
           <!-- Body ------------------------------------------------------------------------->
           <div id="main-content-container" fxFlex>
             <router-outlet></router-outlet>
@@ -64,18 +72,18 @@
       </mat-sidenav-content>
     </mat-sidenav-container>
   </div>
-  }
-  @else{
+}
+@else{
 
-  <!-- Body ------------------------------------------------------------------------->
-  <div id="main-content-container" fxFlex>
-    <router-outlet></router-outlet>
-  </div>
+<!-- Body ------------------------------------------------------------------------->
+<div id="main-content-container" fxFlex>
+  <router-outlet></router-outlet>
+</div>
 
-  <!-- Footer ------------------------------------------------------------------------->
-  <div fxFlex="none" id="footerToolbar">
-    <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
-  </div>
-  }
+<!-- Footer ------------------------------------------------------------------------->
+<div fxFlex="none" id="footerToolbar">
+  <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
+</div>
+}
 
 </div>

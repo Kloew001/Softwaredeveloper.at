@@ -8,22 +8,23 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
     selector: 'async-button',
     template: `<button mat-raised-button
 
-                    [color]="color"
+  [color]="color"
 
-                    [class.loading]="isloading"
-                    [disabled]="isDisabled">
+  [class.loading]="isloading"
+  [disabled]="isDisabled">
 
-                    <mat-icon>{{icon}}</mat-icon>
+  <mat-icon>{{icon}}</mat-icon>
 
-                    {{text}}
-                    <ng-content [class.loading]="isloading">
-                    </ng-content>
+  {{text}}
+  <ng-content [class.loading]="isloading">
+  </ng-content>
 
-                    <mat-spinner [mode]="'indeterminate'"
-                                 [diameter]="19"
-                                 *ngIf="isloading"
-                                 [class.loading]="isloading"></mat-spinner>
-               </button>`,
+  @if (isloading) {
+    <mat-spinner [mode]="'indeterminate'"
+      [diameter]="19"
+    [class.loading]="isloading"></mat-spinner>
+  }
+</button>`,
     styles: [`  :host 
                 {
                     position: relative;
