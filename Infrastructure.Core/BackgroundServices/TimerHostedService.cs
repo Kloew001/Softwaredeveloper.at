@@ -9,7 +9,7 @@ public abstract class TimerHostedService : BaseHostedService
     protected TimerHostedService(
         IServiceScopeFactory serviceScopeFactory,
         IHostApplicationLifetime appLifetime,
-        ILogger<BaseHostedService> logger,
+        ILogger<TimerHostedService> logger,
         IApplicationSettings applicationSettings)
         : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
     {

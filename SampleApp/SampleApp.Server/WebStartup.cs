@@ -11,7 +11,7 @@ public class WebStartup : WebStartupCore<DomainStartup>
     {
     }
 
-    public override void ConfigureServices()
+    protected override void ConfigureServices()
     {
         base.ConfigureServices();
 

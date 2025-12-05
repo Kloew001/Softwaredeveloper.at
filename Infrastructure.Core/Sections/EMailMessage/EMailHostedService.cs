@@ -13,12 +13,18 @@ public interface IEMailSendHandler
 
 public class EMailSendHandler : IEMailSendHandler
 {
+    protected readonly ILogger<EMailSendHandler> _logger;
     protected readonly IDbContext _context;
-    private readonly IEMailSender _emailSender;
-    private readonly IDateTimeService _dateTimeService;
+    protected readonly IEMailSender _emailSender;
+    protected readonly IDateTimeService _dateTimeService;
 
-    public EMailSendHandler(IDbContext context, IEMailSender emailSender, IDateTimeService dateTimeService)
+    public EMailSendHandler(
+        ILogger<EMailSendHandler> logger,
+        IDbContext context, 
+        IEMailSender emailSender, 
+        IDateTimeService dateTimeService)
     {
+        _logger = logger;
         _context = context;
         _emailSender = emailSender;
         _dateTimeService = dateTimeService;
@@ -42,6 +48,8 @@ public class EMailSendHandler : IEMailSendHandler
             emailMessage.Status = EmailMessageStatusType.Error;
 
             OnError(emailMessage);
+
+            _logger.LogError(ex, "Error sending email message with id {EmailMessageId}: {ErrorMessage}", emailMessage.Id, ex.Message);
         }
     }
 
@@ -101,9 +109,8 @@ public class EMailHostedService : HandleBatchTimeHostedService
     {
     }
 
-    protected override async Task<List<Guid>> GetIdsAsync(CancellationToken ct)
+    protected override async Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
         var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
 
         var now = DateTime.Now;
@@ -112,11 +119,10 @@ public class EMailHostedService : HandleBatchTimeHostedService
         return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize, ct);
     }
 
-    protected override async Task HandleIdAsync(Guid id, CancellationToken ct)
+    protected override async Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct)
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
             scope.ServiceProvider.GetService<ICurrentUserService>()
                 .SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 

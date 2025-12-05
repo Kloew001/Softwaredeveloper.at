@@ -27,10 +27,8 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
         };
     }
 
-    protected override async Task<List<Guid>> GetIdsAsync(CancellationToken ct)
+    protected override async Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-
         var context = scope.ServiceProvider.GetService<IDbContext>();
 
         var ids = await context.Set<BinaryContent>()
@@ -43,12 +41,10 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 
         return ids;
     }
-    protected override async Task HandleIdAsync(Guid id, CancellationToken ct)
+    protected override async Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct)
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-
             scope.ServiceProvider.GetService<ICurrentUserService>()
                 .SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
@@ -74,11 +70,11 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
         {
             _logger.LogError(ex, ex.Message);
 
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var errorScope = _serviceScopeFactory.CreateScope();
 
-            scope.ServiceProvider.GetService<ICurrentUserService>().SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
+            errorScope.ServiceProvider.GetService<ICurrentUserService>().SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
-            var context = scope.ServiceProvider.GetService<IDbContext>();
+            var context = errorScope.ServiceProvider.GetService<IDbContext>();
 
             var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id);
             binaryContent.ExtractionHandledAt = DateTime.Now;

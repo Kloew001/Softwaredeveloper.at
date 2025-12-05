@@ -17,24 +17,26 @@ public abstract class HandleBatchTimeHostedService : TimerHostedService
 
     protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken ct)
     {
-        await HandleBatchAsync(ct);
+        await HandleBatchAsync(scope, ct);
     }
 
-    protected virtual async Task HandleBatchAsync(CancellationToken ct)
+    protected virtual async Task HandleBatchAsync(IServiceScope scope, CancellationToken ct)
     {
-        var ids = await GetIdsAsync(ct);
+        using var childScope = scope.CreateChildScope(true);
+        var ids = await GetIdsAsync(childScope, ct);
 
         foreach (var id in ids)
         {
-            await HandleIdAsync(id, ct);
+            using var childScopeId = scope.CreateChildScope(true);
+            await HandleIdAsync(childScopeId, id, ct);
         }
 
         if (ids.Count == _hostedServicesConfiguration.BatchSize)
         {
-            await HandleBatchAsync(ct);
+            await HandleBatchAsync(scope, ct);
         }
     }
 
-    protected abstract Task<List<Guid>> GetIdsAsync(CancellationToken ct);
-    protected abstract Task HandleIdAsync(Guid id, CancellationToken ct);
+    protected abstract Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct);
+    protected abstract Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct);
 }

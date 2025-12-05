@@ -9,7 +9,7 @@ public class DataSeedHostedService : BaseHostedService
     public DataSeedHostedService(
         IServiceScopeFactory serviceScopeFactory,
         IHostApplicationLifetime appLifetime,
-        ILogger<BaseHostedService> logger,
+        ILogger<DataSeedHostedService> logger,
         IApplicationSettings applicationSettings)
         : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
     {

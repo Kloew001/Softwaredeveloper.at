@@ -51,11 +51,11 @@ public class WebStartupCore<TDomainStartup>
 
             app.Run();
 
-            Log.Information("Web application stopped");
+            Log.Information("Web application finished");
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Application terminated unexpectedly");
+            Log.Fatal(ex, "Web application terminated unexpectedly");
         }
         finally
         {

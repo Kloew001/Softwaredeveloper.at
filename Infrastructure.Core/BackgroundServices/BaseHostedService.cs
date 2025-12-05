@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
-using static SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.SoftwaredeveloperDotAtDbContext;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
