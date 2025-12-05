@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using static SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.SoftwaredeveloperDotAtDbContext;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
@@ -99,7 +100,6 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         if (CanStart() == false)
         {
-            _logger.LogInformation($"IHostedService {Name} do not have configuration");
             return Task.CompletedTask;
         }
 
@@ -136,7 +136,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     {
         try
         {
-            _logger.LogInformation($"IHostedService execute for {Name}");
+            var stopWatch = Stopwatch.StartNew();
 
             using var scope = _serviceScopeFactory.CreateScope();
             using var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>();
@@ -148,6 +148,8 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             {
                 if (await CanStartBackgroundServiceInfo() == false)
                     return;
+
+                _logger.LogInformation($"Start BackgroundService: {Name}");
 
                 await StartBackgroundServiceInfoAsync(cancellationToken);
 
@@ -162,10 +164,12 @@ public abstract class BaseHostedService : IHostedService, IDisposable
                 await heartbeatTask;
 
                 await FinishedBackgroundServiceInfoAsync(cancellationToken);
+
+                _logger.LogInformation($"Finished BackgroundService: {Name} in {stopWatch.ElapsedMilliseconds} ms");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error while executing background hosted service: '{Name}'");
+                _logger.LogError(ex, $"Error in BackgroundService: {Name}");
 
                 await ErrorBackgroundServiceInfoAsync(ex, cancellationToken);
             }

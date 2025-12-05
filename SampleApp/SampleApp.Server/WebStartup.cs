@@ -1,26 +1,25 @@
-﻿using Infrastructure.Core.Web;
-
-using SampleApp.Application;
+﻿using SampleApp.Application;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
 public class WebStartup : WebStartupCore<DomainStartup>
 {
-    public WebStartup(IConfigurationRoot configuration)
-        : base(configuration)
+    public WebStartup(WebApplicationBuilder builder)
+        : base(builder)
     {
     }
 
-    public override void ConfigureServices(WebApplicationBuilder builder)
+    public override void ConfigureServices()
     {
-        base.ConfigureServices(builder);
+        base.ConfigureServices();
 
-        builder.Services.RegisterDBContext<SampleAppIdentityDbContext>();
+        Services.RegisterDBContext<SampleAppIdentityDbContext>();
 
-        builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
+        Builder.AddIdentity<ApplicationUser, ApplicationRole, SampleAppIdentityDbContext>();
 
-        builder.Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
-        //builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+        Services.AddScoped<ICurrentUserService, AlwaysServiceUserCurrentUserService>();
+        //Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
     }
 }

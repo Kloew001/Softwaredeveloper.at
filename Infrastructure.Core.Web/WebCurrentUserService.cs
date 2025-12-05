@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.JsonWebTokens;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core;
-
 using System.Security.Claims;
 
-namespace Infrastructure.Core.Web;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 
 public class WebCurrentUserService : ICurrentUserService
 {

@@ -19,12 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\SampleApp.Server\log4net.config" Link="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />

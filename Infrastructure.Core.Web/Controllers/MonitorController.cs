@@ -1,5 +1,4 @@
-﻿using Infrastructure.Core.Web.Utility;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 
@@ -36,10 +35,13 @@ public class MonitorController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo(); [AllowAnonymous]
-
-    [HttpGet("detail")]
-    public IActionResult Detail([FromServices] IApplicationSettings applicationSettings)
+    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo(); 
+    
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult Detail(
+        [FromServices] IApplicationSettings applicationSettings,
+        [FromServices] IDateTimeService dateTimeService)
     {
         if (applicationSettings.FeatureToggles.MonitorDetails != true)
             return Forbid();
@@ -80,7 +82,7 @@ public class MonitorController : BaseApiController
             },
 
             TimestampUtc = DateTime.UtcNow,
-            Timestamp = DateTime.Now,
+            Timestamp = dateTimeService.Now().ToString(),
         });
     }
 }

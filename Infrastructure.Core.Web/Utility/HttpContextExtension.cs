@@ -3,7 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 
-namespace Infrastructure.Core.Web.Utility;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Utility;
 
 public static class HttpContextExtension
 {
@@ -25,11 +25,17 @@ public static class HttpContextExtension
         }
 
         var apiKey = ctx.Request.Headers["X-Api-Key"].FirstOrDefault();
+        
         if (!string.IsNullOrWhiteSpace(apiKey))
             return apiKey!.Trim().ToLowerInvariant();
 
         return null;
     }
+    public static string ResolveAccountIdOrAnon(this HttpContext ctx)
+    {
+        return ResolveAccountId(ctx) ?? "anon";
+    }
+
     public static string ResolveActionPath(this HttpContext ctx)
         => ctx.Request.Path;
 
@@ -41,7 +47,7 @@ public static class HttpContextExtension
 
     public static string ResolveAccountIdAndBucketIpKey(this HttpContext ctx)
     {
-        var acc = ResolveAccountId(ctx) ?? "anon";
+        var acc = ResolveAccountIdOrAnon(ctx);
         var ipk = ResolveBucketIp(ctx);
         return $"accip:{acc}|{ipk}";
     }

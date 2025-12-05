@@ -1,6 +1,6 @@
-﻿using Infrastructure.Core.Tests;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Tests;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 
 namespace SampleApp.Application.Tests;

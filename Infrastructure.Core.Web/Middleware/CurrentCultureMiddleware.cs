@@ -5,10 +5,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-
 using System.Globalization;
 
-namespace Infrastructure.Core.Web.Middleware;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 public static class UseCurrentCultureBuilderExtensions
 {

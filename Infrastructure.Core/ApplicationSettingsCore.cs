@@ -7,15 +7,15 @@ public class ApplicationConfigurationAttribute : Attribute
 
 public interface IApplicationSettings
 {
-    Dictionary<string, string> ConnectionStrings { get; set; }
-
-    Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
-    UrlConfiguration Url { get; set; }
-
-    SmtpServerConfiguration SmtpServer { get; set; }
-    MultilingualConfiguration Multilingual { get; set; }
-
-    FeatureToggles FeatureToggles { get; set; }
+    Dictionary<string, string> ConnectionStrings { get; }
+    RateLimitingConfiguration RateLimiting { get; }
+    ForwardedHeadersConfiguration ForwardedHeaders { get; }
+    Dictionary<string, HostedServicesConfiguration> HostedServices { get; }
+    UrlConfiguration Url { get; }
+    SmtpServerConfiguration SmtpServer { get; }
+    MultilingualConfiguration Multilingual { get; }
+    FeatureToggles FeatureToggles { get; }
+    FullRequestLoggingConfiguration FullRequestLogging { get;  }
 }
 
 public abstract class CoreApplicationSettings : IApplicationSettings
@@ -28,6 +28,7 @@ public abstract class CoreApplicationSettings : IApplicationSettings
     public SmtpServerConfiguration SmtpServer { get; set; }
     public MultilingualConfiguration Multilingual { get; set; } = new MultilingualConfiguration();
     public FeatureToggles FeatureToggles { get; set; } = new FeatureToggles();
+    public FullRequestLoggingConfiguration FullRequestLogging { get; set; } = new FullRequestLoggingConfiguration();
 }
 
 [ApplicationConfiguration]
@@ -67,4 +68,13 @@ public class ForwardedHeadersConfiguration
 public class FeatureToggles
 {
     public bool MonitorDetails { get; set; } = false;
+}
+
+[ApplicationConfiguration]
+public class FullRequestLoggingConfiguration
+{
+    public bool Enabled { get; set; } = false;
+    public bool IncludeBody { get; set; } = false;
+    public int MaxBodyLength { get; set; } = 4096;
+    public bool SanitizeSensitiveHeaders { get; set; } = true;
 }

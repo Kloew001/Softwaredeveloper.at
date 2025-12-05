@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using static Infrastructure.Core.Web.WebApplicationBuilderExtensions;
+using static SoftwaredeveloperDotAt.Infrastructure.Core.Web.WebApplicationBuilderExtensions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 

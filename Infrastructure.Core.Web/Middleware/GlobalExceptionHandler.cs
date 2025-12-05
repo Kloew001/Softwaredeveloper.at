@@ -7,7 +7,7 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 using System.Diagnostics;
 using SoftwareDeveloperDotATValidation = SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
-namespace Infrastructure.Core.Web.Middleware;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 public class ValidationExceptionHandler : IExceptionHandler
 {

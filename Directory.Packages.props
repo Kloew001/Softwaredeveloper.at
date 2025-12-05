@@ -49,5 +49,14 @@
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageVersion Include="System.Threading.RateLimiting" Version="8.0.0" />
     <PackageVersion Include="TomLonghurst.ReadableTimeSpan" Version="1.0.5" />
+	<PackageVersion Include="Serilog" Version="4.3.0" />
+	<PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
+	<PackageVersion Include="Serilog.AspNetCore" Version="8.0.1" />
+	<PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.0" />
+	<PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
+	<PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+	<PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+	<PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+	<PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
   </ItemGroup>
 </Project>

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using static Infrastructure.Core.Web.WebApplicationBuilderExtensions;
+using static SoftwaredeveloperDotAt.Infrastructure.Core.Web.WebApplicationBuilderExtensions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 

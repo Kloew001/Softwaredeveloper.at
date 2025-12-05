@@ -1,7 +1,4 @@
-﻿using ExtendableEnums.Microsoft.AspNetCore;
-using Infrastructure.Core.Web.Middleware;
-using Infrastructure.Core.Web.Utility;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,111 +10,23 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using SoftwaredeveloperDotAt.Infrastructure.Core;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
-namespace Infrastructure.Core.Web;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 
 public static class WebApplicationBuilderExtensions
 {
-    public static WebApplicationBuilder AddDefaultServices(this WebApplicationBuilder builder)
-    {
-        builder.ConfigureHosting();
-
-        var environmentVariablesPrefix = builder.Configuration.GetSection("EnvironmentVariablesPrefix").Get<string>() ?? string.Empty;
-        builder.Configuration.AddEnvironmentVariables(environmentVariablesPrefix);
-
-        builder.Services.AddLogging(options =>
-        {
-        });
-        builder.Logging.AddLog4Net("log4net.config");
-
-        builder.Services.AddHttpContextAccessor();
-
-        builder.AddForwardedHeaders();
-
-        var rateLimitingConfiguration = builder.Configuration
-            .GetSection("RateLimiting")
-            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
-
-        if (rateLimitingConfiguration.Enabled)
-        {
-            builder.AddRateLimiter();
-        }
-
-        builder.Services.AddControllers(options =>
-        {
-            options.UseExtendableEnumModelBinding();
-
-            //options.ModelBinderProviders.Remove
-            //(options.ModelBinderProviders.Single(_ => _.GetType() == typeof(Microsoft.AspNetCore.Mvc.ModelBinding.Binders.DateTimeModelBinderProvider)));
-
-            //options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
-        })
-        //.AddApplicationPart(typeof(BaseApiController).Assembly)
-
-        .AddNewtonsoftJson(options =>
-        {
-            //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.None;
-            options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-            options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Include;
-            options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Local;
-        });
-
-        builder.Services.AddEndpointsApiExplorer();
-
-        builder.Services.AddProblemDetails(options =>
-        {
-            options.CustomizeProblemDetails = context =>
-            {
-                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-                var problem = context.ProblemDetails;
-
-                problem.Instance ??= $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
-                problem.Type ??= $"https://httpstatuses.com/{problem.Status}";
-
-                var traceId = Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
-                problem.Extensions["traceId"] = traceId;
-                problem.Extensions["timestamp"] = DateTimeOffset.UtcNow;
-
-                if (env.IsDevelopment() && context.Exception is not null)
-                {
-                    problem.Extensions["exception"] = new
-                    {
-                        type = context.Exception.GetType().Name,
-                        message = context.Exception.Message,
-                        stackTrace = context.Exception.StackTrace
-                    };
-                }
-            };
-        });
-        builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
-        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-
-        builder.AddResponseCompression();
-
-        builder.AddCors();
-
-        builder.AddDefaultHsts();
-
-        builder.Services.AddSingleton<ISecurityHeadersService, SecurityHeadersService>();
-
-        return builder;
-    }
-
     private const int _defaultMxRequestBodySizeInMB = 5;
 
     public static WebApplicationBuilder ConfigureHosting(this WebApplicationBuilder builder)

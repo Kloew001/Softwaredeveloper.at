@@ -6,13 +6,12 @@ using Moq;
 
 using NUnit.Framework;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core;
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
-namespace Infrastructure.Core.Tests;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Tests;
 
 public abstract class BaseTest<TDomainStartup>
     where TDomainStartup : IDomainStartupCore, new()

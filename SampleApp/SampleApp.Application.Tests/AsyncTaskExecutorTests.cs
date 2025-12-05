@@ -1,9 +1,8 @@
-﻿using Infrastructure.Core.Tests;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Tests;
 using System.Data;
 using System.Diagnostics;
 

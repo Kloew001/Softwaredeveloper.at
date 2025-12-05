@@ -1,4 +1,4 @@
-﻿using Infrastructure.Core.Tests;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Tests;
 
 namespace SampleApp.Application.Tests;
 

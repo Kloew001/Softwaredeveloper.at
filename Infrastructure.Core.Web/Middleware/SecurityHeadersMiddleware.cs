@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
-namespace Infrastructure.Core.Web.Middleware;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 public static class SecurityHeadersBuilderExtensions
 {
