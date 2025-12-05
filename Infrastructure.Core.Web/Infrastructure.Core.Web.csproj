@@ -42,6 +42,8 @@
 		<PackageReference Include="ExtendableEnums.Microsoft.AspNetCore" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" />
+		<PackageReference Include="Swashbuckle.AspNetCore" />
+		<PackageReference Include="Microsoft.OpenApi" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 		<PackageReference Include="System.Threading.RateLimiting" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
@@ -52,7 +54,6 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" />
-		<PackageReference Include="Swashbuckle.AspNetCore" />
 	</ItemGroup>
 
 	<ItemGroup>
