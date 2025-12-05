@@ -1,3 +1,2 @@
-var builder = WebApplication.CreateBuilder(args);
-var startup = new WebStartup(builder);
+var startup = new WebStartup(args);
 startup.Run();

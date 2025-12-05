@@ -6,8 +6,8 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
 
 public class WebStartup : WebStartupCore<DomainStartup>
 {
-    public WebStartup(WebApplicationBuilder builder)
-        : base(builder)
+    public WebStartup(string[] args)
+        : base(args)
     {
     }
 

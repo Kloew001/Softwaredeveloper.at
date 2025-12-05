@@ -22,9 +22,9 @@ public class WebStartupCore<TDomainStartup>
     protected IServiceCollection Services => Builder.Services;
     public TDomainStartup DomainStartup { get; }
 
-    public WebStartupCore(WebApplicationBuilder builder)
+    public WebStartupCore(string[] args)
     {
-        Builder = builder;
+        Builder = WebApplication.CreateBuilder(args);
         DomainStartup = new TDomainStartup();
     }
 
@@ -169,6 +169,9 @@ public class WebStartupCore<TDomainStartup>
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Routing.EndpointMiddleware", LogEventLevel.Warning)
+
+            .MinimumLevel.Override("SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks.AsyncTaskExecutorHostedService", LogEventLevel.Warning)
+            .MinimumLevel.Override("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailHostedService", LogEventLevel.Warning)
 
             .Enrich.FromLogContext()
             .Enrich.WithExceptionDetails()
