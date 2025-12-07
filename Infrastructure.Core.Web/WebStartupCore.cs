@@ -130,8 +130,7 @@ public class WebStartupCore<TDomainStartup>
                 problem.Instance ??= $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
                 problem.Type ??= $"https://httpstatuses.com/{problem.Status}";
 
-                var traceId = Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
-                problem.Extensions["traceId"] = traceId;
+                problem.Extensions["correlationId"] = context.HttpContext.ResolveCorrelationId();
                 problem.Extensions["timestamp"] = DateTimeOffset.UtcNow;
 
                 if (env.IsDevelopment() && context.Exception is not null)
@@ -175,19 +174,44 @@ public class WebStartupCore<TDomainStartup>
 
             .Enrich.FromLogContext()
             .Enrich.WithExceptionDetails()
-            .Enrich.WithMachineName()
-            .Enrich.WithThreadId()
 
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Exception}")
-            
-            .WriteTo.Async(a => a
-                 .File(GetLogFilePath(),
+
+            .WriteTo.Logger(lc => lc
+                .Filter.ByExcluding(LoggingFilters.IsWebOrWorker)
+                .WriteTo.Async(a => a.File(
+                    path: GetLogFilePath("app-.log"),
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 1000,
                     shared: true,
                     fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
                     rollOnFileSizeLimit: true,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] ({MachineName}/{ThreadId}) {SourceContext} | {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "[GEN {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                ))
+            )
+            .WriteTo.Logger(lc => lc
+                .Filter.ByIncludingOnly(LoggingFilters.IsWeb)
+                .WriteTo.Async(a => a.File(
+                    GetLogFilePath("web-.log"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 1000,
+                    shared: true,
+                    fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
+                    rollOnFileSizeLimit: true,
+                    outputTemplate: "[WEB {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId} acc:{AccountId} ip:{ClientIP}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                ))
+            )
+            .WriteTo.Logger(lc => lc
+                .Filter.ByIncludingOnly(LoggingFilters.IsWorker)
+                .WriteTo.Async(a => a.File(
+                    path: GetLogFilePath("worker-.log"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 1000,
+                    shared: true,
+                    fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
+                    rollOnFileSizeLimit: true,
+                    outputTemplate: "[WRK {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                ))
             );
 
             var serilogSection = Builder.Configuration.GetSection("Serilog");
@@ -198,12 +222,12 @@ public class WebStartupCore<TDomainStartup>
         });
     }
 
-    protected virtual string GetLogFilePath()
+    protected virtual string GetLogFilePath(string fileName = "app-.log")
     {
-        return GetDefaultLogFilePath();
+        return GetDefaultLogFilePath(fileName);
     }
-    
-    protected static string GetDefaultLogFilePath()
+
+    protected static string GetDefaultLogFilePath(string fileName = "app-.log")
     {
         var projectName = System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name!.ToLowerInvariant();
 
@@ -238,7 +262,7 @@ public class WebStartupCore<TDomainStartup>
 
         Directory.CreateDirectory(logFolder);
 
-        var logPath = Path.Combine(logFolder, "app-.log");
+        var logPath = Path.Combine(logFolder, fileName);
         return logPath;
     }
 
@@ -299,13 +323,13 @@ public class WebStartupCore<TDomainStartup>
     protected virtual void UseLogging(WebApplication app)
     {
         app.UseFullRequestLogging();
+        app.UseSerilogCorrelationId();
 
         app.UseSerilogRequestLogging(opts =>
         {
             opts.EnrichDiagnosticContext = LogAdditionalInfo;
             opts.MessageTemplate =
-                "HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed:0.000} ms " +
-                "[cid:{CorrelationId} acc:{AccountId} ip:{ClientIP}|{BucketIp}]";
+                "HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed:0.000} ms";
 
             opts.GetLevel = (ctx, elapsed, ex) =>
             {
@@ -314,16 +338,16 @@ public class WebStartupCore<TDomainStartup>
                     path.StartsWithSegments("/swagger"))
                     return LogEventLevel.Verbose;
 
-                if (ex != null) 
+                if (ex != null)
                     return LogEventLevel.Error;
 
                 if (elapsed > 500)
                     return LogEventLevel.Warning; // > 500ms
 
-                if (ctx.Response.StatusCode == 401) 
+                if (ctx.Response.StatusCode == 401)
                     return LogEventLevel.Debug;
-                
-                if (ctx.Response.StatusCode == 403) 
+
+                if (ctx.Response.StatusCode == 403)
                     return LogEventLevel.Debug;
 
                 if (ctx.Response.StatusCode >= 500)
@@ -339,17 +363,8 @@ public class WebStartupCore<TDomainStartup>
 
     protected virtual void LogAdditionalInfo(IDiagnosticContext diagnosticContext, HttpContext httpContext)
     {
-        diagnosticContext.Set("CorrelationId",
-            httpContext.TraceIdentifier);
-
-        diagnosticContext.Set("ClientIP",
-            httpContext.ResolveIp());
-
-        diagnosticContext.Set("BucketIp",
-            httpContext.ResolveBucketIp());
-
-        diagnosticContext.Set("AccountId",
-            httpContext.ResolveAccountIdOrAnon());
+        //diagnosticContext.Set("CorrelationId",
+        //    httpContext.ResolveCorrelationId());
     }
 
     protected virtual void HandleAuthorization(WebApplication app)

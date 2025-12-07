@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Http;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -7,6 +9,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Utility;
 
 public static class HttpContextExtension
 {
+    public static string ResolveCorrelationId(this HttpContext ctx)
+    {
+        return ctx.TraceIdentifier ?? Activity.Current?.Id;
+    }
+
     public static string? ResolveAccountId(this HttpContext ctx)
     {
         var u = ctx.User;

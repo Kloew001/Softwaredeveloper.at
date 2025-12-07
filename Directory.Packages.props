@@ -45,6 +45,7 @@
     <PackageVersion Include="NUnit" Version="4.4.0" />
     <PackageVersion Include="NUnit.Analyzers" Version="4.11.2" />
     <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
+    <PackageVersion Include="Serilog.Filters.Expressions" Version="2.1.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.0.1" />
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.3.10]" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />

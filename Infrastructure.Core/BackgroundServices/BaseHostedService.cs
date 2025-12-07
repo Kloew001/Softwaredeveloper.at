@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
@@ -95,17 +97,22 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"IHostedService.StartAsync for {Name}");
+        var correlationId = Guid.NewGuid().ToString();
+        using (LogContext.PushProperty("Area", "Worker"))
+        using (LogContext.PushProperty("CorrelationId", correlationId))
+        { 
+            _logger.LogInformation($"IHostedService.StartAsync for {Name}");
 
-        if (CanStart() == false)
-        {
+            if (CanStart() == false)
+            {
+                return Task.CompletedTask;
+            }
+
+            _appLifetime.ApplicationStarted.Register(async () =>
+                await ExecuteAsync(cancellationToken));
+
             return Task.CompletedTask;
         }
-
-        _appLifetime.ApplicationStarted.Register(async () =>
-            await ExecuteAsync(cancellationToken));
-
-        return Task.CompletedTask;
     }
 
     protected virtual bool CanStart()

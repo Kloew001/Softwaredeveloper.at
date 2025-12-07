@@ -59,12 +59,7 @@ public class ValidationExceptionHandler : IExceptionHandler
 
     private async ValueTask<bool> HandleProblemDetails(HttpContext httpContext, Exception exception, ValidationProblemDetails problemDetails, CancellationToken cancellationToken)
     {
-        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
-
-        using (_logger.BeginScope(new Dictionary<string, object?> { ["TraceId"] = traceId }))
-        {
-            _logger.LogWarning(exception, "Validation failed. TraceId={TraceId}", traceId);
-        }
+        _logger.LogError(exception, "Validation failed. correlationId={correlationId}", httpContext.ResolveCorrelationId());
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
 
@@ -111,12 +106,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
-
-        using (_logger.BeginScope(new Dictionary<string, object?> { ["TraceId"] = traceId }))
-        {
-            _logger.LogError(exception, "Unhandled exception. TraceId={TraceId}", traceId);
-        }
+        _logger.LogError(exception, "Unhandled exception. correlationId={correlationId}", httpContext.ResolveCorrelationId());
 
 #if DEBUG
         Debugger.Break();
