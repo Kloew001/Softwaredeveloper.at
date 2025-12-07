@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;

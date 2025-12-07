@@ -18,7 +18,7 @@ public interface IAuditableEntity<TEntityAudit> : IAuditableEntity
     IEnumerable<IEntityAudit> IAuditableEntity.Audits => Audits.OfType<IEntityAudit>();
 }
 
-public interface IEntityAudit: ISupportValidDateRange
+public interface IEntityAudit : ISupportValidDateRange
 {
     public Guid Id { get; set; }
 
@@ -41,7 +41,7 @@ public enum AuditActionType
     Modified,
 
     [EnumExtension(DisplayName = "Deleted")]
-    Deleted, 
+    Deleted,
 }
 
 public interface IEntityAudit<TEntity> : IEntityAudit

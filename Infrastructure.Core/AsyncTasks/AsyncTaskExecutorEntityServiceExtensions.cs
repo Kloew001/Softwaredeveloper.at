@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 
 public static class AsyncTaskExecutorEntityServiceExtensions
 {

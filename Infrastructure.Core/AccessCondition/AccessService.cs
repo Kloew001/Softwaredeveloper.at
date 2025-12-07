@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Reflection;
 
-using System.Reflection;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 
@@ -73,7 +73,7 @@ public class AccessService
         });
     }
 
-    private async ValueTask<bool> EvaluateInternalAsync<TAccessCondition>(Func<TAccessCondition, IEntity, ValueTask<bool>> canAsync, IAccessCondition accessCondition, IEntity securityEntity) 
+    private async ValueTask<bool> EvaluateInternalAsync<TAccessCondition>(Func<TAccessCondition, IEntity, ValueTask<bool>> canAsync, IAccessCondition accessCondition, IEntity securityEntity)
         where TAccessCondition : IAccessCondition
     {
         if (_sectionManager.IsActive<SecurityFreeSection>())

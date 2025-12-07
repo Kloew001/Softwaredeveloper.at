@@ -24,7 +24,7 @@ public class BinaryContentService
         if (referencedEntity.BinaryContent == null)
         {
             var binaryContent = await _context.CreateEntityAync<BinaryContent>();
-            referencedEntity.BinaryContentId = binaryContent.Id; 
+            referencedEntity.BinaryContentId = binaryContent.Id;
             referencedEntity.BinaryContent = binaryContent;
 
             referencedEntity.BinaryContent.ReferenceType = referencedEntity.GetType().UnProxy().Name;

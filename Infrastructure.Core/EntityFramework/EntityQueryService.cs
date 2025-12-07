@@ -27,9 +27,9 @@ public class OrderByAttribute : Attribute
 public class PageResult<TItem>
 {
     public int TotalCount { get; set; } = 0;
-    public int PageCount => 
-        PageSize == null ? 1 : 
-        PageSize <= 0 ? 0 : 
+    public int PageCount =>
+        PageSize == null ? 1 :
+        PageSize <= 0 ? 0 :
         (int)Math.Ceiling((double)TotalCount / PageSize.Value);
 
     public int? Page { get; set; } = null;
@@ -47,10 +47,10 @@ public class PageFilter
     public int? Page { get; set; } = 0;
     public int? PageSize { get; set; } = 0;
 
-    public bool IsPagingActive => 
-        Page != null && 
+    public bool IsPagingActive =>
+        Page != null &&
         PageSize != null &&
-        Page > 0 && 
+        Page > 0 &&
         PageSize > 0;
 }
 

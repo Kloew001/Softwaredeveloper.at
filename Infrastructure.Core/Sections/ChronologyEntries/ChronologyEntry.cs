@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
@@ -10,10 +11,10 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
 public class ChronologyEntry : ChangeTrackedEntity, IMultiLingualEntity<ChronologyEntryTranslation>, IReferencedToEntity
 {
     public Guid? ReferenceId { get; set; }
-    
+
     [NotMapped]
     public virtual Entity Reference { get; set; }
-    
+
     public string ReferenceType { get; set; }
 
     public int? ChronologyType { get; set; }

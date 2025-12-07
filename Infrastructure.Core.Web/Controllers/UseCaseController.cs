@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;

@@ -5,9 +5,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 public static class IBinaryContentServiceExtensions
 {
     public static async Task ApplyContentAsync<TEntity>(
-        this EntityService<TEntity> service, 
-        IReferencedToBinaryContent referencedEntity, 
-        string name, 
+        this EntityService<TEntity> service,
+        IReferencedToBinaryContent referencedEntity,
+        string name,
         byte[] content,
         string mimeType = null)
         where TEntity : Entity, IReferencedToBinaryContent

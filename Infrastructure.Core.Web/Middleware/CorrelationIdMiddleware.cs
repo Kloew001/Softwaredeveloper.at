@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+
 using Serilog.Context;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;

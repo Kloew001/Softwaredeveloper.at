@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Globalization;
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using System.Globalization;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 

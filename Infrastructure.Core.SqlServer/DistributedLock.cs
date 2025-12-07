@@ -1,11 +1,15 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using System.Data;
+﻿using System.Data;
 using System.Text;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer;
 
 [TransientDependency<IDistributedLock>]
 public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
@@ -62,13 +66,13 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
 
         _transaction = (SqlTransaction)await _connection.BeginTransactionAsync();
 
-        using (SqlCommand createCmd = _connection.CreateCommand())
+        using (var createCmd = _connection.CreateCommand())
         {
             createCmd.Transaction = _transaction;
             createCmd.CommandTimeout = _lockTimeout;
             createCmd.CommandType = System.Data.CommandType.Text;
 
-            StringBuilder sbCreateCommand = new StringBuilder();
+            var sbCreateCommand = new StringBuilder();
             sbCreateCommand.AppendLine("DECLARE @res INT");
             sbCreateCommand.AppendLine("EXEC @res = sp_getapplock");
             sbCreateCommand.Append("@Resource = '").Append(_lockId).AppendLine("',");
@@ -121,7 +125,7 @@ public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
 
     private void ReleaseLock()
     {
-        using SqlCommand releaseCmd = _connection.CreateCommand();
+        using var releaseCmd = _connection.CreateCommand();
         releaseCmd.Transaction = _transaction;
         releaseCmd.CommandType = System.Data.CommandType.StoredProcedure;
         releaseCmd.CommandText = "sp_releaseapplock";

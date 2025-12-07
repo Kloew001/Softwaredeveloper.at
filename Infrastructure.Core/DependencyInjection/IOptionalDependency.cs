@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 
 public interface IOptionalDependency<T>
 {

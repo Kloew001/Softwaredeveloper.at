@@ -65,7 +65,7 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 
             if (textExtractor != null)
                 binaryContent.ExtractedText = textExtractor.ExtractText(binaryContent.Content);
-            
+
             await context.SaveChangesAsync(ct);
         }
         catch (Exception ex)

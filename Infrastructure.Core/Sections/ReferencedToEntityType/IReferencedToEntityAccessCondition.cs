@@ -1,4 +1,4 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ReferencedToEntityType;
 
 public abstract class IReferencedToEntityAccessCondition<TReferencedToEntityType> : IAccessCondition<TReferencedToEntityType>
     where TReferencedToEntityType : IReferencedToEntity
@@ -15,10 +15,10 @@ public abstract class IReferencedToEntityAccessCondition<TReferencedToEntityType
     public virtual async ValueTask<bool> CanCreateAsync(TReferencedToEntityType entity)
     {
         var referencedEntity = await entity.GetReferencedEntityAsync(_dbContext);
-        
-        var result = await _accessService.EvaluateAsync(referencedEntity, (ac, se) => 
+
+        var result = await _accessService.EvaluateAsync(referencedEntity, (ac, se) =>
             ac.CanCreateAsync(se));
-    
+
         return result;
     }
 

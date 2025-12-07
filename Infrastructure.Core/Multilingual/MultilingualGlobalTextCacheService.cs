@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
+﻿using System.Data;
 
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 

@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Data;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-
-using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
@@ -72,7 +72,7 @@ public abstract class MultilingualImportExportHandlerService : IMultilingualImpo
 
             foreach (var text in texte)
             {
-                DataRow dataRow = dataTable.NewRow();
+                var dataRow = dataTable.NewRow();
 
                 dataRow["TextKey"] = text.Key;
                 dataRow["Text"] = text.Text;

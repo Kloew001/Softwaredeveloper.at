@@ -13,7 +13,7 @@ public class EntityValidatorDependency<TEntity>
     public IDbContext DbContext { get; private set; }
     public MultilingualService MultilingualService { get; private set; }
 
-    public EntityValidatorDependency(IDbContext dbContext , IServiceProvider serviceProvider, MultilingualService multilingualService)
+    public EntityValidatorDependency(IDbContext dbContext, IServiceProvider serviceProvider, MultilingualService multilingualService)
     {
         DbContext = dbContext;
         _serviceProvider = serviceProvider;

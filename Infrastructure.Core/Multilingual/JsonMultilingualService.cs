@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Data;
+
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 using Newtonsoft.Json;
-using System.Data;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
@@ -54,7 +55,7 @@ public class JsonMultilingualService : MultilingualImportExportHandlerService
 
     private DataSet GetDataSetFromContent(byte[] jsonContent)
     {
-        string json = System.Text.Encoding.UTF8.GetString(jsonContent);
+        var json = System.Text.Encoding.UTF8.GetString(jsonContent);
 
         var cultures = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
 
@@ -70,7 +71,7 @@ public class JsonMultilingualService : MultilingualImportExportHandlerService
 
             foreach (var text in culture.Value)
             {
-                DataRow dataRow = dataTable.NewRow();
+                var dataRow = dataTable.NewRow();
 
                 dataRow["TextKey"] = text.Key;
                 dataRow["Text"] = text.Value;

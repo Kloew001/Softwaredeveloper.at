@@ -31,7 +31,7 @@ public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
     {
         BackgroundServiceInfoEnabled = false;
 
-        string filePath = GetFileName();
+        var filePath = GetFileName();
 
         _watcher = new FileSystemWatcher(System.IO.Path.GetDirectoryName(filePath));
 
@@ -56,7 +56,7 @@ public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
         if (_reloadJson == false)
             return;
 
-        string filePath = GetFileName();
+        var filePath = GetFileName();
 
         var multilingualService = scope.ServiceProvider.GetService<JsonMultilingualService>();
 

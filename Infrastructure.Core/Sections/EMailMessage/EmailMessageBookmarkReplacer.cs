@@ -56,7 +56,7 @@ public class EmailMessageGlobalBookmark : IEmailMessageGlobalBookmark
     public List<IEmailMessageBookmark> Bookmarks { get; set; } = [];
 
     public EmailMessageGlobalBookmark(
-        ILogger<EmailMessageGlobalBookmark> logger, 
+        ILogger<EmailMessageGlobalBookmark> logger,
         IApplicationSettings applicationSettings)
     {
         _logger = logger;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;

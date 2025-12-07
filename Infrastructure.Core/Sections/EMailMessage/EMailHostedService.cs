@@ -20,8 +20,8 @@ public class EMailSendHandler : IEMailSendHandler
 
     public EMailSendHandler(
         ILogger<EMailSendHandler> logger,
-        IDbContext context, 
-        IEMailSender emailSender, 
+        IDbContext context,
+        IEMailSender emailSender,
         IDateTimeService dateTimeService)
     {
         _logger = logger;

@@ -1,13 +1,14 @@
-﻿using DocumentFormat.OpenXml.InkML;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
 using Serilog.Context;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 
@@ -104,7 +105,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         var correlationId = Guid.NewGuid().ToString();
         using (LogContext.PushProperty(SerilogUtility.Area, SerilogUtility.Area_Worker))
         using (LogContext.PushProperty("CorrelationId", correlationId))
-        { 
+        {
             _logger.LogInformation($"IHostedService.StartAsync for {Name}");
 
             if (CanStart() == false)

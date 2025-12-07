@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using System.Diagnostics;
+
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
-using System.Diagnostics;
+
 using SoftwareDeveloperDotATValidation = SoftwaredeveloperDotAt.Infrastructure.Core.Validation;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;

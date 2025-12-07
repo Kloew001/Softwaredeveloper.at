@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 

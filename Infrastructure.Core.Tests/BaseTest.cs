@@ -158,7 +158,7 @@ public abstract class BaseTest<TDomainStartup>
             var applicationSettings = childScope.ServiceProvider
                 .GetService<IApplicationSettings>();
 
-            applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out HostedServicesConfiguration hostedServicesConfiguration);
+            applicationSettings.HostedServices.TryGetValue(typeof(AsyncTaskExecutorHostedService).Name, out var hostedServicesConfiguration);
 
             await hostedService.ExecuteAsync(cancellationToken);
         }, cancellationToken);

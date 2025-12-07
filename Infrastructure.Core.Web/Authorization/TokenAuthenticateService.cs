@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Authentication.BearerToken;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+
 using static SoftwaredeveloperDotAt.Infrastructure.Core.Web.WebApplicationBuilderExtensions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;

@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-
-using System.Collections;
+﻿using System.Collections;
 using System.Reflection;
+
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 

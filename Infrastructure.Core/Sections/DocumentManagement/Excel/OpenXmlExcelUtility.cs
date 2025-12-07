@@ -7,7 +7,7 @@ public static class OpenXmlExcelUtility
     {
         var memoryStream = new MemoryStream();
 
-        using (FileStream templateStream = new FileStream(templatePath, FileMode.Open, FileAccess.Read))
+        using (var templateStream = new FileStream(templatePath, FileMode.Open, FileAccess.Read))
         {
             templateStream.CopyTo(memoryStream);
         }

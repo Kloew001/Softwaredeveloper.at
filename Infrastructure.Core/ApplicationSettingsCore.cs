@@ -15,7 +15,7 @@ public interface IApplicationSettings
     SmtpServerConfiguration SmtpServer { get; }
     MultilingualConfiguration Multilingual { get; }
     FeatureToggles FeatureToggles { get; }
-    FullRequestLoggingConfiguration FullRequestLogging { get;  }
+    FullRequestLoggingConfiguration FullRequestLogging { get; }
 }
 
 public abstract class CoreApplicationSettings : IApplicationSettings

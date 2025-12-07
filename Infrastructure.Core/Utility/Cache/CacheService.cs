@@ -17,11 +17,11 @@ public interface ICacheService
 public class CacheService : ICacheService
 {
     public IMemoryCache MemoryCache { get; set; }
-    public ScopedCache ScopedCache (IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ScopedCache>();
+    public ScopedCache ScopedCache(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<ScopedCache>();
     public IDistributedCache DistributedCache { get; set; }
-    
+
     public CacheService(
-        IMemoryCache memoryCache, 
+        IMemoryCache memoryCache,
         IDistributedCache distributedCache)
     {
         MemoryCache = memoryCache;

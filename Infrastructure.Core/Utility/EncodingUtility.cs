@@ -29,7 +29,7 @@ public static class EncodingUtility
         {
             try
             {
-                Encoding ansi = Encoding.GetEncoding(1252); // ANSI encoding (Windows-1252)
+                var ansi = Encoding.GetEncoding(1252); // ANSI encoding (Windows-1252)
                 ansi.GetString(content);
                 return ansi;
             }

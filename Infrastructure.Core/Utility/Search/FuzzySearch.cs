@@ -24,9 +24,9 @@ public static class FuzzySearch
 
         if (directlyMatch.Any())
         {
-            var result = FuzzySharp.Process.ExtractOne(queryStr, directlyMatch.Select(_=>_.Orginal));
+            var result = FuzzySharp.Process.ExtractOne(queryStr, directlyMatch.Select(_ => _.Orginal));
 
-            int index = valuesList.FindIndex(_ => _ == result.Value);
+            var index = valuesList.FindIndex(_ => _ == result.Value);
             return new ExtractedResult<string>(result.Value, result.Score, index);
         }
 

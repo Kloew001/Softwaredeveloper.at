@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ReferencedToEntityType;
 
 public interface IReferencedToEntity : IEntity
 {
     Guid? ReferenceId { get; set; }
     string ReferenceType { get; set; }
-     Entity Reference { get; set; }
+    Entity Reference { get; set; }
 }
 
 public static class IReferencedToEntityTypeExtensions
@@ -26,7 +26,7 @@ public static class IReferencedToEntityTypeExtensions
         }
     }
 
-    private static string GetReferenceType<TEntitiy>(TEntitiy referencedEntity) 
+    private static string GetReferenceType<TEntitiy>(TEntitiy referencedEntity)
         where TEntitiy : IEntity
     {
         return referencedEntity.GetType().UnProxy().Name;
@@ -36,13 +36,13 @@ public static class IReferencedToEntityTypeExtensions
         where T : IReferencedToEntity
     {
         return query
-                .Where(_ => _.ReferenceId == referencedEntity.Id && 
+                .Where(_ => _.ReferenceId == referencedEntity.Id &&
                             _.ReferenceType == GetReferenceType(referencedEntity));
     }
 
     public static async Task<IEntity> GetReferencedEntityAsync(this IReferencedToEntity entity, IDbContext context)
     {
-        if( entity.Reference != null )
+        if (entity.Reference != null)
             return entity.Reference;
 
         var entityType = AssemblyUtils.AllLoadedTypes()

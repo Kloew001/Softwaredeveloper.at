@@ -4,7 +4,7 @@ using SampleApp.Application.Sections.PersonSection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
-namespace SoftwaredeveloperDotAt.Server.Controllers;
+namespace SampleApp.Server.Controllers;
 
 public class PersonController : BaseApiController
 {

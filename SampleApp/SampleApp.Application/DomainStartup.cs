@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL;
+
 namespace SampleApp.Application;
 
 public class DomainStartup : DomainStartupCore<ApplicationSettings>

@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL;
 
 public static class PostgreSQLDbContextHandlerExtensions
 {

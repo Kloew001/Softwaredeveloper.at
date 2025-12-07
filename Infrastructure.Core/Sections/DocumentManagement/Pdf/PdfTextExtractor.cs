@@ -25,8 +25,8 @@ public class PdfTextExtractor : ITextExtractor
             using (var pdfReader = new PdfReader(memoryStream))
             using (var pdfDoc = new PdfDocument(pdfReader))
             {
-                string extractedText = "";
-                for (int page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
+                var extractedText = "";
+                for (var page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
                 {
                     extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
                         .GetTextFromPage(pdfDoc.GetPage(page));

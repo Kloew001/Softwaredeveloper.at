@@ -3,7 +3,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL;
 
 public static class PostgreSQLContextHandlerExtensions
 {

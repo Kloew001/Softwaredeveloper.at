@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Data;
+using System.Diagnostics;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Tests;
-using System.Data;
-using System.Diagnostics;
 
 namespace SampleApp.Application.Tests;
 
@@ -18,7 +19,7 @@ public class AsyncTaskExecutorTests : BaseTest<DomainStartup>
 
         var executorTask = StartAsyncTaskExecutorAsync();
 
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             //if (i <= 1 || i % 10 == 0)
             //{

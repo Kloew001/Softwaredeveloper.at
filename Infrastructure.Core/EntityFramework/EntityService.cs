@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.PrePersistant;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
@@ -27,7 +28,6 @@ public class EntityServiceDependency<TEntity>
     public MultilingualService MultilingualService { get; private set; }
     public ICurrentUserService CurrentUserService { get; private set; }
     public IDateTimeService DateTimeService { get; private set; }
-    
 
     public EntityServiceDependency(
         IServiceProvider serviceProvider,
@@ -415,7 +415,7 @@ public class EntityService<TEntity>
 
         if (validationResult == null)
             return;
-        
+
         if (validationResult.IsValid == false)
             throw ToValidationException(validationResult);
     }

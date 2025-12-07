@@ -70,8 +70,8 @@ public class StateHolidaysHelper
         j = (year + (year / 4) + i + 2 - c + (c / 4)) % 7;
 
         l = i - j;
-        int month = (int)(3 + ((l + 40) / 44));
-        int day = (int)(l + 28 - 31 * (month / 4));
+        var month = (int)(3 + ((l + 40) / 44));
+        var day = (int)(l + 28 - 31 * (month / 4));
 
         return new DateTime(year, month, day);
     }

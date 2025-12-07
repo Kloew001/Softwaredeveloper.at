@@ -13,7 +13,7 @@ public static class IEnumerableExtensions
 {
     public static List<List<T>> GetAllCombinations<T>(List<T> list)
     {
-        List<List<T>> result = new List<List<T>>();
+        var result = new List<List<T>>();
 
         result.Add(new List<T>());
 
@@ -21,7 +21,7 @@ public static class IEnumerableExtensions
         if (list.Count == 1)
             return result;
 
-        List<List<T>> tailCombos = GetAllCombinations(list.Skip(1).ToList());
+        var tailCombos = GetAllCombinations(list.Skip(1).ToList());
         tailCombos.ForEach(combo =>
         {
             result.Add(new List<T>(combo));
@@ -101,7 +101,7 @@ public static class IEnumerableExtensions
     {
         var combinedStrs = new List<string>();
 
-        if(str.IsNotNullOrEmpty())
+        if (str.IsNotNullOrEmpty())
             combinedStrs.Add(str);
 
         if (strs != null)
@@ -110,7 +110,7 @@ public static class IEnumerableExtensions
             {
                 if (s.IsNotNullOrEmpty())
                     combinedStrs.Add(s);
-            }   
+            }
         }
 
         combinedStrs = combinedStrs.Distinct().ToList();

@@ -127,8 +127,8 @@ public class EmailMessageService
     }
 
     public async Task<EmailMessage> CreateByTemplateAsync(
-        Entity referenceEntity, 
-        EMailMessageTemplate template, 
+        Entity referenceEntity,
+        EMailMessageTemplate template,
         Guid? cultureId = null,
         Func<EmailMessage, ValueTask> modifyEmailMessage = null)
     {

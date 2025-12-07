@@ -113,7 +113,7 @@ public class AsyncTaskExecutor
         while (IsAnyTasksRunning(tasks))
         {
             await ExecuteNextOperationsAsync(batchSize, cancellationToken);
-            
+
             await Task.Delay(100);
         }
 
@@ -128,7 +128,7 @@ public class AsyncTaskExecutor
     private async Task ExecuteNextOperationAsync(CancellationToken cancellationToken = default)
     {
         var now = _dateTimeService.Now();
-        Guid asyncTaskOperationId = Guid.Empty;
+        var asyncTaskOperationId = Guid.Empty;
 
         using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
         {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+
 public interface IDbContextHandler
 {
     Task UpdateDatabaseAsync(DbContext context);

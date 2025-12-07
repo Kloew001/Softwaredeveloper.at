@@ -1,8 +1,8 @@
-﻿using ExtendableEnums;
+﻿using System.Reflection;
+
+using ExtendableEnums;
 
 using Microsoft.Extensions.Caching.Memory;
-
-using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
@@ -142,7 +142,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
         foreach (var propertyMap in propertyMaps)
         {
-            object sourceValue = ResolveSourceValue(source, propertyMap);
+            var sourceValue = ResolveSourceValue(source, propertyMap);
 
             if (sourceValue == null)
             {
@@ -248,7 +248,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
     private static object ResolveSourceValue(object source, PropertyMap propertyMap)
     {
-        object sourceValue = source;
+        var sourceValue = source;
         foreach (var sourceProperty in propertyMap.SourceProperties)
         {
             var sourceValue2 = sourceValue.GetType()

@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
@@ -60,7 +61,7 @@ public class FullRequestLoggingMiddleware
         stopwatch.Stop();
         var elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
 
-        string responseBody = string.Empty;
+        var responseBody = string.Empty;
         if (_configuration.IncludeBody)
         {
             responseBody = ReadResponseBodyDecoded(context.Response, responseBodyStream, _configuration.MaxBodyLength);
@@ -187,7 +188,7 @@ public class FullRequestLoggingMiddleware
             return "(non-text content omitted)";
 
         buffer.Position = 0;
-        byte[] data = buffer.ToArray();
+        var data = buffer.ToArray();
 
         response.Headers.TryGetValue("Content-Encoding", out var contentEncoding);
         var encoding = contentEncoding.ToString();

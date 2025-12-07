@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
+
+using Newtonsoft.Json;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
@@ -25,13 +25,13 @@ public class RestApiClient
         };
 
         SetAccessToken(token);
-     }
+    }
 
     public void SetAccessToken(string token)
     {
         if (token.IsNotNullOrEmpty())
         {
-            _httpClient.DefaultRequestHeaders.Authorization = 
+            _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
         }
     }

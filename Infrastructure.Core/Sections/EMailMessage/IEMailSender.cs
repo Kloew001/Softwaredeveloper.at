@@ -75,7 +75,7 @@ public class SmtpEMailSender : IEMailSender
                 foreach (var attachment in message.Attachments)
                 {
                     builder.Attachments.Add(Path.GetFileName(attachment.BinaryContent.Name), attachment.BinaryContent.Content);
-                }   
+                }
 
                 mailMessage.Body = builder.ToMessageBody();
 

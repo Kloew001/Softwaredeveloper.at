@@ -5,7 +5,7 @@ namespace SampleApp.Application.Sections.PersonSection;
 
 public class PersonService : EntityService<Person>
 {
-    public PersonService(EntityServiceDependency<Person> entityServiceDependency) 
+    public PersonService(EntityServiceDependency<Person> entityServiceDependency)
         : base(entityServiceDependency)
     {
     }

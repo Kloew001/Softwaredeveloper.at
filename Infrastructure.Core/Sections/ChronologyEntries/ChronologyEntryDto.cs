@@ -36,7 +36,7 @@ public class ChronologyEntryDtoFactory : IDtoFactory<ChronologyEntryDto, Chronol
     private string GetShortName(ApplicationUser user)
     {
         return (user.FirstName.IsNullOrWhiteSpace() ? "" : user.FirstName.Substring(0, 1).ToUpper()) +
-               (user.LastName.IsNullOrWhiteSpace() ? "" : user.LastName.Substring(0,1).ToUpper());
+               (user.LastName.IsNullOrWhiteSpace() ? "" : user.LastName.Substring(0, 1).ToUpper());
     }
 
     public ChronologyEntry ConvertToEntity(ChronologyEntryDto dto, ChronologyEntry entity, IServiceProvider serviceProvider)

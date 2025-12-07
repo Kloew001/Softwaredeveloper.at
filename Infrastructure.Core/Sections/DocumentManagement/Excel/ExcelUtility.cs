@@ -1,6 +1,6 @@
-﻿using ClosedXML.Excel;
+﻿using System.Data;
 
-using System.Data;
+using ClosedXML.Excel;
 
 public static class ExcelUtility
 {
@@ -33,7 +33,7 @@ public static class ExcelUtility
         using var memoryStream = new MemoryStream(excelContent);
         using var workBook = new XLWorkbook(memoryStream);
 
-        foreach (IXLWorksheet workSheet in workBook.Worksheets)
+        foreach (var workSheet in workBook.Worksheets)
         {
             var dataTable = new DataTable(workSheet.Name);
 
@@ -48,13 +48,13 @@ public static class ExcelUtility
                 dataTable.Columns.Add(new DataColumn(cellHeader));
             });
 
-            foreach (IXLRow row in workSheet.RowsUsed().Skip(1))
+            foreach (var row in workSheet.RowsUsed().Skip(1))
             {
-                DataRow dataRow = dataTable.NewRow();
+                var dataRow = dataTable.NewRow();
 
                 //foreach (IXLCell cell in row.Cells(row.FirstCellUsed().Address.ColumnNumber, row.LastCellUsed().Address.ColumnNumber))
 
-                for (int i = 0; i < dataTable.Columns.Count; i++)
+                for (var i = 0; i < dataTable.Columns.Count; i++)
                 {
                     var cell = row.Cell(i + 1);
 

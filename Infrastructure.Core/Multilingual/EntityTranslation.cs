@@ -11,7 +11,7 @@ public interface IMultiLingualEntity<TTranslation> : IMultiLingualEntity
     where TTranslation : IEntityTranslation
 {
     new ICollection<TTranslation> Translations { get; set; }
-    
+
     IEnumerable<IEntityTranslation> IMultiLingualEntity.Translations => Translations.OfType<IEntityTranslation>();
 }
 
@@ -28,7 +28,7 @@ public interface IEntityTranslation<TEntity> : IEntityTranslation
     where TEntity : IEntity
 {
     new TEntity Core { get; set; }
-    
+
     IEntity IEntityTranslation.Core
     {
         get => Core;

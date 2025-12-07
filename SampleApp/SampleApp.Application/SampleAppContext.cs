@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+
 using SampleApp.Application.Sections.PersonSection;
 
 namespace SampleApp.Application;

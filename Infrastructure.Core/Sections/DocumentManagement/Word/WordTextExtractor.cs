@@ -1,9 +1,8 @@
-﻿using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
+﻿using System.Text;
+
+using DocumentFormat.OpenXml.Packaging;
 
 using Microsoft.Extensions.Logging;
-
-using System.Text;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Word;
 
@@ -26,7 +25,7 @@ public class WordTextExtractor : ITextExtractor
             using (var memoryStream = new MemoryStream(content))
             using (var wordDoc = WordprocessingDocument.Open(memoryStream, false))
             {
-                Body body = wordDoc.MainDocumentPart.Document.Body;
+                var body = wordDoc.MainDocumentPart.Document.Body;
                 fullText.Append(body.InnerText);
 
                 var headers = wordDoc.MainDocumentPart.HeaderParts;

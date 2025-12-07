@@ -1,9 +1,9 @@
-﻿using DocumentFormat.OpenXml.InkML;
-using Microsoft.AspNetCore.Http;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
+
+using Microsoft.AspNetCore.Http;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Utility;
 
@@ -32,7 +32,7 @@ public static class HttpContextExtension
         }
 
         var apiKey = ctx.Request.Headers["X-Api-Key"].FirstOrDefault();
-        
+
         if (!string.IsNullOrWhiteSpace(apiKey))
             return apiKey!.Trim().ToLowerInvariant();
 
@@ -101,11 +101,11 @@ public static class HttpContextExtension
         {
             var b = (byte[])bytes.Clone();
 
-            int keepBits = Math.Clamp(ipv6Prefix, 0, 128);
-            for (int bit = keepBits; bit < 128; bit++)
+            var keepBits = Math.Clamp(ipv6Prefix, 0, 128);
+            for (var bit = keepBits; bit < 128; bit++)
             {
-                int i = bit / 8;
-                int bitInByte = 7 - (bit % 8);
+                var i = bit / 8;
+                var bitInByte = 7 - (bit % 8);
                 b[i] &= (byte)~(1 << bitInByte);
             }
             return $"{new IPAddress(b)}/{ipv6Prefix}";

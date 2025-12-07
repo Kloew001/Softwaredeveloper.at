@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
+﻿using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 
 public interface IAppStatupInit
 {

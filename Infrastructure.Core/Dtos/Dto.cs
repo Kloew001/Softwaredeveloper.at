@@ -18,6 +18,6 @@ public interface IDto
 
 public class Dto : IDto
 {
-    [Newtonsoft.Json.JsonProperty("id",  Order = -1)]
+    [Newtonsoft.Json.JsonProperty("id", Order = -1)]
     public Guid? Id { get; set; }
 }

@@ -21,15 +21,15 @@ public class DeleteUseCase<TEntity, TDto> : UseCase<TDto, bool>
 
     protected override async Task<bool> OnExecute(TDto dto, CancellationToken cancellationToken)
     {
-        TEntity entity = await _service.GetSingleByIdAsync(dto.Id.Value);
+        var entity = await _service.GetSingleByIdAsync(dto.Id.Value);
 
         if (entity is ISoftDelete softDelete)
         {
-            System.Reflection.MethodInfo method = typeof(ISoftDeleteEntityServiceExtensions)
+            var method = typeof(ISoftDeleteEntityServiceExtensions)
                            .GetMethod(nameof(ISoftDeleteEntityServiceExtensions.SoftDeleteAsync))
                            ?.MakeGenericMethod(typeof(TEntity));
 
-            Task task = (Task)method.Invoke(null, new object[] { _service, dto.Id.Value });
+            var task = (Task)method.Invoke(null, new object[] { _service, dto.Id.Value });
             await task;
         }
         else

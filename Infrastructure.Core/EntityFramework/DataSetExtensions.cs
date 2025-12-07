@@ -1,6 +1,6 @@
 ﻿using System.Data;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 public static class DataSetExtensions
 {
@@ -8,7 +8,7 @@ public static class DataSetExtensions
     {
         var dataSet = new DataSet();
         var dataTable = new DataTable();
-        bool schemaInitialized = false;
+        var schemaInitialized = false;
 
         foreach (var item in items)
         {
@@ -31,7 +31,7 @@ public static class DataSetExtensions
         var properties = record.GetType().GetProperties();
         foreach (var prop in properties)
         {
-            Type propertyType = prop.PropertyType;
+            var propertyType = prop.PropertyType;
             if (Nullable.GetUnderlyingType(propertyType) != null)
                 propertyType = Nullable.GetUnderlyingType(propertyType);
 
@@ -48,9 +48,9 @@ public static class DataSetExtensions
         var properties = record.GetType().GetProperties();
         foreach (var prop in properties)
         {
-            object value = prop.GetValue(record, null) ?? DBNull.Value;
+            var value = prop.GetValue(record, null) ?? DBNull.Value;
 
-            Type propertyType = prop.PropertyType;
+            var propertyType = prop.PropertyType;
             if (Nullable.GetUnderlyingType(propertyType) != null)
                 propertyType = Nullable.GetUnderlyingType(propertyType);
 

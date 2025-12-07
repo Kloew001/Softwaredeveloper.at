@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Reflection;
+
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 using Microsoft.Extensions.Hosting;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;

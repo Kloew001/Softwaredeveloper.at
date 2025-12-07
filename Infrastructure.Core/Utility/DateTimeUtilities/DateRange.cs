@@ -1,4 +1,4 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
 
 public interface IDateTimeRange : IRange<DateTime>
 {

@@ -1,7 +1,7 @@
 ﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
-namespace SoftwaredeveloperDotAt.Server.Controllers;
+namespace SampleApp.Server.Controllers;
 
 public class AccountController : BaseAuthenticateController
 {

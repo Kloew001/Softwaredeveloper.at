@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+
 using static SoftwaredeveloperDotAt.Infrastructure.Core.Web.WebApplicationBuilderExtensions;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
@@ -66,7 +68,7 @@ public class JwtTokenService : ITokenService
             //    ValidateLifetime = false // here we are saying that we don't care about the token's expiration date
             //};
 
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
 
             var jwtSecurityToken = securityToken as JwtSecurityToken;
 

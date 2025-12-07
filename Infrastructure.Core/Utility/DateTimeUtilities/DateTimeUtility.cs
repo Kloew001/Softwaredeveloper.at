@@ -1,15 +1,15 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.StateHolidays;
+﻿using System.Globalization;
 
-using System.Globalization;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.StateHolidays;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DateTimeUtilities;
 
 public static class DateTimeUtility
 {
     public static DateTime RandomDate(this DateTime start, DateTime end)
     {
         var gen = new Random();
-        int range = (end - start).Days;
+        var range = (end - start).Days;
         return start.AddDays(gen.Next(range));
     }
 
@@ -35,7 +35,7 @@ public static class DateTimeUtility
 
         if (month == 12)
             date = new DateTime(year + 1, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
-        else 
+        else
             date = new DateTime(year, month + 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
 
         if (date.Kind == DateTimeKind.Utc)

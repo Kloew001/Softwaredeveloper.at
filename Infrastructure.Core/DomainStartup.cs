@@ -60,7 +60,7 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
         //if (HostEnvironment == null || HostEnvironment.IsDevelopment())
         //    Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-        Services.AddScoped<IDateTimeService, DateTimeService>();
+        Services.AddSingleton<IDateTimeService, DateTimeService>();
     }
 
     protected virtual void ConfigureApplicationSettings()

@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using System.Reflection;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 

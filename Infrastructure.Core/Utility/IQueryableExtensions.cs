@@ -1,12 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
 
-using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public static class IQueryableExtensions
 {
-   
+
     public static IQueryable<T> OrderByRandom<T>(this IQueryable<T> query)
     {
         return query.OrderBy(en => EF.Functions.Random());
@@ -36,7 +36,7 @@ public static class IQueryableExtensions
 
         var member = propertyNamePath.Split('.')
             .Aggregate((Expression)parameter, Expression.PropertyOrField);
-        
+
         var keySelector = Expression.Lambda(member, parameter);
         var methodCall = Expression.Call(typeof(Queryable), method, new[]
                 { parameter.Type, member.Type },

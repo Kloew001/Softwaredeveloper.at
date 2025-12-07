@@ -45,7 +45,7 @@ public class HtmlTextExtractor : ITextExtractor
 
     private static void ConvertContentTo(HtmlNode node, TextWriter outText)
     {
-        foreach (HtmlNode subnode in node.ChildNodes)
+        foreach (var subnode in node.ChildNodes)
         {
             ConvertTo(subnode, outText);
         }
@@ -66,7 +66,7 @@ public class HtmlTextExtractor : ITextExtractor
 
             case HtmlNodeType.Text:
                 // script and style must not be output
-                string parentName = node.ParentNode.Name;
+                var parentName = node.ParentNode.Name;
                 if ((parentName == "script") || (parentName == "style"))
                     break;
 

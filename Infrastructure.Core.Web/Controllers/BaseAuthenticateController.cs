@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;

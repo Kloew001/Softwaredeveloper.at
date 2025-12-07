@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer;
 
 public static class DistributedCacheExtensions
 {

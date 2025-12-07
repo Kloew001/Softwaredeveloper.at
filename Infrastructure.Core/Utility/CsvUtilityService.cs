@@ -1,8 +1,8 @@
-﻿using CsvHelper;
-using CsvHelper.Configuration;
-
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
+
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
@@ -18,7 +18,7 @@ public class CsvUtilityService
         var configuration = DefaultConfiguration(encoding);
 
         if (configurationModify != null)
-           configurationModify(configuration);
+            configurationModify(configuration);
 
         using (var memoryStream = new MemoryStream(content))
         using (var streamReader = new StreamReader(memoryStream, encoding))

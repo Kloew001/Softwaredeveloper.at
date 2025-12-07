@@ -1,4 +1,8 @@
-﻿using ExtendableEnums.EntityFrameworkCore;
+﻿using System.Data.Common;
+using System.Linq.Expressions;
+using System.Reflection;
+
+using ExtendableEnums.EntityFrameworkCore;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -9,13 +13,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
-using System.Data.Common;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 

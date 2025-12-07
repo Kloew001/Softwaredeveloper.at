@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
-
-using System.Text.Json.Serialization;
+﻿using System.Text;
 using System.Text.Json;
-using System.Text;
+using System.Text.Json.Serialization;
+
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility.Cache;
 

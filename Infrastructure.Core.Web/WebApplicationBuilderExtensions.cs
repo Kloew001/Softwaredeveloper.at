@@ -1,4 +1,9 @@
-﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+﻿using System.IO.Compression;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -15,14 +20,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Identity;
-using System.IO.Compression;
-using System.Net;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.RateLimiting;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 

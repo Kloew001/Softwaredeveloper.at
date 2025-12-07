@@ -37,7 +37,7 @@ public static class StringUtility
         var randomString = new StringBuilder();
         var random = new Random();
 
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
             randomString.Append(chars[random.Next(chars.Length)]);
 
         return randomString.ToString();
@@ -74,12 +74,12 @@ public static class StringUtility
 
         var stringBuilder = new StringBuilder(s.Normalize(NormalizationForm.FormD));
 
-        foreach (KeyValuePair<string, string> keyValuePair in SPECIAL_DIACRITICS)
+        foreach (var keyValuePair in SPECIAL_DIACRITICS)
             stringBuilder.Replace(keyValuePair.Key, keyValuePair.Value);
 
-        for (int i = 0; i < stringBuilder.Length; i++)
+        for (var i = 0; i < stringBuilder.Length; i++)
         {
-            char c = stringBuilder[i];
+            var c = stringBuilder[i];
 
             if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
                 stringBuilder.Remove(i, 1);
@@ -99,11 +99,11 @@ public static class StringUtility
         using (var sha = SHA256.Create())
         {
             // Convert the string to a byte array first, to be processed
-            byte[] textBytes = System.Text.Encoding.UTF8.GetBytes(text + salt);
-            byte[] hashBytes = sha.ComputeHash(textBytes);
+            var textBytes = System.Text.Encoding.UTF8.GetBytes(text + salt);
+            var hashBytes = sha.ComputeHash(textBytes);
 
             // Convert back to a string, removing the '-' that BitConverter adds
-            string hash = BitConverter
+            var hash = BitConverter
                 .ToString(hashBytes)
                 .Replace("-", String.Empty);
 
@@ -115,7 +115,7 @@ public static class StringUtility
     {
         var baseUri = new UriBuilder(baseUrl);
 
-        if (Uri.TryCreate(baseUri.Uri, relativeUrl, out Uri newUri))
+        if (Uri.TryCreate(baseUri.Uri, relativeUrl, out var newUri))
             return newUri.ToString();
         else
             throw new ArgumentException($"Unable to combine specified url values: '{baseUrl}', '{relativeUrl}'");

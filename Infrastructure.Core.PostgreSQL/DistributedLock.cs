@@ -1,10 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Npgsql;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
-using System.Data;
+﻿using System.Data;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+using Npgsql;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
+using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL;
 
 /// <summary>
 /// https://ankitvijay.net/2021/02/28/distributed-lock-using-postgresql/comment-page-1/

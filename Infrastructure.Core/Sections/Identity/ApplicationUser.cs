@@ -1,7 +1,8 @@
 ﻿
-using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
 

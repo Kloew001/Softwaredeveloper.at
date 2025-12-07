@@ -1,10 +1,13 @@
-﻿using DocumentFormat.OpenXml.Drawing;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+using DocumentFormat.OpenXml.Drawing;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Activateable;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportDefault;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 

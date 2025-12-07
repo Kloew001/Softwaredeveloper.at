@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
@@ -35,8 +36,8 @@ public class MonitorController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo(); 
-    
+    public Task<DBConnectionInfo> DBConnectionInfo() => _monitoreService.DBConnectionInfo();
+
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Detail(

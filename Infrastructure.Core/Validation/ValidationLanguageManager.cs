@@ -34,7 +34,7 @@ public class ValidationLanguageManager : FluentValidation.Resources.LanguageMana
         {
             culture = culture ?? Culture ?? CultureInfo.CurrentUICulture;
 
-            string currentCultureKey = culture.Name + ":" + key;
+            var currentCultureKey = culture.Name + ":" + key;
             value = _languages.GetOrAdd(currentCultureKey, k => GetTranslation(culture.Name, key));
 
             // If the value couldn't be found, try the parent culture.
@@ -42,7 +42,7 @@ public class ValidationLanguageManager : FluentValidation.Resources.LanguageMana
             while (value == null && currentCulture.Parent != CultureInfo.InvariantCulture)
             {
                 currentCulture = currentCulture.Parent;
-                string parentCultureKey = currentCulture.Name + ":" + key;
+                var parentCultureKey = currentCulture.Name + ":" + key;
                 value = _languages.GetOrAdd(parentCultureKey, k => GetTranslation(currentCulture.Name, key));
             }
         }

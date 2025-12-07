@@ -9,7 +9,7 @@ public static class EnumHelper
         var random = new Random();
         return (T)values.GetValue(random.Next(values.Length));
     }
-    
+
     public static T GetAttributeOfType<T>(this Enum enumVal)
         where T : Attribute
     {
@@ -49,10 +49,10 @@ public static class EnumHelper
 
     public static T GetEnumFromId<T>(this Guid id) where T : Enum
     {
-        foreach(T enumVal in Enum.GetValues(typeof(T)))
+        foreach (T enumVal in Enum.GetValues(typeof(T)))
         {
             var attribute = enumVal.GetAttributeOfType<EnumExtensionAttribute>();
-            if(attribute != null && Guid.Parse(attribute.Id) == id)
+            if (attribute != null && Guid.Parse(attribute.Id) == id)
             {
                 return enumVal;
             }

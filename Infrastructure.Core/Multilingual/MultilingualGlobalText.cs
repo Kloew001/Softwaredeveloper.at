@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportIndex;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
