@@ -100,23 +100,26 @@ public class EMailSendHandler : IEMailSendHandler
 
 public class EMailHostedService : HandleBatchTimeHostedService
 {
+    private readonly IDateTimeService _dateTimeService;
+
     public EMailHostedService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<EMailHostedService> logger,
         IApplicationSettings settings,
-        IHostApplicationLifetime appLifetime)
+        IHostApplicationLifetime appLifetime,
+        IDateTimeService dateTimeService)
         : base(serviceScopeFactory, appLifetime, logger, settings)
     {
+        _dateTimeService = dateTimeService;
     }
 
     protected override async Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct)
     {
         var sendHandler = scope.ServiceProvider.GetService<IEMailSendHandler>();
 
-        var now = DateTime.Now;
-        var date = now.Subtract(_hostedServicesConfiguration.InitialDelay);
+        var now = _dateTimeService.Now();
 
-        return await sendHandler.GetIdsAsync(date, _hostedServicesConfiguration.BatchSize, ct);
+        return await sendHandler.GetIdsAsync(now, _hostedServicesConfiguration.BatchSize, ct);
     }
 
     protected override async Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct)

@@ -48,14 +48,18 @@ public class AsyncTaskExecutor
     private readonly ILogger<AsyncTaskExecutor> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IDbContext _context;
+    private readonly IDateTimeService _dateTimeService;
 
-    public AsyncTaskExecutor(IServiceProvider serviceProvider,
+    public AsyncTaskExecutor(
+        IServiceProvider serviceProvider,
         IDbContext context,
-        ILogger<AsyncTaskExecutor> logger)
+        ILogger<AsyncTaskExecutor> logger,
+        IDateTimeService dateTimeService)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _context = context;
+        _dateTimeService = dateTimeService;
     }
 
     private static readonly Dictionary<Guid, Type> _handlerTypes = CollectAllHandler();
@@ -123,7 +127,7 @@ public class AsyncTaskExecutor
 
     private async Task ExecuteNextOperationAsync(CancellationToken cancellationToken = default)
     {
-        var dateNow = DateTime.Now;
+        var now = _dateTimeService.Now();
         Guid asyncTaskOperationId = Guid.Empty;
 
         using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
@@ -132,9 +136,9 @@ public class AsyncTaskExecutor
             if (await distributedLock.TryAcquireLockAsync(lockName, 1000) == false)
                 throw new TimeoutException();
 
-            await RemoveDuplicatesAsync(dateNow, cancellationToken);
+            await RemoveDuplicatesAsync(now, cancellationToken);
 
-            var nextIds = await GetNextAsyncTaskOperationIdsAsync(dateNow, 1, cancellationToken);
+            var nextIds = await GetNextAsyncTaskOperationIdsAsync(now, 1, cancellationToken);
 
             if (nextIds.Any() == false)
                 return;
@@ -222,7 +226,7 @@ public class AsyncTaskExecutor
                 if (asyncTaskOperation.Status != AsyncTaskOperationStatus.Executing)
                 {
                     asyncTaskOperation.Status = AsyncTaskOperationStatus.Executing;
-                    asyncTaskOperation.StartedAt = DateTime.Now;
+                    asyncTaskOperation.StartedAt = _dateTimeService.Now();
                 }
             }
 
@@ -240,7 +244,7 @@ public class AsyncTaskExecutor
                 .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
 
             asyncTaskOperation.Status = AsyncTaskOperationStatus.Success;
-            asyncTaskOperation.FinishedAt = DateTime.Now;
+            asyncTaskOperation.FinishedAt = _dateTimeService.Now();
             await context.SaveChangesAsync();
         }
     }
@@ -262,7 +266,7 @@ public class AsyncTaskExecutor
                 {
                     asyncTaskOperation.Status = AsyncTaskOperationStatus.Pending;
                     asyncTaskOperation.StartedAt = null;
-                    asyncTaskOperation.ExecuteAt = DateTime.Now.Add(TimeSpan.FromSeconds(asyncTaskOperation.RetryCount * 5));
+                    asyncTaskOperation.ExecuteAt = _dateTimeService.Now().Add(TimeSpan.FromSeconds(asyncTaskOperation.RetryCount * 5));
                     asyncTaskOperation.RetryCount = asyncTaskOperation.RetryCount + 1;
                     asyncTaskOperation.ErrorMessage = ex.ToString();
                 }
@@ -335,7 +339,7 @@ public class AsyncTaskExecutor
 
     public async Task<bool> AnyNextAsyncTaskOperationAsync(CancellationToken ct = default)
     {
-        var result = await AnyNextAsyncTaskOperationAsyncQuery(_context.As<DbContext>(), ct, DateTime.Now);
+        var result = await AnyNextAsyncTaskOperationAsyncQuery(_context.As<DbContext>(), ct, _dateTimeService.Now());
         return result;
     }
 
@@ -392,7 +396,7 @@ public class AsyncTaskExecutor
 
         var parameter = JsonConvert.SerializeObject(asyncTaskOperationHandler, new JsonSerializerSettings());
 
-        var now = DateTime.Now;
+        var now = _dateTimeService.Now();
 
         var asyncTask = new AsyncTaskOperation()
         {
@@ -419,7 +423,7 @@ public class AsyncTaskExecutor
     {
         using (var scope = _serviceProvider.CreateScope())
         {
-            var olderThen = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
+            var olderThen = _dateTimeService.Now().AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
             var context = scope.ServiceProvider.GetService<IDbContext>();
 
             var query = context.Set<AsyncTaskOperation>()
@@ -479,7 +483,7 @@ public class AsyncTaskExecutor
 
     private Task<bool> AnyNotFinishedAsyncTasksAsync(params Guid[] referenceIds)
     {
-        var timeout = DateTime.Now.AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
+        var timeout = _dateTimeService.Now().AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
 
         if (referenceIds.Length == 1)
         {

@@ -3,19 +3,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using static SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework.SoftwaredeveloperDotAtDbContext;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection;
 
 public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 {
+    private readonly IDateTimeService _dateTimeService;
+
     public BinaryContentExtractionHostedService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<BinaryContentExtractionHostedService> logger,
         IApplicationSettings settings,
-        IHostApplicationLifetime appLifetime)
+        IHostApplicationLifetime appLifetime,
+        IDateTimeService dateTimeService)
         : base(serviceScopeFactory, appLifetime, logger, settings)
     {
+        _dateTimeService = dateTimeService;
     }
 
     protected override HostedServicesConfiguration GetDefaultConfiguration()
@@ -77,7 +79,7 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
             var context = errorScope.ServiceProvider.GetService<IDbContext>();
 
             var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id);
-            binaryContent.ExtractionHandledAt = DateTime.Now;
+            binaryContent.ExtractionHandledAt = _dateTimeService.Now();
 
             await context.SaveChangesAsync(ct);
         }

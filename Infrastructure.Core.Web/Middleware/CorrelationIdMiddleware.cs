@@ -20,7 +20,7 @@ public class CorrelationIdMiddleware
 
     public async Task Invoke(HttpContext context)
     {
-        using (LogContext.PushProperty("Area", "Web"))
+        using (LogContext.PushProperty(Core.Utility.SerilogUtility.Area, Utility.SerilogUtility.Area_Web))
         using (LogContext.PushProperty("CorrelationId", context.ResolveCorrelationId()))
         using (LogContext.PushProperty("AccountId", context.ResolveAccountIdOrAnon()))
         using (LogContext.PushProperty("ClientIP", context.ResolveIp()))

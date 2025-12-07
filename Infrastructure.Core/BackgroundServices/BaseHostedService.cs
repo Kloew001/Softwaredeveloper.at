@@ -62,6 +62,8 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     protected readonly IHostApplicationLifetime _appLifetime;
     private readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
 
+    private readonly IDateTimeService _dateTimeService;
+
     public virtual string Name { get => GetType().Name; }
 
     public bool BackgroundServiceInfoEnabled { get; set; } = true;
@@ -78,6 +80,8 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         _applicationSettings = applicationSettings;
         _hostedServicesConfiguration = GetConfiguration();
+        _dateTimeService = serviceScopeFactory.CreateScope()
+            .ServiceProvider.GetRequiredService<IDateTimeService>();
     }
 
     protected virtual HostedServicesConfiguration GetConfiguration()
@@ -98,7 +102,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var correlationId = Guid.NewGuid().ToString();
-        using (LogContext.PushProperty("Area", "Worker"))
+        using (LogContext.PushProperty(SerilogUtility.Area, SerilogUtility.Area_Worker))
         using (LogContext.PushProperty("CorrelationId", correlationId))
         { 
             _logger.LogInformation($"IHostedService.StartAsync for {Name}");
@@ -266,7 +270,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         if (IsExecuting(backgroundServiceInfo))
             return false;
 
-        var now = DateTime.Now;
+        var now = _dateTimeService.Now();
         if (backgroundServiceInfo == null || backgroundServiceInfo.NextExecuteAt == null)
         {
             var nextExecuteAt = CalcNextExecuteAt(now, backgroundServiceInfo);
@@ -288,7 +292,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     {
         if (IsExecuting(backgroundServiceInfo))
         {
-            var now = DateTime.Now;
+            var now = _dateTimeService.Now();
 
             if (backgroundServiceInfo.LastHeartbeat == null)
                 return true;
@@ -313,7 +317,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         var context = scope.ServiceProvider.GetService<IDbContext>();
         var DbContextTransaction = scope.ServiceProvider.GetService<DbContextTransaction>();
-        var now = DateTime.Now;
+        var now = _dateTimeService.Now();
 
         var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
 
@@ -338,7 +342,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             return;
 
         using var scope = _serviceScopeFactory.CreateScope();
-        var now = DateTime.Now;
+        var now = _dateTimeService.Now();
 
         var context = scope.ServiceProvider.GetService<IDbContext>();
 
@@ -367,7 +371,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
 
-        backgroundServiceInfo.LastHeartbeat = DateTime.Now;
+        backgroundServiceInfo.LastHeartbeat = _dateTimeService.Now();
 
         await context.SaveChangesAsync(cancellationToken);
     }
@@ -380,7 +384,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         using var scope = _serviceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetService<IDbContext>();
 
-        var now = DateTime.Now;
+        var now = _dateTimeService.Now();
 
         var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
 
