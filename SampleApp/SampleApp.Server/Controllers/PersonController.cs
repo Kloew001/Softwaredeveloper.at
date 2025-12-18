@@ -1,7 +1,9 @@
 ﻿
 using SampleApp.Application.Sections.PersonSection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace SampleApp.Server.Controllers;
@@ -42,4 +44,26 @@ public class PersonController : BaseApiController
     [HttpPost]
     public Task<PersonDto> Update(PersonDto dto)
         => _service.UpdateAsync(dto);
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task TestEMail([FromServices] IDbContext context)
+    {
+        context.Set<Person>().Add(new Person
+        {
+            FirstName = "Max",
+            LastName = "Mustermann"
+        });
+
+        context.Set<EmailMessage>().Add(new EmailMessage
+        {
+            AnAdress = "asdas",
+            Subject = "Test",
+            HtmlContent = "<h1>Test</h1>"
+        });
+
+        throw new Exception("Test Exception");
+
+        await context.SaveChangesAsync();
+    }
 }

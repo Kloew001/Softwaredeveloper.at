@@ -64,10 +64,7 @@ public static class ServiceCollectionExtensions
 {
     public static void RegisterExtendableEnumExtensions(this IServiceCollection services)
     {
-        var extendableEnumExtensionsTypes = AssemblyUtils.AllLoadedTypes()
-           .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-           .Where(p => typeof(IExtendableEnumExtension).IsAssignableFrom(p))
-           .ToList();
+        var extendableEnumExtensionsTypes = AssemblyUtils.GetDerivedTypes<IExtendableEnumExtension>();
 
         foreach (var extendableEnumExtensionType in extendableEnumExtensionsTypes)
         {
@@ -96,10 +93,7 @@ public static class ServiceCollectionExtensions
 
     public static void RegisterSelfRegisterDependencies(this IServiceCollection services)
     {
-        var appStatupInits = AssemblyUtils.AllLoadedTypes()
-           .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-           .Where(p => typeof(IAppStatupInit).IsAssignableFrom(p))
-           .ToList();
+        var appStatupInits = AssemblyUtils.GetDerivedTypes<IAppStatupInit>();
 
         foreach (var appStatupInit in appStatupInits)
         {
@@ -247,10 +241,9 @@ public static class ServiceCollectionExtensions
 
     public static void RegisterAllHostedService(this IServiceCollection services)
     {
-        var serviceTypes = AssemblyUtils.AllLoadedTypes()
-           .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-           .Where(p => typeof(BaseHostedService).IsAssignableFrom(p))
-           .ToList();
+        services.AddSingleton(typeof(IBackgroundTrigger<>), typeof(BackgroundTrigger<>));
+
+        var serviceTypes = AssemblyUtils.GetDerivedTypes<BaseHostedService>();
 
         foreach (var serviceType in serviceTypes)
         {

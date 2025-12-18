@@ -252,6 +252,10 @@ public static class WebApplicationBuilderExtensions
                 options.Password.RequiredUniqueChars = 1;
 
                 options.SignIn.RequireConfirmedAccount = true;
+
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoleManager<RoleManager<TRole>>()
             .AddEntityFrameworkStores<TContext>()
@@ -323,15 +327,35 @@ public static class WebApplicationBuilderExtensions
 
     public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions>? configureOptions = null)
     {
+        var config = builder.Configuration
+            .GetSection("RateLimiting")
+            .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
+
         builder.Services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
+                if (config.Blacklist.Contains(ip))
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        ip,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 0,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        });
+                }
                 return RateLimitPartition.GetTokenBucketLimiter(
-                    httpContext.ResolveIpOrAnon(), _ =>
-                    new TokenBucketRateLimiterOptions
+                    ip,
+                    _ => new TokenBucketRateLimiterOptions
                     {
                         TokenLimit = 100,
                         TokensPerPeriod = 5,
@@ -344,6 +368,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed2per10Sec, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions()
@@ -357,6 +386,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed5per10Sec, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions()
@@ -370,6 +404,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Sliding60per1Min, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetSlidingWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new SlidingWindowRateLimiterOptions
@@ -384,6 +423,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed10per1Min, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
@@ -397,6 +441,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed5per1Hour, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
@@ -410,6 +459,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed10per1Hour, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
@@ -423,6 +477,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed10per24Hours, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
@@ -436,6 +495,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Fixed100per24Hours, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.GetFixedWindowLimiter(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(), _ =>
                     new FixedWindowRateLimiterOptions
@@ -449,6 +513,11 @@ public static class WebApplicationBuilderExtensions
 
             options.AddPolicy(RateLimitPolicy.Sliding1per1SecAnd100per24Hours, httpContext =>
             {
+                var ip = httpContext.ResolveIpOrAnon();
+
+                if (config.Whitelist.Any(r => r.Contains(ip)))
+                    return RateLimitPartition.GetNoLimiter($"white-{ip}");
+
                 return RateLimitPartition.Get(
                     httpContext.ResolveAccountIdOrAnonBucketIdByActionKey(),
                     _ =>

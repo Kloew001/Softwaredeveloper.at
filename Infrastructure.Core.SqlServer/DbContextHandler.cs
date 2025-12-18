@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
@@ -19,13 +20,18 @@ public static class SqlServerDbContextHandlerExtensions
 
 public class SqlServerDbContextHandler : BaseDbContextHandler
 {
+    public SqlServerDbContextHandler(ILogger<SqlServerDbContextHandler> logger)
+        : base(logger)
+    {
+    }
+
     public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
     {
         var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
 
         options.UseSqlServer(connectionString, options =>
         {
-
+            options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
         });
 
         base.DBContextOptions(serviceProvider, options, connectionStringKey);

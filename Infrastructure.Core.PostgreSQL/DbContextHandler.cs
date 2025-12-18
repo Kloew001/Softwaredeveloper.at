@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Castle.Core.Logging;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
@@ -20,12 +23,18 @@ public static class PostgreSQLDbContextHandlerExtensions
 
 public class PostgreSQLDbContextHandler : BaseDbContextHandler
 {
+    public PostgreSQLDbContextHandler(ILogger<PostgreSQLDbContextHandler> logger)
+        : base(logger)
+    {
+    }
+
     public override void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
     {
         var connectionString = GetConnectionString(serviceProvider, connectionStringKey);
 
         options.UseNpgsql(connectionString, options =>
         {
+            options.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
         });
         //.UseCamelCaseNamingConvention();
 

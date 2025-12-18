@@ -10,6 +10,8 @@ public interface IDbContextHandler
 
     void OnModelCreating(ModelBuilder modelBuilder);
 
-    void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime);
-    void HandleEntityAudit(DbContext context, DateTime transactionDateTime);
+    void HandleChangeTrackedEntity(DbContext context);
+    void HandleEntityAudit(DbContext context);
+    void EnqueueBackgroundTrigger(DbContext context);
+    void TriggerBackground(DbContext context);
 }

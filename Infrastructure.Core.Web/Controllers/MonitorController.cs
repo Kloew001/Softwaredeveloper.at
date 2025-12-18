@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Monitor;
 
@@ -33,6 +34,11 @@ public class MonitorController : BaseApiController
     [HttpGet]
     [AllowAnonymous]
     public Task<bool> IsAlive() => _monitoreService.IsAlive();
+
+    [HttpGet]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicy.Fixed10per1Min)]
+    public bool RateLimit() => true;
 
     [HttpGet]
     [AllowAnonymous]

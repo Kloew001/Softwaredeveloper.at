@@ -98,19 +98,34 @@ public class EMailSendHandler : IEMailSendHandler
     }
 }
 
-public class EMailHostedService : HandleBatchTimeHostedService
+public class EMailHostedService : HandleBatchTimeHostedService, IBackgroundTriggerable<EmailMessage>
 {
-    private readonly IDateTimeService _dateTimeService;
-
     public EMailHostedService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<EMailHostedService> logger,
         IApplicationSettings settings,
-        IHostApplicationLifetime appLifetime,
-        IDateTimeService dateTimeService)
+        IHostApplicationLifetime appLifetime)
         : base(serviceScopeFactory, appLifetime, logger, settings)
     {
-        _dateTimeService = dateTimeService;
+    }
+
+    protected override HostedServicesConfiguration GetConfiguration()
+    {
+        var config = base.GetConfiguration();
+
+        config.BatchSize ??= 10;
+        config.ExecuteMode ??= HostedServicesExecuteModeType.Trigger;
+
+        if (config.ExecuteMode == HostedServicesExecuteModeType.Interval)
+        {
+            config.Interval ??= TimeSpan.FromSeconds(5);
+        }
+        else if (config.ExecuteMode == HostedServicesExecuteModeType.Trigger)
+        {
+            config.TriggerExecuteWaitTimeout ??= TimeSpan.FromMinutes(1);
+        }
+
+        return config;
     }
 
     protected override async Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct)
@@ -119,7 +134,7 @@ public class EMailHostedService : HandleBatchTimeHostedService
 
         var now = _dateTimeService.Now();
 
-        return await sendHandler.GetIdsAsync(now, _hostedServicesConfiguration.BatchSize, ct);
+        return await sendHandler.GetIdsAsync(now, _configuration.BatchSize.Value, ct);
     }
 
     protected override async Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct)

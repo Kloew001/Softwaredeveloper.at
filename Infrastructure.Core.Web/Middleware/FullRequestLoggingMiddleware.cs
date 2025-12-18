@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
+using Newtonsoft.Json;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 public static class FullRequestLoggingBuilderExtensions
@@ -114,10 +116,11 @@ public class FullRequestLoggingMiddleware
 
     private string FormatObject(string title, object obj)
     {
-        var json = JsonSerializer.Serialize(
-            obj,
-            new JsonSerializerOptions { WriteIndented = true }
-        );
+        var json = obj.ToJson(new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore
+        });
 
         return $"{title}:\n{json}";
     }
@@ -226,7 +229,7 @@ public class FullRequestLoggingMiddleware
         try
         {
             using var doc = JsonDocument.Parse(body);
-            var pretty = JsonSerializer.Serialize(doc, new JsonSerializerOptions
+            var pretty = System.Text.Json.JsonSerializer.Serialize(doc, new JsonSerializerOptions
             {
                 WriteIndented = true
             });

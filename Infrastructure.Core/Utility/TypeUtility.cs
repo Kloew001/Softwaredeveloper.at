@@ -17,6 +17,7 @@ public static class TypeUtility
             .OfType<Attribute>()
             .SingleOrDefault();
     }
+
     public static TAttrbitute GetAttribute<TAttrbitute>(this Type objType, bool inherit = true)
         where TAttrbitute : Attribute
     {

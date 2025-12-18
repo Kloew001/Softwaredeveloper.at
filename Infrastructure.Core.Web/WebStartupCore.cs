@@ -171,9 +171,6 @@ public class WebStartupCore<TDomainStartup>
             .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Routing.EndpointMiddleware", LogEventLevel.Warning)
 
-            .MinimumLevel.Override("SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks.AsyncTaskExecutorHostedService", LogEventLevel.Warning)
-            .MinimumLevel.Override("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage.EMailHostedService", LogEventLevel.Warning)
-
             .Enrich.FromLogContext()
             .Enrich.WithExceptionDetails()
 
@@ -293,9 +290,8 @@ public class WebStartupCore<TDomainStartup>
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
+            app.UseHttpsRedirection();
         }
-
-        app.UseHttpsRedirection();
 
         app.UseResponseCompression();
 
@@ -308,6 +304,8 @@ public class WebStartupCore<TDomainStartup>
 
         HandleAuthentication(app);
         HandleAuthorization(app);
+
+        app.UseSerilogAccountContext();
 
         HandleCurrentCulture(app);
 
@@ -325,7 +323,8 @@ public class WebStartupCore<TDomainStartup>
     protected virtual void UseLogging(WebApplication app)
     {
         app.UseFullRequestLogging();
-        app.UseSerilogCorrelationId();
+
+        app.UseSerilogAdditionalContext();
 
         app.UseSerilogRequestLogging(opts =>
         {

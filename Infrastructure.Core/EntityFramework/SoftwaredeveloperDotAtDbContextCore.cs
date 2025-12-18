@@ -25,9 +25,16 @@ public class DbContextTransaction
 public abstract class SoftwaredeveloperDotAtDbContextCore : DbContext, IDbContext
 {
     public bool UseProxy { get; set; } = true;
+
+    protected IDbContextHandler _dbContextHandler;
+
     public SoftwaredeveloperDotAtDbContextCore(DbContextOptions options)
         : base(options)
     {
+        _dbContextHandler = this.GetService<IDbContextHandler>();
+
+        if (_dbContextHandler == null)
+            throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,30 +51,37 @@ public abstract class SoftwaredeveloperDotAtDbContextCore : DbContext, IDbContex
     {
         BeforeSaveChanges();
 
-        return base.SaveChanges();
+        var result = base.SaveChanges();
+
+        AfterSaveChanges();
+
+        return result;
     }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         BeforeSaveChanges();
 
-        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+        AfterSaveChanges();
+
+        return result;
     }
 
-    private void BeforeSaveChanges()
+    protected virtual void BeforeSaveChanges()
     {
-        var dbContextHandler = this.GetService<IDbContextHandler>();
-
-        if (dbContextHandler == null)
-            throw new Exception($"Could not resolve {nameof(IDbContextHandler)}");
-
         var transactionService = this.GetService<DbContextTransaction>();
         transactionService.EnsureTime();
 
-        var transactionDateTime = transactionService.TransactionTime.Value;
+        _dbContextHandler.HandleEntityAudit(this);
+        _dbContextHandler.HandleChangeTrackedEntity(this);
+        _dbContextHandler.EnqueueBackgroundTrigger(this);
+    }
 
-        dbContextHandler.HandleEntityAudit(this, transactionDateTime);
-        dbContextHandler.HandleChangeTrackedEntity(this, transactionDateTime);
+    protected virtual void AfterSaveChanges()
+    {
+        _dbContextHandler.TriggerBackground(this);
     }
 
     public TEntity CreateEntity<TEntity>()

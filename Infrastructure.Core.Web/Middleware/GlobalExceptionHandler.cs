@@ -62,7 +62,7 @@ public class ValidationExceptionHandler : IExceptionHandler
 
     private async ValueTask<bool> HandleProblemDetails(HttpContext httpContext, Exception exception, ValidationProblemDetails problemDetails, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Validation failed. correlationId={correlationId}", httpContext.ResolveCorrelationId());
+        _logger.LogWarning(exception, "Validation failed. correlationId={correlationId}", httpContext.ResolveCorrelationId());
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
 

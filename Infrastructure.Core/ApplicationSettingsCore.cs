@@ -21,14 +21,14 @@ public interface IApplicationSettings
 public abstract class CoreApplicationSettings : IApplicationSettings
 {
     public Dictionary<string, string> ConnectionStrings { get; set; }
-    public RateLimitingConfiguration RateLimiting { get; set; } = new RateLimitingConfiguration();
-    public ForwardedHeadersConfiguration ForwardedHeaders { get; set; } = new ForwardedHeadersConfiguration();
+    public RateLimitingConfiguration RateLimiting { get; set; } = new();
+    public ForwardedHeadersConfiguration ForwardedHeaders { get; set; } = new();
     public Dictionary<string, HostedServicesConfiguration> HostedServices { get; set; }
     public UrlConfiguration Url { get; set; }
     public SmtpServerConfiguration SmtpServer { get; set; }
     public MultilingualConfiguration Multilingual { get; set; } = new MultilingualConfiguration();
     public FeatureToggles FeatureToggles { get; set; } = new FeatureToggles();
-    public FullRequestLoggingConfiguration FullRequestLogging { get; set; } = new FullRequestLoggingConfiguration();
+    public FullRequestLoggingConfiguration FullRequestLogging { get; set; } = new();
 }
 
 [ApplicationConfiguration]
@@ -43,15 +43,26 @@ public class HostedServicesConfiguration
     public TimeSpan? EnabledFromTime { get; set; }
     public TimeSpan? EnabledToTime { get; set; }
 
-    public int BatchSize { get; set; } = 10;
+    public int? BatchSize { get; set; }
 
-    public TimeSpan? Interval { get; set; } = null;
+    public HostedServicesExecuteModeType? ExecuteMode { get; set; }
+    public TimeSpan? Interval { get; set; }
+    public TimeSpan? TriggerExecuteWaitTimeout { get; set; }
+}
+
+public enum HostedServicesExecuteModeType
+{
+    OneTime,
+    Interval,
+    Trigger
 }
 
 [ApplicationConfiguration]
 public class RateLimitingConfiguration
 {
     public bool Enabled { get; set; } = true;
+    public string[] Blacklist { get; set; } = [];
+    public string[] Whitelist { get; set; } = [];
 }
 
 [ApplicationConfiguration]

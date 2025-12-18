@@ -11,6 +11,30 @@ public static class AssemblyUtils
             .Where(type => type.GetCustomAttributes(typeof(TAttribute), true).Length > 0);
     }
 
+    public static Type[] GetDerivedTypes<TInterface>()
+    {
+        return GetDerivedTypes(typeof(TInterface));
+    }
+
+    public static Type[] GetDerivedTypes(Type type)
+    {
+        var types = AllLoadedTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false });
+
+        if (!type.IsGenericTypeDefinition)
+        {
+            types = types.Where(t => type.IsAssignableFrom(t));
+        }
+        else
+        {
+            types = types.Where(t => t.GetInterfaces().Any(i =>
+                i.IsGenericType &&
+                i.GetGenericTypeDefinition() == type));
+        }
+
+        return types.ToArray();
+    }
+
     public static Type[] AllLoadedTypes()
     {
         lock (__lockObj)

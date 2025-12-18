@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 
-public class AsyncTaskExecutorHostedService : TimerHostedService
+public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTriggerable<AsyncTaskOperation>
 {
     public AsyncTaskExecutorHostedService(
         IServiceScopeFactory serviceScopeFactory,
@@ -21,6 +21,21 @@ public class AsyncTaskExecutorHostedService : TimerHostedService
         : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
     {
         BackgroundServiceInfoEnabled = false;
+    }
+
+    protected override HostedServicesConfiguration GetConfiguration()
+    {
+        var config = base.GetConfiguration();
+    
+        config.BatchSize ??= 10;
+        config.ExecuteMode ??= HostedServicesExecuteModeType.Trigger;
+
+        if (config.ExecuteMode == HostedServicesExecuteModeType.Trigger)
+        {
+            config.TriggerExecuteWaitTimeout ??= TimeSpan.FromMinutes(1);
+        }
+
+        return config;
     }
 
     protected override async Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken)
@@ -33,7 +48,7 @@ public class AsyncTaskExecutorHostedService : TimerHostedService
 
         var parallelTasks = new List<Task>
         {
-            asyncTaskExecutor.ExecuteNextOperationsAsync(_hostedServicesConfiguration.BatchSize, cancellationToken),
+            asyncTaskExecutor.ExecuteNextOperationsAsync(_configuration.BatchSize.Value, cancellationToken),
             asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100))),
             asyncTaskExecutor.HandleTimeout()
         };
@@ -94,12 +109,10 @@ public class AsyncTaskExecutor
             {
                 try
                 {
-                    using (var scope = _serviceProvider.CreateScope())
-                    {
-                        var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
+                    using var scope = _serviceProvider.CreateScope();
+                    var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
-                        await asyncTaskExecutor.ExecuteNextOperationAsync(cancellationToken);
-                    }
+                    await asyncTaskExecutor.ExecuteNextOperationAsync(cancellationToken);
                 }
                 finally
                 {
@@ -148,105 +161,97 @@ public class AsyncTaskExecutor
             await SetExecutingAsync(asyncTaskOperationId);
         }
 
-        using (var childScope = _serviceProvider.CreateScope())
-        {
-            var asyncTaskExecutor = childScope.ServiceProvider.GetService<AsyncTaskExecutor>();
+        using var childScope = _serviceProvider.CreateScope();
+        var asyncTaskExecutor = childScope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
-            await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
-        }
+        await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
     }
 
     public async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
     {
-        using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
+        using var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>();
+        var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteAsyncTaskOperationIdAsync)}_{asyncTaskOperationId}";
+        if (distributedLock.TryAcquireLock(lockName, 3) == false)
+            throw new InvalidOperationException();
+
+        try
         {
-            var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteAsyncTaskOperationIdAsync)}_{asyncTaskOperationId}";
-            if (distributedLock.TryAcquireLock(lockName, 3) == false)
+            var asyncTaskOperation = await _context.Set<AsyncTaskOperation>()
+                .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
+
+            if (asyncTaskOperation.Status > AsyncTaskOperationStatus.Executing)
                 throw new InvalidOperationException();
 
-            try
+            if (asyncTaskOperation.ExecuteById.HasValue)
             {
-                var asyncTaskOperation = await _context.Set<AsyncTaskOperation>()
-                    .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
-
-                if (asyncTaskOperation.Status > AsyncTaskOperationStatus.Executing)
-                    throw new InvalidOperationException();
-
-                if (asyncTaskOperation.ExecuteById.HasValue)
-                {
-                    _serviceProvider.GetService<ICurrentUserService>()
-                        .SetCurrentUserId(asyncTaskOperation.ExecuteById.Value);
-                }
-
-                var handlerType = _handlerTypes[asyncTaskOperation.OperationHandlerId];
-
-                var asyncTaskOperationHandler = (IAsyncTaskOperationHandler)_serviceProvider.GetService(handlerType);
-
-                JsonConvert.PopulateObject(asyncTaskOperation.ParameterSerialized,
-                    asyncTaskOperationHandler, null);
-
-                await SetExecutingAsync(asyncTaskOperationId);
-
-                await asyncTaskOperationHandler.ExecuteAsync(cancellationToken);
-
-                await SetSuccessAsync(asyncTaskOperationId);
-
-                return true;
+                _serviceProvider.GetService<ICurrentUserService>()
+                    .SetCurrentUserId(asyncTaskOperation.ExecuteById.Value);
             }
-            //catch (DbUpdateConcurrencyException ex)
-            //{
-            //    HandleError(asyncTaskOperation, ex);
-            //    return;
-            //}
-            catch (Exception ex)
-            {
-                await HandleErrorAsync(asyncTaskOperationId, ex);
+
+            var handlerType = _handlerTypes[asyncTaskOperation.OperationHandlerId];
+
+            var asyncTaskOperationHandler = (IAsyncTaskOperationHandler)_serviceProvider.GetService(handlerType);
+
+            JsonConvert.PopulateObject(asyncTaskOperation.ParameterSerialized,
+                asyncTaskOperationHandler, null);
+
+            await SetExecutingAsync(asyncTaskOperationId);
+
+            await asyncTaskOperationHandler.ExecuteAsync(cancellationToken);
+
+            await SetSuccessAsync(asyncTaskOperationId);
+
+            return true;
+        }
+        //catch (DbUpdateConcurrencyException ex)
+        //{
+        //    HandleError(asyncTaskOperation, ex);
+        //    return;
+        //}
+        catch (Exception ex)
+        {
+            await HandleErrorAsync(asyncTaskOperationId, ex);
 
 #if DEBUG
-                Debugger.Break();
+            Debugger.Break();
 #endif
 
-                return false;
-            }
+            return false;
         }
     }
 
     private async Task SetExecutingAsync(params Guid[] asyncTaskOperationIds)
     {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var asyncTaskOperations = await context.Set<AsyncTaskOperation>()
+            .Where(_ => asyncTaskOperationIds.Contains(_.Id))
+            .ToListAsync();
+
+        foreach (var asyncTaskOperation in asyncTaskOperations)
         {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var asyncTaskOperations = await context.Set<AsyncTaskOperation>()
-                .Where(_ => asyncTaskOperationIds.Contains(_.Id))
-                .ToListAsync();
-
-            foreach (var asyncTaskOperation in asyncTaskOperations)
+            if (asyncTaskOperation.Status != AsyncTaskOperationStatus.Executing)
             {
-                if (asyncTaskOperation.Status != AsyncTaskOperationStatus.Executing)
-                {
-                    asyncTaskOperation.Status = AsyncTaskOperationStatus.Executing;
-                    asyncTaskOperation.StartedAt = _dateTimeService.Now();
-                }
+                asyncTaskOperation.Status = AsyncTaskOperationStatus.Executing;
+                asyncTaskOperation.StartedAt = _dateTimeService.Now();
             }
-
-            await context.SaveChangesAsync();
         }
+
+        await context.SaveChangesAsync();
     }
 
     private async Task SetSuccessAsync(Guid asyncTaskOperationId)
     {
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetService<IDbContext>();
 
-            var asyncTaskOperation = await context.Set<AsyncTaskOperation>()
-                .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
+        var asyncTaskOperation = await context.Set<AsyncTaskOperation>()
+            .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
 
-            asyncTaskOperation.Status = AsyncTaskOperationStatus.Success;
-            asyncTaskOperation.FinishedAt = _dateTimeService.Now();
-            await context.SaveChangesAsync();
-        }
+        asyncTaskOperation.Status = AsyncTaskOperationStatus.Success;
+        asyncTaskOperation.FinishedAt = _dateTimeService.Now();
+        await context.SaveChangesAsync();
     }
 
     private async Task HandleErrorAsync(Guid asyncTaskOperationId, Exception ex)
@@ -255,30 +260,28 @@ public class AsyncTaskExecutor
         {
             _logger.LogError(ex, "Fehler beim Verarbeiten der AsyncOperation: " + asyncTaskOperationId);
 
-            using (var scope = _serviceProvider.CreateScope())
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetService<IDbContext>();
+
+            var asyncTaskOperation = await context.Set<AsyncTaskOperation>()
+                .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
+
+            if (asyncTaskOperation.RetryCount < asyncTaskOperation.MaxRetryCount)
             {
-                var context = scope.ServiceProvider.GetService<IDbContext>();
-
-                var asyncTaskOperation = await context.Set<AsyncTaskOperation>()
-                    .SingleOrDefaultAsync(o => o.Id == asyncTaskOperationId);
-
-                if (asyncTaskOperation.RetryCount < asyncTaskOperation.MaxRetryCount)
-                {
-                    asyncTaskOperation.Status = AsyncTaskOperationStatus.Pending;
-                    asyncTaskOperation.StartedAt = null;
-                    asyncTaskOperation.ExecuteAt = _dateTimeService.Now().Add(TimeSpan.FromSeconds(asyncTaskOperation.RetryCount * 5));
-                    asyncTaskOperation.RetryCount = asyncTaskOperation.RetryCount + 1;
-                    asyncTaskOperation.ErrorMessage = ex.ToString();
-                }
-                else
-                {
-                    asyncTaskOperation.ExecuteAt = null;
-                    asyncTaskOperation.Status = AsyncTaskOperationStatus.Failed;
-                    asyncTaskOperation.ErrorMessage = ex.ToString();
-                }
-
-                await context.SaveChangesAsync();
+                asyncTaskOperation.Status = AsyncTaskOperationStatus.Pending;
+                asyncTaskOperation.StartedAt = null;
+                asyncTaskOperation.ExecuteAt = _dateTimeService.Now().Add(TimeSpan.FromSeconds(asyncTaskOperation.RetryCount * 5));
+                asyncTaskOperation.RetryCount = asyncTaskOperation.RetryCount + 1;
+                asyncTaskOperation.ErrorMessage = ex.ToString();
             }
+            else
+            {
+                asyncTaskOperation.ExecuteAt = null;
+                asyncTaskOperation.Status = AsyncTaskOperationStatus.Failed;
+                asyncTaskOperation.ErrorMessage = ex.ToString();
+            }
+
+            await context.SaveChangesAsync();
         }
         catch (Exception ex2)
         {
@@ -421,36 +424,34 @@ public class AsyncTaskExecutor
 
     public async Task HandleTimeout()
     {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+
+        var olderThen = _dateTimeService.Now().AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var query = context.Set<AsyncTaskOperation>()
+              .Where(_ => _.Status == AsyncTaskOperationStatus.Executing &&
+                          _.StartedAt < olderThen);
+
+        if (await query.AnyAsync())
         {
-            var olderThen = _dateTimeService.Now().AddSeconds(-1 * DefaultAsyncTaskTimeOutInSeconds);
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var query = context.Set<AsyncTaskOperation>()
-                  .Where(_ => _.Status == AsyncTaskOperationStatus.Executing &&
-                              _.StartedAt < olderThen);
-
-            if (query.Any())
-            {
-                await query.ExecuteUpdateAsync(_ =>
-                    _.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
-            }
+            await query.ExecuteUpdateAsync(_ =>
+                _.SetProperty(b => b.Status, AsyncTaskOperationStatus.Timeout));
         }
     }
 
     public async Task Delete(DateTime olderThen)
     {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+
+        var context = scope.ServiceProvider.GetService<IDbContext>();
+
+        var query = context.Set<AsyncTaskOperation>()
+            .Where(_ => _.CreatedAt < olderThen);
+
+        if (await query.AnyAsync())
         {
-            var context = scope.ServiceProvider.GetService<IDbContext>();
-
-            var query = context.Set<AsyncTaskOperation>()
-                .Where(_ => _.CreatedAt < olderThen);
-
-            if (query.Any())
-            {
-                await query.ExecuteDeleteAsync();
-            }
+            await query.ExecuteDeleteAsync();
         }
     }
 

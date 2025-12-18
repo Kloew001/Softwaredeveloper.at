@@ -38,6 +38,7 @@ public static class HttpContextExtension
 
         return null;
     }
+
     public static string ResolveAccountIdOrAnon(this HttpContext ctx)
     {
         return ResolveAccountId(ctx) ?? "anon";

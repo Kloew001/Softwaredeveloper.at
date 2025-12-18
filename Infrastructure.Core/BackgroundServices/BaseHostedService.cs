@@ -2,11 +2,16 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
+using DocumentFormat.OpenXml.Wordprocessing;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 using Serilog.Context;
 
@@ -59,15 +64,14 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     protected readonly IServiceScopeFactory _serviceScopeFactory;
     protected readonly ILogger<BaseHostedService> _logger;
     protected readonly IApplicationSettings _applicationSettings;
-    protected readonly HostedServicesConfiguration _hostedServicesConfiguration;
+    protected readonly HostedServicesConfiguration _configuration;
     protected readonly IHostApplicationLifetime _appLifetime;
-    private readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
-
-    private readonly IDateTimeService _dateTimeService;
+    protected readonly IDateTimeService _dateTimeService;
+    private readonly CancellationTokenSource _cancellationToken = new();
 
     public virtual string Name { get => GetType().Name; }
 
-    public bool BackgroundServiceInfoEnabled { get; set; } = true;
+    public bool BackgroundServiceInfoEnabled { get; protected set; } = true;
 
     protected BaseHostedService(
         IServiceScopeFactory serviceScopeFactory,
@@ -78,26 +82,31 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         _serviceScopeFactory = serviceScopeFactory;
         _appLifetime = appLifetime;
         _logger = logger;
-
         _applicationSettings = applicationSettings;
-        _hostedServicesConfiguration = GetConfiguration();
-        _dateTimeService = serviceScopeFactory.CreateScope()
-            .ServiceProvider.GetRequiredService<IDateTimeService>();
+        _dateTimeService = serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<IDateTimeService>();
+        _configuration = GetConfiguration();
+        PostPrepareConfiguration();
     }
 
     protected virtual HostedServicesConfiguration GetConfiguration()
     {
-        _applicationSettings.HostedServices.TryGetValue(GetType().Name, out var hostedServicesConfiguration);
+        if (_applicationSettings.HostedServices.TryGetValue(GetType().Name, out var hostedServicesConfiguration))
+        {
+            return hostedServicesConfiguration;
+        }
 
-        if (hostedServicesConfiguration == null)
-            hostedServicesConfiguration = GetDefaultConfiguration();
-
-        return hostedServicesConfiguration;
+        return GetDefaultConfiguration();
     }
 
-    protected virtual HostedServicesConfiguration GetDefaultConfiguration()
+    protected virtual void PostPrepareConfiguration()
     {
-        return null;
+        _configuration.ExecuteMode ??= HostedServicesExecuteModeType.OneTime;
+        _configuration.BatchSize ??= 10;
+    }
+
+    private HostedServicesConfiguration GetDefaultConfiguration()
+    {
+        return new HostedServicesConfiguration();
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -106,7 +115,14 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         using (LogContext.PushProperty(SerilogUtility.Area, SerilogUtility.Area_Worker))
         using (LogContext.PushProperty("CorrelationId", correlationId))
         {
-            _logger.LogInformation($"IHostedService.StartAsync for {Name}");
+            _logger.LogInformation("HostedService Start '{name}' with configuration: {configuration}",
+                Name,
+                _configuration.ToJson(new JsonSerializerSettings()
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    Formatting = Formatting.Indented,
+                    Converters = { new StringEnumConverter() }
+                }));
 
             if (CanStart() == false)
             {
@@ -122,22 +138,22 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     protected virtual bool CanStart()
     {
-        if (_hostedServicesConfiguration == null)
+        if (_configuration == null)
         {
-            _logger.LogWarning($"IHostedService {Name} do not have configuration.");
+            _logger.LogWarning("HostedService {name} do not have configuration.", Name);
             return false;
         }
 
-        if (_hostedServicesConfiguration?.Enabled != true)
+        if (_configuration?.Enabled != true)
         {
-            _logger.LogInformation($"IHostedService {Name} is disabled.");
+            _logger.LogInformation("HostedService {name} is disabled.", Name);
             return false;
         }
 
-        if (_hostedServicesConfiguration.EnabledFromTime.HasValue || _hostedServicesConfiguration.EnabledToTime.HasValue)
+        if (_configuration.EnabledFromTime.HasValue || _configuration.EnabledToTime.HasValue)
         {
-            if (!_hostedServicesConfiguration.EnabledFromTime.HasValue || !_hostedServicesConfiguration.EnabledToTime.HasValue)
-                _logger.LogError($"IHostedService {Name} EnabledFromTime and EnabledToTime must have value");
+            if (!_configuration.EnabledFromTime.HasValue || !_configuration.EnabledToTime.HasValue)
+                _logger.LogError("HostedService {name} EnabledFromTime and EnabledToTime must have value", Name);
         }
 
         return true;
@@ -157,10 +173,10 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
             try
             {
-                if (await CanStartBackgroundServiceInfo() == false)
+                if (await CanStartBackgroundServiceInfoAsync(cancellationToken) == false)
                     return;
 
-                _logger.LogInformation($"Start BackgroundService: {Name}");
+                _logger.LogInformation("Start BackgroundService: {name}", Name);
 
                 await StartBackgroundServiceInfoAsync(cancellationToken);
 
@@ -176,11 +192,11 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
                 await FinishedBackgroundServiceInfoAsync(cancellationToken);
 
-                _logger.LogInformation($"Finished BackgroundService: {Name} in {stopWatch.ElapsedMilliseconds} ms");
+                _logger.LogInformation("Finished BackgroundService: {name} in {ElapsedMilliseconds} ms", Name, stopWatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error in BackgroundService: {Name}");
+                _logger.LogError(ex, "Error in BackgroundService: {name}", Name);
 
                 await ErrorBackgroundServiceInfoAsync(ex, cancellationToken);
             }
@@ -191,7 +207,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Fatal Error: '{Name}'");
+            _logger.LogError(ex, "Fatal Error: {name}", Name);
         }
     }
 
@@ -215,7 +231,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"IHostedService.StopAsync for {Name}");
+        _logger.LogInformation("IHostedService Stop for {name}", Name);
 
         _cancellationToken.Cancel();
 
@@ -252,7 +268,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         }
     }
 
-    protected virtual async Task<bool> CanStartBackgroundServiceInfo()
+    protected virtual async Task<bool> CanStartBackgroundServiceInfoAsync(CancellationToken cancellationToken)
     {
         if (BackgroundServiceInfoEnabled == false)
             return true;
@@ -262,7 +278,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
 
-        if (_hostedServicesConfiguration.Enabled == false)
+        if (_configuration.Enabled == false)
             return false;
 
         if (IsTimeouted(backgroundServiceInfo))
@@ -300,7 +316,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
             var elapsed = now - backgroundServiceInfo.LastHeartbeat.Value;
 
-            if (elapsed > TimeSpan.FromSeconds(HearthBeatInterval.TotalSeconds * 3))
+            if (elapsed > TimeSpan.FromSeconds(HearthBeatInterval.TotalSeconds * 5))
             {
                 return true;
             }
@@ -397,7 +413,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         backgroundServiceInfo.LastErrorStack = ex.StackTrace;
         backgroundServiceInfo.LastHeartbeat = null;
 
-        if (_hostedServicesConfiguration.Interval.HasValue)
+        if (_configuration.Interval.HasValue)
         {
             backgroundServiceInfo.NextExecuteAt =
                 CalcNextExecuteAt(now, backgroundServiceInfo);
@@ -408,11 +424,11 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     private IEnumerable<DateRange> GetEnabledDateRange(DateTime dateTime)
     {
-        if (_hostedServicesConfiguration.EnabledFromTime.HasValue &&
-            _hostedServicesConfiguration.EnabledToTime.HasValue)
+        if (_configuration.EnabledFromTime.HasValue &&
+            _configuration.EnabledToTime.HasValue)
         {
-            var enabledFromTime = _hostedServicesConfiguration.EnabledFromTime.Value;
-            var enabledToTime = _hostedServicesConfiguration.EnabledToTime.Value;
+            var enabledFromTime = _configuration.EnabledFromTime.Value;
+            var enabledToTime = _configuration.EnabledToTime.Value;
             var isDayOverlapped = enabledToTime < enabledFromTime;
 
             if (!isDayOverlapped)
@@ -444,10 +460,10 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     {
         var enabledDateRanges = GetEnabledDateRange(dateTime).ToList();
 
-        if (_hostedServicesConfiguration.Interval.IsNull())
+        if (_configuration.Interval.IsNull())
             return dateTime;
 
-        var nextExecuteAt = dateTime.Add(_hostedServicesConfiguration.Interval.Value);
+        var nextExecuteAt = dateTime.Add(_configuration.Interval.Value);
 
         var isFirstRun = backgroundserviceInfo?.LastFinishedAt == null;
 
@@ -499,7 +515,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         //throw new InvalidOperationException();
     }
 
-    private async Task<BackgroundserviceInfo> GetBackgroundServiceInfoAsync(IDbContext context)
+    protected async Task<BackgroundserviceInfo> GetBackgroundServiceInfoAsync(IDbContext context)
     {
         return await
             context.Set<BackgroundserviceInfo>()

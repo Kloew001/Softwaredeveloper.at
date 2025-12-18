@@ -31,12 +31,13 @@ public abstract class HandleBatchTimeHostedService : TimerHostedService
             await HandleIdAsync(childScopeId, id, ct);
         }
 
-        if (ids.Count == _hostedServicesConfiguration.BatchSize)
+        if (ids.Count == _configuration.BatchSize)
         {
             await HandleBatchAsync(scope, ct);
         }
     }
 
     protected abstract Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct);
+
     protected abstract Task HandleIdAsync(IServiceScope scope, Guid id, CancellationToken ct);
 }

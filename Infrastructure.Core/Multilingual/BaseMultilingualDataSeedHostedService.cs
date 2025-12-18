@@ -45,6 +45,18 @@ public abstract class BaseMultilingualDataSeedHostedService : TimerHostedService
         };
     }
 
+    protected override HostedServicesConfiguration GetConfiguration()
+    {
+        var config = base.GetConfiguration();
+
+        config.ExecuteMode ??= HostedServicesExecuteModeType.Interval;
+
+        if(config.ExecuteMode == HostedServicesExecuteModeType.Interval)
+            config.Interval ??= TimeSpan.FromSeconds(1);
+
+        return config;
+    }
+
     private FileSystemWatcher _watcher;
     private bool _reloadJson = true;
 

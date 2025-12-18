@@ -20,13 +20,17 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
         _dateTimeService = dateTimeService;
     }
 
-    protected override HostedServicesConfiguration GetDefaultConfiguration()
+    protected override HostedServicesConfiguration GetConfiguration()
     {
-        return new HostedServicesConfiguration
-        {
-            Interval = TimeSpan.FromMinutes(15),
-            BatchSize = 100
-        };
+        var config = base.GetConfiguration();
+
+        config.BatchSize ??= 100;
+        config.ExecuteMode ??= HostedServicesExecuteModeType.Interval;
+
+        if (config.ExecuteMode == HostedServicesExecuteModeType.Interval)
+            config.Interval ??= TimeSpan.FromMinutes(15);
+
+        return config;
     }
 
     protected override async Task<List<Guid>> GetIdsAsync(IServiceScope scope, CancellationToken ct)
@@ -37,7 +41,7 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
                 .Where(_ => _.ExtractionHandledAt == null ||
                             _.ExtractionHandledAt < _.DateModified)
                 .OrderBy(_ => _.DateCreated)
-                .Take(_hostedServicesConfiguration.BatchSize)
+                .Take(_configuration.BatchSize.Value)
                 .Select(_ => _.Id)
                 .ToListAsync(ct);
 

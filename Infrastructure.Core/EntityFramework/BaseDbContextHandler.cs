@@ -22,6 +22,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 public abstract class BaseDbContextHandler : IDbContextHandler
 {
+    private readonly ILogger<BaseDbContextHandler> _logger;
+    private readonly IEnumerable<Type> _backgroundTriggerableTypes;
+
+    protected BaseDbContextHandler(ILogger<BaseDbContextHandler> logger)
+    {
+        _logger = logger;
+        _backgroundTriggerableTypes = AssemblyUtils.GetDerivedTypes(typeof(IBackgroundTriggerable<>));
+    }
+
     public virtual async Task UpdateDatabaseAsync(DbContext context)
     {
         var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
@@ -45,6 +54,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
         await context.Database.MigrateAsync();
     }
+
     protected string GetConnectionString(IServiceProvider serviceProvider, string connectionStringKey)
     {
         var connectionString = serviceProvider.GetService<IApplicationSettings>().ConnectionStrings[connectionStringKey];
@@ -75,9 +85,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
     public virtual void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyExtendableEnumConversions();
-
         ApplyBaseEntity(modelBuilder);
-
         ApplyEnumToStringValueConverter(modelBuilder);
         ApplyDateTime(modelBuilder);
         ApplyDecimal(modelBuilder);
@@ -227,8 +235,11 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         return null;
     }
 
-    public void HandleEntityAudit(DbContext context, DateTime transactionDateTime)
+    public void HandleEntityAudit(DbContext context)
     {
+        var transactionService = context.GetService<DbContextTransaction>();
+        var transactionDateTime = transactionService.TransactionTime.Value;
+
         var entityEntries = context.ChangeTracker
             .Entries()
             .Where(e => e.Entity is IAuditableEntity)
@@ -271,9 +282,12 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         }
     }
 
-    public void HandleChangeTrackedEntity(DbContext context, DateTime transactionDateTime)
+    public void HandleChangeTrackedEntity(DbContext context)
     {
         var currentUserService = context.GetService<ICurrentUserService>();
+
+        var transactionService = context.GetService<DbContextTransaction>();
+        var transactionDateTime = transactionService.TransactionTime.Value;
 
         var changedEntries = context.ChangeTracker
             .Entries()
@@ -310,6 +324,38 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
                 baseEntity.DateCreated = originalDateCreated;
                 baseEntity.CreatedById = originalCreatedById;
+            }
+        }
+    }
+
+    public virtual void TriggerBackground(DbContext context)
+    {
+        var backgroundTriggerQueue = context.GetService<BackgroundTriggerQueue>();
+
+        while (backgroundTriggerQueue.TryDequeue(out var trigger))
+        {
+            trigger.Trigger();
+        }
+    }
+
+    public virtual void EnqueueBackgroundTrigger(DbContext context)
+    {
+        var backgroundTriggerQueue = context.GetService<BackgroundTriggerQueue>();
+
+        foreach (var backgroundTriggerableType in _backgroundTriggerableTypes)
+        {
+            var entityType = backgroundTriggerableType.GetTriggerableEntityType();
+
+            var isEntityAdded = context.ChangeTracker
+                .Entries()
+                .Any(e => e.Entity.GetType() == entityType &&
+                          e.State == EntityState.Added);
+
+            if (isEntityAdded)
+            {
+                var triggerType = typeof(IBackgroundTrigger<>).MakeGenericType(backgroundTriggerableType);
+                var backgroundTrigger = (IBackgroundTrigger)context.GetService(triggerType);
+                backgroundTriggerQueue.Enqueue(backgroundTrigger);
             }
         }
     }
