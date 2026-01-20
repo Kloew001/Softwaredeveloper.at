@@ -22,8 +22,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 public abstract class BaseDbContextHandler : IDbContextHandler
 {
-    private readonly ILogger<BaseDbContextHandler> _logger;
-    private readonly IEnumerable<Type> _backgroundTriggerableTypes;
+    protected readonly ILogger<BaseDbContextHandler> _logger;
+    protected readonly IEnumerable<Type> _backgroundTriggerableTypes;
 
     protected BaseDbContextHandler(ILogger<BaseDbContextHandler> logger)
     {
@@ -102,7 +102,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         modelBuilder.ApplyConfigurationsFromAssembly(context.GetType().Assembly);
     }
 
-    private void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)
+    protected virtual void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -349,7 +349,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
             var isEntityAdded = context.ChangeTracker
                 .Entries()
-                .Any(e => e.Entity.GetType() == entityType &&
+                .Any(e => e.Entity.GetType().UnProxy() == entityType &&
                           e.State == EntityState.Added);
 
             if (isEntityAdded)
@@ -363,7 +363,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
     public abstract void ApplyApplicationUser(ModelBuilder modelBuilder);
 
-    private void ApplyGlobalFilters(ModelBuilder modelBuilder)
+    protected virtual void ApplyGlobalFilters(ModelBuilder modelBuilder)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
