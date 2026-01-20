@@ -71,9 +71,9 @@ public class WebStartupCore<TDomainStartup>
 
         AddDefaultServices();
 
-        Builder.AddSwaggerGenWithBearer();
+        AddSwaggerGen();
 
-        HandleAuthentication();
+        AddAuthentication();
 
         Builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
     }
@@ -265,9 +265,14 @@ public class WebStartupCore<TDomainStartup>
         return logPath;
     }
 
-    protected virtual void HandleAuthentication()
+    protected virtual void AddAuthentication()
     {
         Builder.AddJwtBearerAuthentication();
+    }
+
+    protected virtual void AddSwaggerGen()
+    {
+        Builder.AddSwaggerGenWithBearer();
     }
 
     protected virtual void ConfigureApp(WebApplication app)
@@ -300,14 +305,14 @@ public class WebStartupCore<TDomainStartup>
 
         app.UseCors();
 
-        HandleRateLimiting(app);
+        UseRateLimiting(app);
 
-        HandleAuthentication(app);
-        HandleAuthorization(app);
+        UseAuthentication(app);
+        UseAuthorization(app);
 
         app.UseSerilogAccountContext();
 
-        HandleCurrentCulture(app);
+        UseCurrentCulture(app);
 
         app.UseSecurityHeaders();
 
@@ -368,17 +373,17 @@ public class WebStartupCore<TDomainStartup>
         //    httpContext.ResolveCorrelationId());
     }
 
-    protected virtual void HandleAuthorization(WebApplication app)
+    protected virtual void UseAuthorization(WebApplication app)
     {
         app.UseAuthorization();
     }
 
-    protected virtual void HandleAuthentication(WebApplication app)
+    protected virtual void UseAuthentication(WebApplication app)
     {
         app.UseAuthentication();
     }
 
-    protected virtual void HandleRateLimiting(WebApplication app)
+    protected virtual void UseRateLimiting(WebApplication app)
     {
         var rateLimitingConfiguration = app.Configuration
             .GetSection("RateLimiting")
@@ -390,7 +395,7 @@ public class WebStartupCore<TDomainStartup>
         }
     }
 
-    protected virtual void HandleCurrentCulture(WebApplication app)
+    protected virtual void UseCurrentCulture(WebApplication app)
     {
         app.UseCurrentCulture();
     }

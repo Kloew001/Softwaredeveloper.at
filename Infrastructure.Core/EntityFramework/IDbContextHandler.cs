@@ -8,7 +8,7 @@ public interface IDbContextHandler
 
     void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection");
 
-    void OnModelCreating(ModelBuilder modelBuilder);
+    void OnModelCreating(ModelBuilder modelBuilder, DbContext context);
 
     void HandleChangeTrackedEntity(DbContext context);
     void HandleEntityAudit(DbContext context);

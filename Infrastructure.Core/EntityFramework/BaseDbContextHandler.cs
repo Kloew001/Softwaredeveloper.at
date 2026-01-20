@@ -82,7 +82,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         });
     }
 
-    public virtual void OnModelCreating(ModelBuilder modelBuilder)
+    public virtual void OnModelCreating(ModelBuilder modelBuilder, DbContext context)
     {
         modelBuilder.ApplyExtendableEnumConversions();
         ApplyBaseEntity(modelBuilder);
@@ -98,7 +98,8 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         ApplyRemoveForeignKeyAttribute(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoftwaredeveloperDotAtDbContext).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(context.GetType().Assembly);
     }
 
     private void ApplyRemoveForeignKeyAttribute(ModelBuilder modelBuilder)

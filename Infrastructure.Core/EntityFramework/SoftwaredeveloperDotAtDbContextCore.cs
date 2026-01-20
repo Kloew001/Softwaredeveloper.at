@@ -42,9 +42,7 @@ public abstract class SoftwaredeveloperDotAtDbContextCore : DbContext, IDbContex
         base.OnModelCreating(modelBuilder);
 
         var dbContextHandler = this.GetService<IDbContextHandler>();
-        dbContextHandler.OnModelCreating(modelBuilder);
-
-        modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+        dbContextHandler.OnModelCreating(modelBuilder, this);
     }
 
     public override int SaveChanges()
