@@ -47,23 +47,8 @@ public class PersonController : BaseApiController
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task TestEMail([FromServices] IDbContext context)
+    public async Task TestException([FromServices] IDbContext context)
     {
-        context.Set<Person>().Add(new Person
-        {
-            FirstName = "Max",
-            LastName = "Mustermann"
-        });
-
-        context.Set<EmailMessage>().Add(new EmailMessage
-        {
-            AnAdress = "asdas",
-            Subject = "Test",
-            HtmlContent = "<h1>Test</h1>"
-        });
-
         throw new Exception("Test Exception");
-
-        await context.SaveChangesAsync();
     }
 }

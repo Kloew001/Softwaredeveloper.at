@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Serilog.Formatting.Json;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
@@ -179,37 +180,40 @@ public class WebStartupCore<TDomainStartup>
             .WriteTo.Logger(lc => lc
                 .Filter.ByExcluding(LoggingFilters.IsWebOrWorker)
                 .WriteTo.Async(a => a.File(
-                    path: GetLogFilePath("app-.log"),
+                    path: GetLogFilePath("app-.jlog"),
+                    formatter: new JsonFormatter(),
                     rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 1000,
+                    retainedFileCountLimit: 100,
                     shared: true,
                     fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
-                    rollOnFileSizeLimit: true,
-                    outputTemplate: "[GEN {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                    rollOnFileSizeLimit: true
+                // outputTemplate: "[GEN {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
                 ))
             )
             .WriteTo.Logger(lc => lc
                 .Filter.ByIncludingOnly(LoggingFilters.IsWeb)
                 .WriteTo.Async(a => a.File(
-                    GetLogFilePath("web-.log"),
+                    formatter: new JsonFormatter(),
+                    GetLogFilePath("web-.jlog"),
                     rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 1000,
+                    retainedFileCountLimit: 100,
                     shared: true,
                     fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
-                    rollOnFileSizeLimit: true,
-                    outputTemplate: "[WEB {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId} acc:{AccountId} ip:{ClientIP}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                    rollOnFileSizeLimit: true
+                // outputTemplate: "[WEB {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId} acc:{AccountId} ip:{ClientIP}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
                 ))
             )
             .WriteTo.Logger(lc => lc
                 .Filter.ByIncludingOnly(LoggingFilters.IsWorker)
                 .WriteTo.Async(a => a.File(
-                    path: GetLogFilePath("worker-.log"),
+                    formatter: new JsonFormatter(),
+                    path: GetLogFilePath("worker-.jlog"),
                     rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 1000,
+                    retainedFileCountLimit: 100,
                     shared: true,
                     fileSizeLimitBytes: 10 * 1024 * 1024,  // 10 MB
-                    rollOnFileSizeLimit: true,
-                    outputTemplate: "[WRK {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
+                    rollOnFileSizeLimit: true
+                // outputTemplate: "[WRK {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [cid:{CorrelationId}] {SourceContext} | {Message:lj}{NewLine}{Exception}"
                 ))
             );
 

@@ -115,7 +115,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         using (LogContext.PushProperty(SerilogUtility.Area, SerilogUtility.Area_Worker))
         using (LogContext.PushProperty("CorrelationId", correlationId))
         {
-            _logger.LogInformation("HostedService Start '{name}' with configuration: {configuration}",
+            _logger.LogInformation("HostedService Start '{Name}' with configuration: {Configuration}",
                 Name,
                 _configuration.ToJson(new JsonSerializerSettings()
                 {
@@ -140,20 +140,20 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     {
         if (_configuration == null)
         {
-            _logger.LogWarning("HostedService {name} do not have configuration.", Name);
+            _logger.LogWarning("HostedService {Name} do not have configuration.", Name);
             return false;
         }
 
         if (_configuration?.Enabled != true)
         {
-            _logger.LogInformation("HostedService {name} is disabled.", Name);
+            _logger.LogInformation("HostedService {Name} is disabled.", Name);
             return false;
         }
 
         if (_configuration.EnabledFromTime.HasValue || _configuration.EnabledToTime.HasValue)
         {
             if (!_configuration.EnabledFromTime.HasValue || !_configuration.EnabledToTime.HasValue)
-                _logger.LogError("HostedService {name} EnabledFromTime and EnabledToTime must have value", Name);
+                _logger.LogError("HostedService {Name} EnabledFromTime and EnabledToTime must have value", Name);
         }
 
         return true;
@@ -176,7 +176,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
                 if (await CanStartBackgroundServiceInfoAsync(cancellationToken) == false)
                     return;
 
-                _logger.LogInformation("Start BackgroundService: {name}", Name);
+                _logger.LogInformation("Start HostedService {Name}", Name);
 
                 await StartBackgroundServiceInfoAsync(cancellationToken);
 
@@ -192,11 +192,11 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
                 await FinishedBackgroundServiceInfoAsync(cancellationToken);
 
-                _logger.LogInformation("Finished BackgroundService: {name} in {ElapsedMilliseconds} ms", Name, stopWatch.ElapsedMilliseconds);
+                _logger.LogInformation("Finished HostedService {Name} in {ElapsedMilliseconds} ms", Name, stopWatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in BackgroundService: {name}", Name);
+                _logger.LogError(ex, "Error in HostedService {Name}", Name);
 
                 await ErrorBackgroundServiceInfoAsync(ex, cancellationToken);
             }
@@ -207,7 +207,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fatal Error: {name}", Name);
+            _logger.LogError(ex, "Fatal Error in HostedService {Name}", Name);
         }
     }
 
@@ -231,7 +231,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("IHostedService Stop for {name}", Name);
+        _logger.LogInformation("Stop HostedService {Name}", Name);
 
         _cancellationToken.Cancel();
 
