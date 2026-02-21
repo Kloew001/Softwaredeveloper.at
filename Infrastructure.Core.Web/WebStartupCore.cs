@@ -29,16 +29,13 @@ public class WebStartupCore<TDomainStartup>
     {
         Builder = WebApplication.CreateBuilder(args);
         DomainStartup = new TDomainStartup();
+
+        ConfigureBuilder(Builder);
     }
 
     public void Run()
     {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.File(GetLogFilePath(),
-                rollingInterval: RollingInterval.Day)
-            .CreateBootstrapLogger();
+        ConfigureBootstrapLogger();
 
         try
         {
@@ -50,7 +47,9 @@ public class WebStartupCore<TDomainStartup>
 
             ConfigureApp(app);
 
-            app.MapFallbackToFile("/index.html");
+            MapFallback(app);
+
+            BeforeRun(app);
 
             app.Run();
 
@@ -66,6 +65,29 @@ public class WebStartupCore<TDomainStartup>
         }
     }
 
+    protected virtual void ConfigureBuilder(WebApplicationBuilder builder)
+    {
+    }
+
+    protected virtual void ConfigureBootstrapLogger()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File(GetLogFilePath(),
+                rollingInterval: RollingInterval.Day)
+            .CreateBootstrapLogger();
+    }
+
+    protected virtual void BeforeRun(WebApplication app)
+    {
+    }
+
+    protected virtual void MapFallback(WebApplication app)
+    {
+        app.MapFallbackToFile("/index.html");
+    }
+
     protected virtual void ConfigureServices()
     {
         DomainStartup.ConfigureServices(Services, Configuration, Environment);
@@ -76,22 +98,104 @@ public class WebStartupCore<TDomainStartup>
 
         AddAuthentication();
 
-        Builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+        AddCurrentUserService();
     }
 
     protected virtual void AddDefaultServices()
     {
-        Builder.ConfigureHosting();
+        ConfigureHosting();
 
         AddLogging();
 
+        AddEnvironmentVariables();
+
+        AddHttpContextAccessor();
+
+        AddForwardedHeaders();
+
+        AddRateLimitingServices();
+
+        ConfigureMvc();
+
+        AddEndpointsApiExplorer();
+
+        AddResponseCompression();
+
+        AddCors();
+
+        AddHsts();
+
+        AddSecurityHeaders();
+
+        AddProblemDetails();
+
+        AddExceptionHandlers();
+    }
+
+    protected virtual void ConfigureApp(WebApplication app)
+    {
+        DomainStartup.ConfigureApp(app);
+
+        UseForwardedHeaders(app);
+
+        UseLogging(app);
+
+        UseExceptionHandling(app);
+
+        UseRequestBuffering(app);
+
+        UseHttpsBehavior(app);
+
+        UseResponseCompression(app);
+
+        UseSpaStaticFiles(app);
+
+        UseCors(app);
+
+        UseRateLimiting(app);
+
+        UseAuthentication(app);
+        UseAuthorization(app);
+
+        UseSerilogAccountContext(app);
+
+        UseCurrentCulture(app);
+
+        UseSecurityHeaders(app);
+
+        UseSwagger(app);
+
+        app.MapControllers();
+    }
+
+    protected virtual void ConfigureHosting()
+    {
+        Builder.ConfigureHosting();
+    }
+
+    protected virtual void AddCurrentUserService()
+    {
+        Builder.Services.AddScoped<ICurrentUserService, WebCurrentUserService>();
+    }
+
+    protected virtual void AddEnvironmentVariables()
+    {
         var environmentVariablesPrefix = Builder.Configuration.GetSection("EnvironmentVariablesPrefix").Get<string>() ?? string.Empty;
         Builder.Configuration.AddEnvironmentVariables(environmentVariablesPrefix);
+    }
 
+    protected virtual void AddHttpContextAccessor()
+    {
         Builder.Services.AddHttpContextAccessor();
+    }
 
+    protected virtual void AddForwardedHeaders()
+    {
         Builder.AddForwardedHeaders();
+    }
 
+    protected virtual void AddRateLimitingServices()
+    {
         var rateLimitingConfiguration = Builder.Configuration
             .GetSection("RateLimiting")
             .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
@@ -100,7 +204,10 @@ public class WebStartupCore<TDomainStartup>
         {
             Builder.AddRateLimiter();
         }
+    }
 
+    protected virtual void ConfigureMvc()
+    {
         Builder.Services.AddControllers(options =>
         {
             options.UseExtendableEnumModelBinding();
@@ -120,9 +227,35 @@ public class WebStartupCore<TDomainStartup>
             options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Include;
             options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Local;
         });
+    }
 
+    protected virtual void AddEndpointsApiExplorer()
+    {
         Builder.Services.AddEndpointsApiExplorer();
+    }
 
+    protected virtual void AddResponseCompression()
+    {
+        Builder.AddResponseCompression();
+    }
+
+    protected virtual void AddCors()
+    {
+        Builder.AddCors();
+    }
+
+    protected virtual void AddHsts()
+    {
+        Builder.AddDefaultHsts();
+    }
+
+    protected virtual void AddSecurityHeaders()
+    {
+        Builder.Services.AddSingleton<ISecurityHeadersService, SecurityHeadersService>();
+    }
+
+    protected virtual void AddProblemDetails()
+    {
         Builder.Services.AddProblemDetails(options =>
         {
             options.CustomizeProblemDetails = context =>
@@ -147,17 +280,12 @@ public class WebStartupCore<TDomainStartup>
                 }
             };
         });
+    }
 
+    protected virtual void AddExceptionHandlers()
+    {
         Builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         Builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-
-        Builder.AddResponseCompression();
-
-        Builder.AddCors();
-
-        Builder.AddDefaultHsts();
-
-        Builder.Services.AddSingleton<ISecurityHeadersService, SecurityHeadersService>();
     }
 
     protected virtual void AddLogging()
@@ -279,54 +407,68 @@ public class WebStartupCore<TDomainStartup>
         Builder.AddSwaggerGenWithBearer();
     }
 
-    protected virtual void ConfigureApp(WebApplication app)
+    protected virtual void UseForwardedHeaders(WebApplication app)
     {
-        DomainStartup.ConfigureApp(app);
-
         app.UseForwardedHeaders();
+    }
 
-        UseLogging(app);
-
+    protected virtual void UseExceptionHandling(WebApplication app)
+    {
         app.UseExceptionHandler();
+    }
 
+    protected virtual void UseRequestBuffering(WebApplication app)
+    {
         app.Use(async (context, next) =>
         {
             context.Request.EnableBuffering();
 
             await next();
         });
+    }
 
+    protected virtual void UseHttpsBehavior(WebApplication app)
+    {
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
             app.UseHttpsRedirection();
         }
+    }
 
+    protected virtual void UseResponseCompression(WebApplication app)
+    {
         app.UseResponseCompression();
+    }
 
+    protected virtual void UseSpaStaticFiles(WebApplication app)
+    {
         app.UseDefaultFiles();
         app.UseStaticFiles();
+    }
 
+    protected virtual void UseCors(WebApplication app)
+    {
         app.UseCors();
+    }
 
-        UseRateLimiting(app);
-
-        UseAuthentication(app);
-        UseAuthorization(app);
-
+    protected virtual void UseSerilogAccountContext(WebApplication app)
+    {
         app.UseSerilogAccountContext();
+    }
 
-        UseCurrentCulture(app);
-
+    protected virtual void UseSecurityHeaders(WebApplication app)
+    {
         app.UseSecurityHeaders();
+    }
 
+    protected virtual void UseSwagger(WebApplication app)
+    {
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
         }
-
-        app.MapControllers();
     }
 
     protected virtual void UseLogging(WebApplication app)
