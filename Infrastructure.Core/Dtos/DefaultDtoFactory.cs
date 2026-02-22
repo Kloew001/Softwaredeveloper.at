@@ -10,26 +10,28 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
     where TDto : IDto
     where TEntity : IEntity
 {
-    private IMemoryCache _memoryCache;
+    private readonly IMemoryCache _memoryCache;
+    protected readonly DtoFactoryResolver _factoryResolver;
 
     public bool AutoSubPropertyMapping { get; set; } = true;
 
-    public DefaultDtoFactory(IMemoryCache memoryCache)
+    public DefaultDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver)
     {
         _memoryCache = memoryCache;
+        _factoryResolver = factoryResolver;
     }
 
-    public virtual TDto ConvertToDto(TEntity entity, TDto dto, IServiceProvider serviceProvider)
+    public virtual TDto ConvertToDto(TEntity entity, TDto dto)
     {
-        return (TDto)SimpleNameMapping(entity, dto, serviceProvider);
+        return (TDto)SimpleNameMapping(entity, dto);
     }
 
-    public virtual TEntity ConvertToEntity(TDto dto, TEntity entity, IServiceProvider serviceProvider)
+    public virtual TEntity ConvertToEntity(TDto dto, TEntity entity)
     {
-        return (TEntity)SimpleNameMapping(dto, entity, serviceProvider);
+        return (TEntity)SimpleNameMapping(dto, entity);
     }
 
-    protected virtual object SimpleNameMapping(object source, object target, IServiceProvider serviceProvider)
+    protected virtual object SimpleNameMapping(object source, object target)
     {
         if (source == null || target == null)
             return null;
@@ -179,11 +181,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     continue;
                 }
 
-                var dto =
-                    typeof(DtoFactoryExtensions)
-                    .GetMethod(nameof(DtoFactoryExtensions.ConvertToDto))
-                    .MakeGenericMethod(propertyMap.TargetProperty.PropertyType)
-                    .Invoke(null, new object[] { sourceEntity, null, serviceProvider });
+                var dto = _factoryResolver.ConvertToDto(sourceEntity, propertyMap.TargetProperty.PropertyType);
 
                 propertyMap.TargetProperty
                     .SetValue(target, dto);
@@ -200,11 +198,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
                 var dtoType = propertyMap.TargetProperty.PropertyType.GenericTypeArguments.First();
 
-                var dtos =
-                    typeof(DtoFactoryExtensions)
-                    .GetMethod(nameof(DtoFactoryExtensions.ConvertToDtos))
-                    .MakeGenericMethod(dtoType)
-                    .Invoke(null, new object[] { sourceEntity, null, serviceProvider });
+                var dtos = _factoryResolver.ConvertToDtos(sourceEntity, dtoType);
 
                 propertyMap.TargetProperty
                     .SetValue(target, dtos);
@@ -219,16 +213,11 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     continue;
                 }
 
-                var targetValue = propertyMap.TargetProperty.GetValue(target);
+                var targetValue = propertyMap.TargetProperty.GetValue(target) as IEntity;
 
-                var entity =
-                   typeof(DtoFactoryExtensions)
-                   .GetMethod(nameof(DtoFactoryExtensions.ConvertToEntity))
-                   .MakeGenericMethod(propertyMap.TargetProperty.PropertyType)
-                   .Invoke(null, new object[] { sourceDto, targetValue, null, serviceProvider });
+                var entity = _factoryResolver.ConvertToEntity(sourceDto, targetValue);
 
-                propertyMap.TargetProperty
-                    .SetValue(target, entity);
+                propertyMap.TargetProperty.SetValue(target, entity);
 
                 if (AutoSubPropertyMapping)
                 {

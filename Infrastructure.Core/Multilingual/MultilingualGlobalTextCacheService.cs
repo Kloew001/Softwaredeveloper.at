@@ -54,12 +54,13 @@ public class MultilingualGlobalTextCacheService : IAppStatupInit
         using (var scope = _serviceScopeFactory.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+            var dtoFactoryResolver = scope.ServiceProvider.GetRequiredService<DtoFactoryResolver>();
 
             var cultures = await context.Set<MultilingualCulture>()
                 .IsActive()
                 .ToListAsync();
 
-            var cultureDtos = cultures.ConvertToDtos<MultilingualCultureDto>();
+            var cultureDtos = dtoFactoryResolver.ConvertToDtos<MultilingualCultureDto>(cultures);
 
             _cacheCulture = cultureDtos;
 
@@ -71,7 +72,7 @@ public class MultilingualGlobalTextCacheService : IAppStatupInit
                     .ThenBy(_ => _.Index)
                     .ToListAsync();
 
-                var textDtos = texts.ConvertToDtos<MultilingualGlobalTextDto>();
+                var textDtos = dtoFactoryResolver.ConvertToDtos<MultilingualGlobalTextDto>(texts);
 
                 cache.Add(cultureDto.Id.Value, textDtos);
             }

@@ -1,13 +1,12 @@
 ﻿
 using SampleApp.Application.Sections.PersonSection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace SampleApp.Server.Controllers;
 
+[AllowAnonymous]
 public class PersonController : BaseApiController
 {
     private readonly PersonService _service;

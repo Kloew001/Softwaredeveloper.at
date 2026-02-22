@@ -93,8 +93,6 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
 
     public virtual void ConfigureApp(IHost host)
     {
-        host.UseDtoFactory();
-
         UpdateDatabase(host);
 
         AppStartInit(host);

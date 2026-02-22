@@ -12,13 +12,10 @@ public class ChronologyEntryDto : Dto
     public string CreatedByShortName { get; set; }
 }
 
-public class ChronologyEntryDtoFactory : IDtoFactory<ChronologyEntryDto, ChronologyEntry>
+public class ChronologyEntryDtoFactory(MultilingualService multilingualService) : IDtoFactory<ChronologyEntryDto, ChronologyEntry>
 {
-    public ChronologyEntryDto ConvertToDto(ChronologyEntry entity, ChronologyEntryDto dto, IServiceProvider serviceProvider)
+    public ChronologyEntryDto ConvertToDto(ChronologyEntry entity, ChronologyEntryDto dto)
     {
-        var multilingualService =
-            serviceProvider.GetService<MultilingualService>();
-
         dto.Id = entity.Id;
 
         dto.ChronologyType = entity.ChronologyType;
@@ -39,7 +36,7 @@ public class ChronologyEntryDtoFactory : IDtoFactory<ChronologyEntryDto, Chronol
                (user.LastName.IsNullOrWhiteSpace() ? "" : user.LastName.Substring(0, 1).ToUpper());
     }
 
-    public ChronologyEntry ConvertToEntity(ChronologyEntryDto dto, ChronologyEntry entity, IServiceProvider serviceProvider)
+    public ChronologyEntry ConvertToEntity(ChronologyEntryDto dto, ChronologyEntry entity)
     {
         throw new NotImplementedException();
     }

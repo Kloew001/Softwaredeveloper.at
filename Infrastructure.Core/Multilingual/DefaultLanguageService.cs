@@ -3,6 +3,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
 public interface IDefaultLanguageService
@@ -28,12 +30,13 @@ public class DefaultLanguageService : IDefaultLanguageService, IAppStatupInit
         using (var scope = _serviceScopeFactory.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+            var dtoFactoryResolver = scope.ServiceProvider.GetRequiredService<DtoFactoryResolver>();
 
             var culture = await context.Set<MultilingualCulture>()
                 .Where(_ => _.IsDefault)
                 .SingleAsync();
 
-            Culture = culture.ConvertToDto<MultilingualCultureDto>();
+            Culture = dtoFactoryResolver.ConvertToDto<MultilingualCultureDto>(culture);
         }
     }
 }

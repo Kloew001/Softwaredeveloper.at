@@ -28,6 +28,7 @@ public class EntityServiceDependency<TEntity>
     public MultilingualService MultilingualService { get; private set; }
     public ICurrentUserService CurrentUserService { get; private set; }
     public IDateTimeService DateTimeService { get; private set; }
+    public DtoFactoryResolver DtoFactoryResolver { get; set; }
 
     public EntityServiceDependency(
         IServiceProvider serviceProvider,
@@ -39,7 +40,8 @@ public class EntityServiceDependency<TEntity>
         ICacheService cacheService,
         ICurrentUserService currentUserService,
         MultilingualService multilingualService,
-        IDateTimeService dateTimeService)
+        IDateTimeService dateTimeService,
+        DtoFactoryResolver dtoFactoryResolver)
     {
         ServiceProvider = serviceProvider;
 
@@ -52,6 +54,7 @@ public class EntityServiceDependency<TEntity>
         CacheService = cacheService;
         MultilingualService = multilingualService;
         DateTimeService = dateTimeService;
+        DtoFactoryResolver = dtoFactoryResolver;
 
         Validator = GetService<EntityValidator<TEntity>>();
     }
@@ -77,6 +80,7 @@ public class EntityService<TEntity>
     protected readonly MultilingualService _multilingualService;
     protected readonly IServiceProvider _serviceProvider;
     protected readonly IDateTimeService _dateTimeService;
+    protected readonly DtoFactoryResolver _dtoFactoryResolver;
 
     public EntityServiceDependency<TEntity> EntityServiceDependency { get; private set; }
 
@@ -94,6 +98,7 @@ public class EntityService<TEntity>
         _cacheService = entityServiceDependency.CacheService;
         _multilingualService = entityServiceDependency.MultilingualService;
         _dateTimeService = entityServiceDependency.DateTimeService;
+        _dtoFactoryResolver = entityServiceDependency.DtoFactoryResolver;
 
         _validator = entityServiceDependency.Validator;
     }
@@ -103,7 +108,7 @@ public class EntityService<TEntity>
     {
         var entity = await GetSingleByIdAsync(id);
 
-        var dto = entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
+        var dto = _dtoFactoryResolver.ConvertToDto<TDto>(entity);
 
         return dto;
     }
@@ -118,7 +123,7 @@ public class EntityService<TEntity>
     {
         var entity = await GetSingleAsync(queryExtension);
 
-        var dto = entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
+        var dto = _dtoFactoryResolver.ConvertToDto<TDto>(entity);
 
         return dto;
     }
@@ -157,7 +162,7 @@ public class EntityService<TEntity>
     {
         var entities = await GetCollectionAsync(queryExtension);
 
-        var dtos = entities.ConvertToDtos<TDto>(serviceProvider: _serviceProvider);
+        var dtos = _dtoFactoryResolver.ConvertToDtos<TDto>(entities);
 
         return dtos;
     }
@@ -180,7 +185,7 @@ public class EntityService<TEntity>
             PageSize = entityPageResult.PageSize,
             TotalCount = entityPageResult.TotalCount,
 
-            PageItems = entityPageResult.PageItems.ConvertToDtos<TDto>(serviceProvider: _serviceProvider)
+            PageItems = _dtoFactoryResolver.ConvertToDtos<TDto>(entityPageResult.PageItems)
         };
 
         return dtoPageResult;
@@ -232,7 +237,7 @@ public class EntityService<TEntity>
             var entity = await QuickCreateAsync((e) =>
             {
                 if (dto != null)
-                    dto.ConvertToEntity(e, serviceProvider: _serviceProvider);
+                    _dtoFactoryResolver.ConvertToEntity(dto, e);
 
                 return ValueTask.CompletedTask;
             });
@@ -258,14 +263,14 @@ public class EntityService<TEntity>
         var entity = await CreateAsync((e) =>
         {
             if (dto != null)
-                dto.ConvertToEntity(e, serviceProvider: _serviceProvider);
+                _dtoFactoryResolver.ConvertToEntity(dto, e);
 
             return ValueTask.CompletedTask;
         });
 
         await SaveAsync(entity);
 
-        return entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
+        return _dtoFactoryResolver.ConvertToDto<TDto>(entity);
     }
 
     public virtual async Task<TEntity> CreateAsync(Func<TEntity, ValueTask> modifyEntity = null)
@@ -321,13 +326,13 @@ public class EntityService<TEntity>
     {
         var entity = await GetSingleByIdAsync(dto.Id.Value);
 
-        dto.ConvertToEntity(entity, serviceProvider: _serviceProvider);
+        _dtoFactoryResolver.ConvertToEntity(dto, entity);
 
         entity = await UpdateAsync(entity);
 
         await SaveAsync(entity);
 
-        return entity.ConvertToDto<TDto>(serviceProvider: _serviceProvider);
+        return _dtoFactoryResolver.ConvertToDto<TDto>(entity);
     }
 
     public virtual async Task<TEntity> UpdateAsync(TEntity entity)

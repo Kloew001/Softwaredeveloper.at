@@ -20,7 +20,7 @@ public class ApplicationRoleDto : Dto
 
 public class ApplicationUserDtoFactory : IDtoFactory<ApplicationUserDetailDto, ApplicationUser>
 {
-    public ApplicationUserDetailDto ConvertToDto(ApplicationUser entity, ApplicationUserDetailDto dto, IServiceProvider serviceProvider)
+    public ApplicationUserDetailDto ConvertToDto(ApplicationUser entity, ApplicationUserDetailDto dto)
     {
         dto.Id = entity.Id;
         dto.Email = entity.Email;
@@ -38,7 +38,7 @@ public class ApplicationUserDtoFactory : IDtoFactory<ApplicationUserDetailDto, A
         return dto;
     }
 
-    public ApplicationUser ConvertToEntity(ApplicationUserDetailDto dto, ApplicationUser entity, IServiceProvider serviceProvider)
+    public ApplicationUser ConvertToEntity(ApplicationUserDetailDto dto, ApplicationUser entity)
     {
         throw new NotImplementedException();
     }
