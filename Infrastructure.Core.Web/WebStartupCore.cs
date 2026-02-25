@@ -74,7 +74,9 @@ public class WebStartupCore<TDomainStartup>
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .WriteTo.Console()
-            .WriteTo.File(GetLogFilePath(),
+            .WriteTo.File(
+                new JsonFormatter(),
+                GetLogFilePath(),
                 rollingInterval: RollingInterval.Day)
             .CreateBootstrapLogger();
     }
@@ -353,12 +355,12 @@ public class WebStartupCore<TDomainStartup>
         });
     }
 
-    protected virtual string GetLogFilePath(string fileName = "app-.log")
+    protected virtual string GetLogFilePath(string fileName = "app-.jlog")
     {
         return GetDefaultLogFilePath(fileName);
     }
 
-    protected static string GetDefaultLogFilePath(string fileName = "app-.log")
+    protected static string GetDefaultLogFilePath(string fileName = "app-.jlog")
     {
         var projectName = System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name!.ToLowerInvariant();
 
