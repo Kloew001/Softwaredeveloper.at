@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -56,7 +56,6 @@
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="itext7" />
-    <PackageReference Include="itext7.bouncy-castle-fips-adapter" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
