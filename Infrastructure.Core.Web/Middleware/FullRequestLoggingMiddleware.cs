@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
@@ -127,44 +128,7 @@ public class FullRequestLoggingMiddleware
 
     private string SanitizeValue(string input, int maxLength = 1024)
     {
-        if (string.IsNullOrEmpty(input))
-            return string.Empty;
-
-        if (input.Length > maxLength)
-        {
-            input = input.Substring(0, maxLength) + "...(truncated)";
-        }
-
-        var sb = new StringBuilder(input.Length);
-
-        foreach (var ch in input)
-        {
-            if (ch == '\r' || ch == '\n')
-            {
-                sb.Append(' ');
-                continue;
-            }
-
-            if (ch == '\u001b' || ch == '\0')
-            {
-                continue;
-            }
-
-            var cat = CharUnicodeInfo.GetUnicodeCategory(ch);
-            switch (cat)
-            {
-                case UnicodeCategory.Control:
-                case UnicodeCategory.Format:
-                case UnicodeCategory.Surrogate:
-                case UnicodeCategory.PrivateUse:
-                case UnicodeCategory.OtherNotAssigned:
-                    continue;
-            }
-
-            sb.Append(ch);
-        }
-
-        return sb.ToString();
+        return StringSanitizer.RemoveControlCharacters(input, maxLength);
     }
 
     private async Task<string> ReadRequestBodySafeAsync(HttpRequest request, int maxLength)
@@ -179,10 +143,9 @@ public class FullRequestLoggingMiddleware
         var body = await reader.ReadToEndAsync();
         request.Body.Position = 0;
 
-        if (body.Length > maxLength)
-            body = body.Substring(0, maxLength) + "...(truncated)";
-
-        return SanitizeValue(body, maxLength); ;
+        // Erst formatieren (JSON pretty-print / truncate), danach Zeichen säubern
+        var formatted = FormatResponseBody(body, maxLength);
+        return SanitizeValue(formatted, maxLength);
     }
 
     private string ReadResponseBodyDecoded(HttpResponse response, MemoryStream buffer, int maxLength)
