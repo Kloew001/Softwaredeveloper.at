@@ -3,8 +3,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Multilingual;
 
 public interface IDefaultLanguageService

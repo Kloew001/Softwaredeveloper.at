@@ -125,7 +125,7 @@ public class FullRequestLoggingMiddleware
         return $"{title}:\n{json}";
     }
 
-    private string SanitizeValue(string? input, int maxLength = 1024)
+    private string SanitizeValue(string input, int maxLength = 1024)
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
@@ -250,7 +250,7 @@ public class FullRequestLoggingMiddleware
         return body;
     }
 
-    private bool IsTextContentType(string? contentType)
+    private bool IsTextContentType(string contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
             return false;

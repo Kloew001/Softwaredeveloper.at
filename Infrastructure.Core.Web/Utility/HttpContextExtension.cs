@@ -14,7 +14,7 @@ public static class HttpContextExtension
         return ctx.TraceIdentifier ?? Activity.Current?.Id;
     }
 
-    public static string? ResolveAccountId(this HttpContext ctx)
+    public static string ResolveAccountId(this HttpContext ctx)
     {
         var u = ctx.User;
 
@@ -65,7 +65,7 @@ public static class HttpContextExtension
         return ResolveIp(ctx) ?? "anon";
     }
 
-    public static string? ResolveIp(this HttpContext ctx)
+    public static string ResolveIp(this HttpContext ctx)
     {
         var ip = ctx.Connection.RemoteIpAddress;
 
@@ -78,7 +78,7 @@ public static class HttpContextExtension
         return ip.ToString();
     }
 
-    public static string? ResolveBucketIp(this HttpContext ctx)
+    public static string ResolveBucketIp(this HttpContext ctx)
     {
         var ip = ctx.Connection.RemoteIpAddress;
 
@@ -88,7 +88,7 @@ public static class HttpContextExtension
         return BucketIp(ip);
     }
 
-    public static string? BucketIp(this IPAddress ip, int ipv4Prefix = 24, int ipv6Prefix = 64)
+    public static string BucketIp(this IPAddress ip, int ipv4Prefix = 24, int ipv6Prefix = 64)
     {
         if (ip == null) return null;
 

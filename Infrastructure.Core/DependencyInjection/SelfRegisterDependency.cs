@@ -62,7 +62,7 @@ public class SingletonDependencyAttribute<TTypeRegisterFor> : SingletonDependenc
 
 public static class ServiceCollectionExtensions
 {
-    public static void RegisterExtendableEnumExtensions(this IServiceCollection services)
+    public static void RegisterExtendableEnumExtensions(this IServiceCollection _)
     {
         var extendableEnumExtensionsTypes = AssemblyUtils.GetDerivedTypes<IExtendableEnumExtension>();
 

@@ -7,17 +7,13 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 
 public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 {
-    private readonly IDateTimeService _dateTimeService;
-
     public BinaryContentExtractionHostedService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<BinaryContentExtractionHostedService> logger,
         IApplicationSettings settings,
-        IHostApplicationLifetime appLifetime,
-        IDateTimeService dateTimeService)
+        IHostApplicationLifetime appLifetime)
         : base(serviceScopeFactory, appLifetime, logger, settings)
     {
-        _dateTimeService = dateTimeService;
     }
 
     protected override HostedServicesConfiguration GetConfiguration()

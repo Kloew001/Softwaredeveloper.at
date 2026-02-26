@@ -294,38 +294,50 @@ public static class WebApplicationBuilderExtensions
             var knownProxies = config?.KnownProxies ?? [];
             var knownNetworks = config?.KnownNetworks ?? [];
 
-            if (knownProxies.Any() || knownNetworks.Any())
-            {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor |
-                    ForwardedHeaders.XForwardedProto;
-
-                options.ForwardedForHeaderName = config == null || config.ForwardedForHeaderName.IsNullOrEmpty()
-                    ? ForwardedHeadersDefaults.XForwardedForHeaderName
-                    : config.ForwardedForHeaderName;
-
-                options.ForwardedProtoHeaderName = config == null || config.ForwardedProtoHeaderName.IsNullOrEmpty()
-                    ? ForwardedHeadersDefaults.XForwardedProtoHeaderName
-                    : config.ForwardedProtoHeaderName;
-
-                foreach (var proxy in knownProxies)
-                    options.KnownProxies.Add(IPAddress.Parse(proxy));
-
-                foreach (var network in knownNetworks)
-                {
-                    var parts = network.Split('/');
-                    options.KnownNetworks.Add(
-                        new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
-                }
-            }
-            else
+            if (knownProxies.Length == 0 && knownNetworks.Length == 0)
             {
                 options.ForwardedHeaders = ForwardedHeaders.None;
+                return;
+            }
+
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto;
+
+            options.ForwardedForHeaderName =
+                string.IsNullOrWhiteSpace(config?.ForwardedForHeaderName)
+                    ? ForwardedHeadersDefaults.XForwardedForHeaderName
+                    : config!.ForwardedForHeaderName;
+
+            options.ForwardedProtoHeaderName =
+                string.IsNullOrWhiteSpace(config?.ForwardedProtoHeaderName)
+                    ? ForwardedHeadersDefaults.XForwardedProtoHeaderName
+                    : config!.ForwardedProtoHeaderName;
+
+            foreach (var proxy in knownProxies)
+            {
+                if (!IPAddress.TryParse(proxy, out var ip))
+                    throw new InvalidOperationException($"Invalid KnownProxy IP: '{proxy}'");
+
+                options.KnownProxies.Add(ip);
+            }
+
+            foreach (var cidr in knownNetworks)
+            {
+                var parts = cidr.Split('/', 2);
+                if (parts.Length != 2 ||
+                    !IPAddress.TryParse(parts[0], out var baseIp) ||
+                    !int.TryParse(parts[1], out var prefix))
+                {
+                    throw new InvalidOperationException($"Invalid KnownNetwork CIDR: '{cidr}' (expected like '10.0.0.0/8')");
+                }
+
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(baseIp, prefix));
             }
         });
     }
 
-    public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions>? configureOptions = null)
+    public static WebApplicationBuilder AddRateLimiter(this WebApplicationBuilder builder, Action<RateLimiterOptions> configureOptions = null)
     {
         var config = builder.Configuration
             .GetSection("RateLimiting")

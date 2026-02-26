@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
+﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries;
 
 public class ChronologyEntryDto : Dto
 {

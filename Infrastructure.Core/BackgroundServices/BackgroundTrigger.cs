@@ -87,7 +87,7 @@ public class BackgroundTriggerQueue
 
 public static class BackgroundTriggerableExtensions
 {
-    public static Type? GetTriggerableEntityType(this Type concreteType)
+    public static Type GetTriggerableEntityType(this Type concreteType)
     {
         var iface = concreteType
             .GetInterfaces()

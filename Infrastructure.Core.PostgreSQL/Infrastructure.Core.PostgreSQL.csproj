@@ -5,7 +5,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageId>SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL</PackageId>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Kloew001/Softwaredeveloper.at</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Kevin Löw</Authors>
+    <Description>Library for base .NET Classes</Description>
+    <PackageProjectUrl>softwaredeveloper.at</PackageProjectUrl>
+    <PackageTags>library</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
   </PropertyGroup>
+
   <!--
   <ItemGroup>
     <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.0.0">
@@ -14,32 +27,8 @@
     </PackageReference>
   </ItemGroup>
   -->
-    <PropertyGroup>
-    <PackageId>SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL</PackageId>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/Kloew001/Softwaredeveloper.at</RepositoryUrl>
-  </PropertyGroup>
   
-  <PropertyGroup>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-
-    <Authors>Kevin Löw</Authors>
-    <Description>Library for base .NET Classes</Description>
-    <PackageProjectUrl>softwaredeveloper.at</PackageProjectUrl>
-    <PackageTags>library</PackageTags>
-	
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <RootNamespace>SoftwaredeveloperDotAt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-    <AssemblyName>SoftwaredeveloperDotAt.$(MSBuildProjectName)</AssemblyName>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <Compile Remove="nuget\**" />
-    <EmbeddedResource Remove="nuget\**" />
-    <None Remove="nuget\**" />
-  </ItemGroup>
-  
+ 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\icon.png" Pack="true" PackagePath="" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)\readme.md" Pack="true" PackagePath="" />
@@ -59,12 +48,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />	
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />	
   </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure.Core\Infrastructure.Core.csproj" />
   </ItemGroup>
-
 
 </Project>

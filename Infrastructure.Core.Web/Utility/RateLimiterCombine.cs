@@ -62,7 +62,7 @@ public static class RateLimiterCombine
         }
 
         public override TimeSpan? IdleDuration => null;
-        public override RateLimiterStatistics? GetStatistics() => null;
+        public override RateLimiterStatistics GetStatistics() => null;
     }
 
     private sealed class MultiLease : RateLimitLease
@@ -77,7 +77,7 @@ public static class RateLimiterCombine
         public override IEnumerable<string> MetadataNames =>
             _leases.SelectMany(l => l.MetadataNames ?? Array.Empty<string>()).Distinct();
 
-        public override bool TryGetMetadata(string metadataName, out object? metadata)
+        public override bool TryGetMetadata(string metadataName, out object metadata)
         {
             foreach (var l in _leases)
             {

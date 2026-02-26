@@ -3,10 +3,10 @@ namespace SampleApp.Application;
 
 public class ApplicationSettings : CoreApplicationSettings
 {
-    public UrlConfiguration Url { get; set; }
+    public SampleConfiguration Sample { get; set; }
 }
 
-public class UrlConfiguration
+public class SampleConfiguration
 {
-    public string BaseUrl { get; set; }
+    public string SampleMode { get; set; }
 }
