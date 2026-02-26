@@ -90,8 +90,8 @@ public class FullRequestLoggingMiddleware
         var logMessage = new StringBuilder();
 
         logMessage.AppendLine("FULL REQUEST/RESPONSE DUMP");
-        logMessage.AppendLine($"Method: {request.Method}");
-        logMessage.AppendLine($"Path: {request.Path}");
+        logMessage.AppendLine($"Method: {SanitizeValue(request.Method)}");
+        logMessage.AppendLine($"Path: {SanitizeValue(request.Path)}");
         logMessage.AppendLine($"StatusCode: {context.Response.StatusCode}");
         logMessage.AppendLine($"ExecutionTimeMs: {elapsedMs:0.00} ms");
         logMessage.AppendLine();
