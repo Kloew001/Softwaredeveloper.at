@@ -20,14 +20,14 @@ public static class StringSanitizer
     /// and limits the maximum length.
     /// Sample: input "Hello\r\nWorld\u001b", output "Hello World".
     /// </summary>
-    public static string Sanitize(string input, int maxLength = 1024)
+    public static string RemoveControlCharacters(string input, int? maxLength = null)
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
 
-        if (input.Length > maxLength)
+        if (maxLength != null && input.Length > maxLength)
         {
-            int cutLength = Math.Max(0, maxLength - TruncationSuffix.Length);
+            int cutLength = Math.Max(0, maxLength.Value - TruncationSuffix.Length);
             input = input.Substring(0, cutLength) + TruncationSuffix;
         }
 
