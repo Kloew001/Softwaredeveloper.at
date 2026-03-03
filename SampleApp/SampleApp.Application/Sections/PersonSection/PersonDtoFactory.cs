@@ -2,6 +2,15 @@
 
 namespace SampleApp.Application.Sections.PersonSection;
 
+public class PersonDtoFactoryProfile : IDtoFactoryProfile
+{
+    public void Apply(DtoFactoryConfiguration config)
+    {
+        config.For<Person, PersonDto>()
+            .ForMember(_ => _.FirstName, o => o.IgnoreMember());
+    }
+}
+
 public class PersonDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver) 
     : DefaultDtoFactory<PersonDto, Person>(memoryCache, factoryResolver)
 {

@@ -1,9 +1,6 @@
 ﻿using System.Reflection;
-
 using ExtendableEnums;
-
 using Microsoft.Extensions.Caching.Memory;
-
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
@@ -15,10 +12,13 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
 
     public bool AutoSubPropertyMapping { get; set; } = true;
 
-    public DefaultDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver)
+    private readonly DtoFactoryConfiguration _configuration;
+
+    public DefaultDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver, DtoFactoryConfiguration configuration)
     {
         _memoryCache = memoryCache;
         _factoryResolver = factoryResolver;
+        _configuration = configuration;
     }
 
     public virtual TDto ConvertToDto(TEntity entity, TDto dto)
@@ -56,6 +56,9 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
             var targetProperties = targetType.GetProperties().ToList();
             var sourceProperties = sourceType.GetProperties().ToList();
 
+            var mapConfig = _configuration.Maps
+                .FirstOrDefault(m => m.SourceType == sourceType && m.TargetType == targetType));
+
             targetProperties
             .ForEach(targetProperty =>
             {
@@ -63,6 +66,9 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     return;
 
                 if (targetProperty.GetCustomAttribute<DtoFactoryIgnoreAttribute>().IsNotNull())
+                    return;
+
+                if (mapConfig != null && !mapConfig.ShouldIgnore(targetProperty))
                     return;
 
                 var sourceProperty = sourceType.GetProperty(targetProperty.Name);
@@ -109,31 +115,6 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     }
                 }
             });
-
-            //if (typeof(IMultiLingualEntity<>).IsAssignableFrom(sourceType))
-            //{
-            //    var translationType =
-            //        sourceType
-            //        .GetInterfaces()
-            //        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMultiLingualEntity<>))
-            //        .SelectMany(i => i.GetGenericArguments())
-            //        .Single();
-
-            //    targetProperties
-            //        .ForEach(targetProperty =>
-            //        {
-            //            var sourceProperty = translationType.GetProperty(targetProperty.Name);
-
-            //            if (sourceProperty != null)
-            //            {
-            //                propertyMaps.Add(new PropertyMap
-            //                {
-            //                    TargetProperty = targetProperty,
-            //                    SourceProperties = new[] { sourceProperty.Name }
-            //                });
-            //            }
-            //        });
-            //}
 
             _memoryCache.Set(cacheKey, propertyMaps);
         }

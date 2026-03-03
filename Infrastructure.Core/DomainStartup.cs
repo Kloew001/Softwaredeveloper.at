@@ -47,6 +47,8 @@ public class DomainStartupCore<TApplicationSettings> : IDomainStartupCore
         Services.RegisterAllHostedService();
         Services.RegisterExtendableEnumExtensions();
 
+        Services.AddDtoFactoryConfiguration();
+
         Services.AddSingleton<ICacheService, CacheService>();
 
         Services.AddSingleton<IEmailMessageGlobalBookmark, EmailMessageGlobalBookmark>();
