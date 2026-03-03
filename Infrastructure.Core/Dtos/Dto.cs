@@ -3,13 +3,10 @@
 [AttributeUsage(AttributeTargets.Class)]
 public class DtoFactoryAttribute : Attribute
 {
-    public bool IgnoreId { get; set; }
-
-    public DtoFactoryAttribute()
-    {
-        IgnoreId = false;
-    }
 }
+
+[AttributeUsage(AttributeTargets.Property)]
+public class DtoFactoryIgnoreAttribute : Attribute { }
 
 public interface IDto
 {

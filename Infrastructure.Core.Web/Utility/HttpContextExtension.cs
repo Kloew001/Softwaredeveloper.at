@@ -1,9 +1,11 @@
-﻿using System.Diagnostics;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Utility;
 
@@ -11,7 +13,7 @@ public static class HttpContextExtension
 {
     public static string ResolveCorrelationId(this HttpContext ctx)
     {
-        return ctx.TraceIdentifier ?? Activity.Current?.Id;
+        return ctx.RequestServices.GetRequiredService<ICorrelationIdAccessor>().GetCorrelationId();
     }
 
     public static string ResolveAccountId(this HttpContext ctx)

@@ -45,9 +45,7 @@ public static class IReferencedToEntityTypeExtensions
         if (entity.Reference != null)
             return entity.Reference;
 
-        var entityType = AssemblyUtils.AllLoadedTypes()
-            .Where(p => p.IsAbstract == false &&
-                        p.IsInterface == false)
+        var entityType = AssemblyUtils.GetAllConcretClasses()
             .FirstOrDefault(t => t.Name == entity.ReferenceType);
 
         if (entityType == null)

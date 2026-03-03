@@ -18,34 +18,28 @@ public static class SerilogAdditionalContextBuilderExtensions
     }
 }
 
-public class SerilogAdditionalContextMiddleware
+public class SerilogAdditionalContextMiddleware(
+    RequestDelegate next,
+    ICorrelationIdAccessor correlationIdAccessor)
 {
-    private readonly RequestDelegate _next;
-
-    public SerilogAdditionalContextMiddleware(RequestDelegate next) => _next = next;
-
     public async Task Invoke(HttpContext context)
     {
         using (LogContext.PushProperty(Core.Utility.SerilogUtility.Area, Utility.SerilogUtility.Area_Web))
-        using (LogContext.PushProperty("CorrelationId", context.ResolveCorrelationId()))
+        using (LogContext.PushProperty("CorrelationId", correlationIdAccessor.GetCorrelationId()))
         using (LogContext.PushProperty("ClientIP", context.ResolveIp()))
         {
-            await _next(context);
+            await next(context);
         }
     }
 }
 
-public class SerilogAccountContextMiddleware
+public class SerilogAccountContextMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public SerilogAccountContextMiddleware(RequestDelegate next) => _next = next;
-
     public async Task Invoke(HttpContext context)
     {
         using (LogContext.PushProperty("AccountId", context.ResolveAccountIdOrAnon()))
         {
-            await _next(context);
+            await next(context);
         }
     }
 }

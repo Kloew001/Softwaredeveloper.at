@@ -82,12 +82,8 @@ public class AsyncTaskExecutor
     private static Dictionary<Guid, Type> CollectAllHandler()
     {
         var handlerTypes =
-                AssemblyUtils.AllLoadedTypes()
-                .Where(t => t.IsClass && !t.IsInterface && !t.IsAbstract &&
-                            typeof(IAsyncTaskOperationHandler).IsAssignableFrom(t))
-                .ToDictionary(t =>
-                        t.GetCustomAttribute<OperationHandlerAttribute>().Id,
-                    t => t);
+                AssemblyUtils.GetDerivedConcretClasses<IAsyncTaskOperationHandler>()
+                .ToDictionary(t => t.GetCustomAttribute<OperationHandlerAttribute>().Id, t => t);
 
         return handlerTypes;
     }

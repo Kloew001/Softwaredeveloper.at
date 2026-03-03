@@ -62,7 +62,7 @@ public class ValidationExceptionHandler : IExceptionHandler
 
     private async ValueTask<bool> HandleProblemDetails(HttpContext httpContext, Exception exception, ValidationProblemDetails problemDetails, CancellationToken cancellationToken)
     {
-        _logger.LogWarning(exception, "Validation failed. correlationId={correlationId}", httpContext.ResolveCorrelationId());
+        _logger.LogWarning(exception, "Validation failed: {Message}", exception.Message);
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
 
@@ -100,7 +100,9 @@ public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
     private readonly IProblemDetailsService _problemDetailsService;
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger,
+
+    public GlobalExceptionHandler(
+        ILogger<GlobalExceptionHandler> logger,
         IProblemDetailsService problemDetailsService)
     {
         _logger = logger;
@@ -109,7 +111,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Unhandled exception. correlationId={correlationId}", httpContext.ResolveCorrelationId());
+        _logger.LogError(exception, "An unhandled exception occurred.");
 
 #if DEBUG
         Debugger.Break();

@@ -13,6 +13,7 @@ public abstract class Entity : IEntity
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
+    [DtoFactoryIgnore]
     public Guid Id { get; set; }
 
     //[ConcurrencyCheck]

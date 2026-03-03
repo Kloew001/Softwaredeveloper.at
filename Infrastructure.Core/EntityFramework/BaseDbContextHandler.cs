@@ -28,7 +28,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
     protected BaseDbContextHandler(ILogger<BaseDbContextHandler> logger)
     {
         _logger = logger;
-        _backgroundTriggerableTypes = AssemblyUtils.GetDerivedTypes(typeof(IBackgroundTriggerable<>));
+        _backgroundTriggerableTypes = AssemblyUtils.GetDerivedConcretClasses(typeof(IBackgroundTriggerable<>));
     }
 
     public virtual async Task UpdateDatabaseAsync(DbContext context)

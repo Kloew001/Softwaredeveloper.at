@@ -59,14 +59,10 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
             targetProperties
             .ForEach(targetProperty =>
             {
-                if (isDtoToEntity && targetProperty.Name == "Id")
-                    return;
-
-                if (targetProperty.Name == "Id" &&
-                    targetType.GetAttribute<DtoFactoryAttribute>()?.IgnoreId == true)
-                    return;
-
                 if (targetProperty.CanWrite == false)
+                    return;
+
+                if (targetProperty.GetCustomAttribute<DtoFactoryIgnoreAttribute>().IsNotNull())
                     return;
 
                 var sourceProperty = sourceType.GetProperty(targetProperty.Name);
@@ -103,7 +99,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                                 {
                                     sourcePropertyFirstLevel.Name,
                                     sourcePropertySecoundLevel.Name
-                            }
+                                }
                             });
                         }
                         else

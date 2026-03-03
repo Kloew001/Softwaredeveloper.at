@@ -65,7 +65,7 @@ public static class StringSanitizer
     /// Normalizes whitespace: trims and collapses multiple whitespace characters into a single space.
     /// Sample: input "  Hello\t  World  ", output "Hello World".
     /// </summary>
-    public static string NormalizeWhitespace(string? input)
+    public static string NormalizeWhitespace(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
@@ -78,7 +78,7 @@ public static class StringSanitizer
     /// Removes diacritics (accents) from characters.
     /// Sample: input "ÄÖÜ äöü éèç", output "AOU aou eec".
     /// </summary>
-    public static string RemoveDiacritics(string? input)
+    public static string RemoveDiacritics(string input)
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
@@ -100,7 +100,7 @@ public static class StringSanitizer
     /// Strips HTML tags and decodes HTML entities, then normalizes whitespace.
     /// Sample: input "&lt;p&gt;Hello &lt;strong&gt;World&lt;/strong&gt;&lt;/p&gt;", output "Hello World".
     /// </summary>
-    public static string StripHtml(string? input)
+    public static string StripHtml(string input)
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
@@ -115,7 +115,7 @@ public static class StringSanitizer
     /// HTML-encodes a string for safe HTML output.
     /// Sample: input "&lt;script&gt;alert('x')&lt;/script&gt;", output "&amp;lt;script&amp;gt;alert(&amp;#39;x&amp;#39;)&amp;lt;/script&amp;gt;".
     /// </summary>
-    public static string HtmlEncode(string? input)
+    public static string HtmlEncode(string input)
     {
         if (input == null)
             return string.Empty;
@@ -127,7 +127,7 @@ public static class StringSanitizer
     /// Allows only characters that match the given whitelist pattern.
     /// Sample: input "User_123@example.com", pattern "a-zA-Z0-9_" => "User_123".
     /// </summary>
-    public static string AllowOnly(string? input, string whitelistPattern)
+    public static string AllowOnly(string input, string whitelistPattern)
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
@@ -145,7 +145,7 @@ public static class StringSanitizer
     /// Creates a filesystem-safe file name from an arbitrary string.
     /// Sample: input "Mein *Dokument* 2024?.pdf", output ähnlich zu "Mein_Dokument_2024_.pdf".
     /// </summary>
-    public static string ToSafeFileName(string? input, int maxLength = 255)
+    public static string ToSafeFileName(string input, int maxLength = 255)
     {
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
@@ -177,7 +177,7 @@ public static class StringSanitizer
     /// Generates a URL-friendly slug from a string.
     /// Sample: input "Änderungen im März 2024", output "anderungen-im-marz-2024".
     /// </summary>
-    public static string ToUrlSlug(string? input, int maxLength = 200)
+    public static string ToUrlSlug(string input, int maxLength = 200)
     {
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
@@ -198,7 +198,7 @@ public static class StringSanitizer
     /// Escapes single quotes for use in legacy SQL string concatenation.
     /// Sample: input "O'Hara", output "O''Hara".
     /// </summary>
-    public static string SanitizeForSql(string? input)
+    public static string SanitizeForSql(string input)
     {
         if (input == null)
             return string.Empty;

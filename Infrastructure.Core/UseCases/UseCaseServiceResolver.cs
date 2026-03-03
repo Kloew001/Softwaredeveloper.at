@@ -20,7 +20,7 @@ public class UseCaseServiceResolver : IAppStatupInit
     {
         using (var scope = _serviceScopeFactory.CreateScope())
         {
-            var useCaseTypes = AssemblyUtils.GetDerivedTypes<IUseCase>();
+            var useCaseTypes = AssemblyUtils.GetDerivedConcretClasses<IUseCase>();
 
             foreach (var useCaseType in useCaseTypes)
             {

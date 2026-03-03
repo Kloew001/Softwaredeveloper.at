@@ -268,6 +268,9 @@ public class WebStartupCore<TDomainStartup>
                 problem.Instance ??= $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
                 problem.Type ??= $"https://httpstatuses.com/{problem.Status}";
 
+                //resolve correlation id from HttpContext and add it to problem details extensions
+                //und add timestamp from IDateTimeService
+
                 problem.Extensions["correlationId"] = context.HttpContext.ResolveCorrelationId();
                 problem.Extensions["timestamp"] = DateTimeOffset.UtcNow;
 
@@ -475,6 +478,9 @@ public class WebStartupCore<TDomainStartup>
 
     protected virtual void UseLogging(WebApplication app)
     {
+        // Ensure correlation token is available early in the pipeline
+        app.UseMiddleware<CorrelationÎdMiddleware>();
+
         app.UseFullRequestLogging();
 
         app.UseSerilogAdditionalContext();

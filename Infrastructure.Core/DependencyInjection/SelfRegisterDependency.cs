@@ -64,7 +64,7 @@ public static class ServiceCollectionExtensions
 {
     public static void RegisterExtendableEnumExtensions(this IServiceCollection _)
     {
-        var extendableEnumExtensionsTypes = AssemblyUtils.GetDerivedTypes<IExtendableEnumExtension>();
+        var extendableEnumExtensionsTypes = AssemblyUtils.GetDerivedConcretClasses<IExtendableEnumExtension>();
 
         foreach (var extendableEnumExtensionType in extendableEnumExtensionsTypes)
         {
@@ -93,7 +93,7 @@ public static class ServiceCollectionExtensions
 
     public static void RegisterSelfRegisterDependencies(this IServiceCollection services)
     {
-        var appStatupInits = AssemblyUtils.GetDerivedTypes<IAppStatupInit>();
+        var appStatupInits = AssemblyUtils.GetDerivedConcretClasses<IAppStatupInit>();
 
         foreach (var appStatupInit in appStatupInits)
         {
@@ -101,10 +101,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(typeof(IAppStatupInit), (sp) => sp.GetRequiredService(appStatupInit));
         }
 
-        var serviceTypes = AssemblyUtils.AllLoadedTypes()
-          .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
-          //.Where(p => typeof(ISelfRegisterDependency).IsAssignableFrom(p))
-          .ToList();
+        var serviceTypes = AssemblyUtils.GetAllConcretClasses();
 
         foreach (var serviceType in serviceTypes)
         {
@@ -146,8 +143,7 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        var serviceTypesAttributed = AssemblyUtils.AllLoadedTypes()
-           .Where(_ => _.IsClass && !_.IsAbstract && !_.IsInterface)
+        var serviceTypesAttributed = AssemblyUtils.GetAllConcretClasses()
            .Where(_ => _.HasAttribute<SelfRegisterDependencyAttribute>() ||
                         _.GetInterfaces().Any(i => i.HasAttribute<SelfRegisterDependencyAttribute>()))
            .Select(_ => new
@@ -243,7 +239,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton(typeof(IBackgroundTrigger<>), typeof(BackgroundTrigger<>));
 
-        var serviceTypes = AssemblyUtils.GetDerivedTypes<BaseHostedService>();
+        var serviceTypes = AssemblyUtils.GetDerivedConcretClasses<BaseHostedService>();
 
         foreach (var serviceType in serviceTypes)
         {

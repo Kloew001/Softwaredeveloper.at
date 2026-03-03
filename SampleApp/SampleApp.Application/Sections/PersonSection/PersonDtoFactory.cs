@@ -1,12 +1,14 @@
-﻿
-using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 namespace SampleApp.Application.Sections.PersonSection;
 
-public class PersonDtoFactory : IDtoFactory<PersonDto, Person>
+public class PersonDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver) 
+    : DefaultDtoFactory<PersonDto, Person>(memoryCache, factoryResolver)
 {
-    public PersonDto ConvertToDto(Person entity, PersonDto dto)
+    public override PersonDto ConvertToDto(Person entity, PersonDto dto)
     {
+        base.ConvertToDto(entity, dto);
+
         dto.Id = entity.Id;
         dto.FirstName = entity.FirstName;
         dto.LastName = entity.LastName;
@@ -14,8 +16,10 @@ public class PersonDtoFactory : IDtoFactory<PersonDto, Person>
         return dto;
     }
 
-    public Person ConvertToEntity(PersonDto dto, Person entity)
+    public override Person ConvertToEntity(PersonDto dto, Person entity)
     {
+        base.ConvertToEntity(dto, entity);
+
         entity.FirstName = dto.FirstName;
         entity.LastName = dto.LastName;
 

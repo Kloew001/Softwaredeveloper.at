@@ -11,18 +11,11 @@ public class DtoFactoryResolver
     [SingletonDependency]
     public class DtoFactoryTypeStore
     {
-        private static Dictionary<Tuple<Type, Type>, Type> _dtoFactoryTypes;
+        private readonly Dictionary<Tuple<Type, Type>, Type> _dtoFactoryTypes = [];
 
         public DtoFactoryTypeStore()
         {
-            _dtoFactoryTypes = new Dictionary<Tuple<Type, Type>, Type>();
-
-            var factoryTypes =
-                AssemblyUtils.AllLoadedTypes()
-               .Where(p => p.IsAbstract == false &&
-                           p.IsInterface == false &&
-                           typeof(IDtoFactory).IsAssignableFrom(p))
-               .ToList();
+            var factoryTypes = AssemblyUtils.GetDerivedConcretClasses<IDtoFactory>();
 
             foreach (var factoryTyp in factoryTypes)
             {

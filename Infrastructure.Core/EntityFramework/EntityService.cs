@@ -324,8 +324,9 @@ public class EntityService<TEntity>
     public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
         where TDto : Dto
     {
-        var entity = await GetSingleByIdAsync(dto.Id.Value);
-
+        var entity = await GetSingleByIdAsync(dto.Id.Value) 
+            ?? throw new Exception("Entity not found");
+        
         _dtoFactoryResolver.ConvertToEntity(dto, entity);
 
         entity = await UpdateAsync(entity);
@@ -360,7 +361,8 @@ public class EntityService<TEntity>
 
     public virtual async Task DeleteAsync(Guid id)
     {
-        var entity = await GetSingleByIdAsync(id);
+        var entity = await GetSingleByIdAsync(id)
+            ?? throw new Exception("Entity not found");
 
         await DeleteAsync(entity);
 

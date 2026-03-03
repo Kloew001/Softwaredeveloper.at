@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 

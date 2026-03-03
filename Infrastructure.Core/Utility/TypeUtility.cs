@@ -2,12 +2,16 @@
 
 public static class TypeUtility
 {
-    public static IEnumerable<Type> GetAllTypesWithAttribute(Type attributeType, bool inherit = true)
+    public static IEnumerable<Type> GetConcretClassesWithAttribute<TAttribute>(bool inherit = true)
+        where TAttribute : Attribute
     {
-        return AssemblyUtils.AllLoadedTypes()
-            .Where(p => p.IsAbstract == false &&
-                        p.IsInterface == false &&
-                        p.GetCustomAttributes(attributeType, inherit).Length > 0)
+        return GetConcretClassesWithAttribute(typeof(TAttribute), inherit);
+    }
+
+    public static IEnumerable<Type> GetConcretClassesWithAttribute(Type attributeType, bool inherit = true)
+    {
+        return AssemblyUtils.GetAllConcretClasses()
+            .Where(p => p.GetCustomAttributes(attributeType, inherit).Length > 0)
             .ToList();
     }
 
