@@ -1,6 +1,4 @@
-﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
-
-namespace SampleApp.Application.Sections.PersonSection;
+﻿namespace SampleApp.Application.Sections.PersonSection;
 
 public class PersonDtoFactory(IMemoryCache memoryCache, DtoFactoryResolver factoryResolver) 
     : DefaultDtoFactory<PersonDto, Person>(memoryCache, factoryResolver)

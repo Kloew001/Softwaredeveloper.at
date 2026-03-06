@@ -1,7 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Collections.Concurrent;
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
@@ -11,7 +14,19 @@ public class DtoFactoryResolver
     [SingletonDependency]
     public class DtoFactoryTypeStore
     {
-        private readonly Dictionary<Tuple<Type, Type>, Type> _dtoFactoryTypes = [];
+        public readonly struct DtoFactoryStoreItem(Type dtoType, Type entityType, Type dtoFactoryType)
+        {
+            public Type DtoType { get; } = dtoType;
+            public Type EntityType { get; } = entityType;
+            public Type DtoFactoryType { get; } = dtoFactoryType;
+
+            public override string ToString()
+            {
+                return $"[{DtoType.Name}, {EntityType.Name}, {DtoFactoryType.Name}]";
+            }
+        }
+
+        private readonly DtoFactoryStoreItem[] _store = [];
 
         public DtoFactoryTypeStore()
         {
@@ -39,25 +54,52 @@ public class DtoFactoryResolver
                         if (entityTypeGeneric.IsGenericParameter)
                             entityTypeGeneric = entityTypeGeneric.BaseType;
 
-                        _dtoFactoryTypes.Add(new Tuple<Type, Type>(dtoTypeGeneric, entityTypeGeneric), factoryTyp);
+                        if(Exists(dtoTypeGeneric, entityTypeGeneric))
+                        {
+                            throw new InvalidOperationException($"Multiple DTO factories found for DTO type '{dtoTypeGeneric.FullName}' and entity type '{entityTypeGeneric.FullName}'.");
+                        }
+
+                        _store = [.._store, new (dtoTypeGeneric, entityTypeGeneric, factoryTyp)];
                     }
                 }
             }
         }
 
-        public bool Contains(Type dtoType, Type entityType)
+        public IEnumerable<DtoFactoryStoreItem> GetAllFactoryStoreItems()
         {
-            var tuple = new Tuple<Type, Type>(dtoType, entityType);
-            return _dtoFactoryTypes.ContainsKey(tuple);
+            return _store;
+        }
+
+        public bool Exists(Type dtoType, Type entityType)
+        {
+            return _store.Any(_ => _.DtoType == dtoType && _.EntityType == entityType);
+        }
+
+        public Type GetDtoType(IDtoFactory dtoFactory, Type entityType)
+        {
+            return GetDtoType(dtoFactory.GetType(), entityType);
+        }
+
+        public Type GetDtoType(Type dtoFactoryType, Type entityType)
+        {
+            var dtoInterface = dtoFactoryType
+                .GetInterfaces()
+                .First(i =>
+                    i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IDtoFactory<,>) &&
+                    i.GetGenericArguments()[1].IsAssignableFrom(entityType));
+
+            var dtoType = dtoInterface.GetGenericArguments()[0];
+
+            return dtoType;
         }
 
         public Type GetFactoryType(Type dtoType, Type entityType)
         {
-            var tuple = new Tuple<Type, Type>(dtoType, entityType);
-
-            var factoryType = _dtoFactoryTypes[tuple];
-
-            return factoryType;
+            return _store
+                .Where(_ => _.DtoType == dtoType && _.EntityType == entityType)
+                .Select(_ => _.DtoFactoryType)
+                .SingleOrDefault();
         }
     }
 
@@ -65,39 +107,100 @@ public class DtoFactoryResolver
     protected readonly DtoFactoryTypeStore _dtoFactoryTypeStore;
     protected readonly IMemoryCache _memoryCache;
     protected readonly IDbContext _dbContext;
+    protected readonly ILogger<DtoFactoryResolver> _logger;
 
-    public DtoFactoryResolver(IServiceProvider serviceProvider, DtoFactoryTypeStore dtoFactoryResolver, IMemoryCache memoryCache, IDbContext dbContext)
+    public DtoFactoryResolver(
+        IServiceProvider serviceProvider, 
+        DtoFactoryTypeStore dtoFactoryResolver, 
+        IMemoryCache memoryCache, 
+        IDbContext dbContext,
+        ILogger<DtoFactoryResolver> logger)
     {
         _serviceProvider = serviceProvider;
         _dtoFactoryTypeStore = dtoFactoryResolver;
         _memoryCache = memoryCache;
         _dbContext = dbContext;
+        _logger = logger;
     }
 
-    private Tuple<Type, Type> FindMatchingTuble(Type dtoType, Type entityType)
+    private Type FindMatchingFactoryType(Type dtoType, Type entityType)
     {
-        var tuple = new Tuple<Type, Type>(dtoType, entityType);
+        if (_dtoFactoryTypeStore.Exists(dtoType, entityType))
+            return _dtoFactoryTypeStore.GetFactoryType(dtoType, entityType);
 
-        if (_dtoFactoryTypeStore.Contains(dtoType, entityType) == true)
-            return tuple;
+        var storeItems = _dtoFactoryTypeStore
+        .GetAllFactoryStoreItems()
+        .Where(_ =>
+            (dtoType.IsAssignableFrom(_.DtoType) || _.DtoType.IsAssignableFrom(dtoType)) && // Dto kann in beiden Richtungen matchen, für Vererbung
+            _.EntityType.IsAssignableFrom(entityType)); //entityType ist immer konkret
 
-        if (tuple.Item1.BaseType == null || tuple.Item1.BaseType == typeof(object))
+        var candidates = storeItems
+            .Select(_ => new
+            {
+                _.DtoFactoryType,
+                DtoDistance = GetInheritanceDistance(dtoType, _.DtoType),
+                EntityDistance = GetInheritanceDistance(entityType, _.EntityType)
+            })
+            .Where(_ => _.DtoDistance.HasValue && _.EntityDistance.HasValue)
+            .OrderBy(c => c.DtoDistance)
+            .ThenBy(c => c.EntityDistance);
+
+        var bestSpecificCandidate = candidates.FirstOrDefault();
+
+        if (bestSpecificCandidate != null)
+            return bestSpecificCandidate.DtoFactoryType;
+
+        return null;
+    }
+
+    private static int? GetInheritanceDistance(Type requestedType, Type candidateType)
+    {
+        // exakter Treffer
+        // GetInheritanceDistance(typeof(CarDto), typeof(CarDto))          // => 0
+
+        // Kandidat ist spezieller (abgeleitet von requested)
+        //GetInheritanceDistance(typeof(CarDto), typeof(ElectroCarDto))   // => -1
+        //GetInheritanceDistance(typeof(DtoBase), typeof(CarDto))         // => -1
+        //GetInheritanceDistance(typeof(DtoBase), typeof(ElectroCarDto))  // => -2
+
+        // Kandidat ist allgemeiner (Basistyp von requested)
+        //GetInheritanceDistance(typeof(CarDto), typeof(DtoBase))         // => 1
+        //GetInheritanceDistance(typeof(ElectroCarDto), typeof(CarDto))   // => 1
+        //GetInheritanceDistance(typeof(ElectroCarDto), typeof(DtoBase))  // => 2
+
+        // Nicht kompatibel
+        //GetInheritanceDistance(typeof(string), typeof(CarDto))          // => null
+        
+        if (requestedType == candidateType)
+            return 0;
+
+        // Wenn spezieller als der angefragte Typ, bevorzugen
+        if (requestedType.IsAssignableFrom(candidateType))
+        {
+            var downDistance = GetDistanceUp(candidateType, requestedType, 0);
+            return downDistance.HasValue ? -downDistance : null;
+        }
+
+        // Wenn allgemeiner
+        if (candidateType.IsAssignableFrom(requestedType))
+        {
+            var upDistance = GetDistanceUp(requestedType, candidateType, 0);
+            return upDistance;
+        }
+
+        return null;
+    }
+
+    private static int? GetDistanceUp(Type current, Type target, int distance)
+    {
+        if (current == null || current == typeof(object))
             return null;
 
-        var resultTuple = FindMatchingTuble(tuple.Item1.BaseType, tuple.Item2);
+        if (current == target)
+            return distance;
 
-        if (resultTuple != null)
-            return resultTuple;
-
-        if (tuple.Item2.BaseType == null || tuple.Item2.BaseType == typeof(object))
-            return null;
-
-        resultTuple = FindMatchingTuble(tuple.Item1, tuple.Item2.BaseType);
-
-        if (resultTuple != null)
-            return resultTuple;
-
-        return FindMatchingTuble(tuple.Item1.BaseType, tuple.Item2.BaseType);
+        // Rekursiv nach oben in der Vererbungshierarchie wandern
+        return GetDistanceUp(current.BaseType, target, distance + 1);
     }
 
     private static MethodInfo resolveMethod = typeof(DtoFactoryResolver)
@@ -120,7 +223,7 @@ public class DtoFactoryResolver
             .Invoke(this, null);
     }
 
-    private IDtoFactory<TDto, TEntity> Resolve<TDto, TEntity>()
+    private IDtoFactory Resolve<TDto, TEntity>()
         where TDto : IDto
         where TEntity : IEntity
     {
@@ -128,18 +231,16 @@ public class DtoFactoryResolver
 
         if (!_memoryCache.TryGetValue(cacheKey, out Type cachedfactoryType))
         {
-            var tuple = FindMatchingTuble(typeof(TDto), typeof(TEntity));
+            var factoryType = FindMatchingFactoryType(typeof(TDto), typeof(TEntity));
 
-            if (tuple == null)
+            if (factoryType == null)
             {
                 cachedfactoryType = typeof(DefaultDtoFactory<TDto, TEntity>);
             }
             else
             {
-                var factoryType = _dtoFactoryTypeStore.GetFactoryType(tuple.Item1, tuple.Item2);
-
                 if (factoryType.ContainsGenericParameters)
-                    factoryType = factoryType.MakeGenericType(new[] { typeof(TDto), typeof(TEntity) });
+                    factoryType = factoryType.MakeGenericType([typeof(TDto), typeof(TEntity)]);
 
                 cachedfactoryType = factoryType;
             }
@@ -148,7 +249,7 @@ public class DtoFactoryResolver
         }
 
         var factory = _serviceProvider.GetRequiredService(cachedfactoryType);
-        return (IDtoFactory<TDto, TEntity>)factory;
+        return (IDtoFactory)factory;
     }
 
     private static MethodInfo convertToDtosMethod = typeof(DtoFactoryResolver)
@@ -164,7 +265,7 @@ public class DtoFactoryResolver
     {
         return (IEnumerable<IDto>)convertToDtosMethod
             .MakeGenericMethod([dtoType])
-            .Invoke(this, [entities, null]);
+            .Invoke(this, [entities]);
     }
 
     public IEnumerable<TDto> ConvertToDtos<TDto>(IEnumerable<IEntity> entities)
@@ -172,14 +273,20 @@ public class DtoFactoryResolver
     {
         if (entities == null)
             return null;
+        
+        var stopwatch = Stopwatch.StartNew();
 
         var dtos = entities
             .Select(entity =>
             {
-                var dto = (TDto)Activator.CreateInstance(typeof(TDto));
-                return ConvertToDto(entity, dto);
+                return ConvertToDto<TDto>(entity);
             })
             .ToList();
+
+        if(stopwatch.ElapsedMilliseconds > 1000)
+        {
+            _logger.LogWarning("Converted {Count} entities to dtos in {ElapsedMilliseconds} ms, which is longer than the threshold of 1000 ms. Consider optimizing the DTO factories or caching the results.", entities.Count(), stopwatch.ElapsedMilliseconds);
+        }
 
         return dtos;
     }
@@ -205,12 +312,44 @@ public class DtoFactoryResolver
         if (entity == null)
             return default;
 
-        if (dto == null)
-            dto = (TDto)Activator.CreateInstance(typeof(TDto));
+        var stopwatch = Stopwatch.StartNew();
 
         var dtoFactory = Resolve(typeof(TDto), entity.GetType());
 
-        return (TDto)dtoFactory.ConvertToDto(entity, dto);
+        if (dto == null)
+        {
+            dto = CreateDto<TDto>(dtoFactory, entity);
+        }
+
+        dto = (TDto)dtoFactory.ConvertToDto(entity, dto);
+
+        if (stopwatch.ElapsedMilliseconds > 100)
+        {
+            _logger.LogWarning("Converted entity of type {EntityType} to DTO of type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of 500 ms. Consider optimizing the DTO factory or caching the results.", entity.GetType().FullName, typeof(TDto).FullName, stopwatch.ElapsedMilliseconds);
+        }
+
+        return dto;
+    }
+
+    private static readonly ConcurrentDictionary<(Type factoryType, Type entityType), Func<object>> _dtoActivatorCache
+        = new();
+
+    private TDto CreateDto<TDto>(IDtoFactory dtoFactory, IEntity entity)
+        where TDto : IDto
+    {
+        var key = (dtoFactory.GetType(), entity.GetType());
+
+        var activator = _dtoActivatorCache.GetOrAdd(key, k =>
+        {
+            var dtoType = _dtoFactoryTypeStore.GetDtoType(dtoFactory, entity.GetType());
+
+            var ctor = dtoType.GetConstructor(Type.EmptyTypes)
+                      ?? throw new InvalidOperationException($"Type {dtoType.FullName} needs a parameterless constructor.");
+
+            return () => ctor.Invoke(null);
+        });
+
+        return (TDto)activator();
     }
 
     public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null)

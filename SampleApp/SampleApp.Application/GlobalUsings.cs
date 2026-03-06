@@ -1,6 +1,7 @@
 ﻿global using Microsoft.Extensions.Caching.Memory;
 
 global using SoftwaredeveloperDotAt.Infrastructure.Core;
+global using SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.AccessCondition;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.DataSeed;
 global using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
