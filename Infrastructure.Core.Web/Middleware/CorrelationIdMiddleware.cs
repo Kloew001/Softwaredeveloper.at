@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
-public class CorrelationÎdMiddleware(RequestDelegate next)
+public class CorrelationIdMiddleware(RequestDelegate next)
 {
     private readonly RequestDelegate _next = next;
     private const string HeaderName = "X-Correlation-ID";
 
-    public async Task Invoke(HttpContext context, ILogger<CorrelationÎdMiddleware> logger)
+    public async Task Invoke(HttpContext context, ILogger<CorrelationIdMiddleware> logger)
     {
         string correlationId;
 

@@ -479,7 +479,7 @@ public class WebStartupCore<TDomainStartup>
     protected virtual void UseLogging(WebApplication app)
     {
         // Ensure correlation token is available early in the pipeline
-        app.UseMiddleware<CorrelationÎdMiddleware>();
+        app.UseMiddleware<CorrelationIdMiddleware>();
 
         app.UseFullRequestLogging();
 
