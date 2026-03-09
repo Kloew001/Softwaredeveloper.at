@@ -1,20 +1,21 @@
 ﻿
 using SampleApp.Application.Sections.PersonSection;
+using SampleApp.Application.Sections.PersonSection.UseCases;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+using SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace SampleApp.Server.Controllers;
 
 [AllowAnonymous]
-public class PersonController : BaseApiController
+public class PersonController(
+    UseCaseService useCaseService,
+    PersonService service
+) : BaseApiController
 {
-    private readonly PersonService _service;
-
-    public PersonController(PersonService service)
-    {
-        _service = service;
-    }
+    private readonly PersonService _service = service;
+    private readonly UseCaseService _useCaseService = useCaseService;
 
     [HttpGet]
     public Task<IEnumerable<PersonDto>> GetAll()
@@ -36,9 +37,12 @@ public class PersonController : BaseApiController
     public async Task<Guid> Create(PersonDto dto)
          => (await _service.CreateAsync(dto)).Id.Value;
 
-    [HttpPost]
-    public Task<Guid> QuickCreate()
-         => _service.QuickCreateAsync(new PersonDto());
+    [HttpPost("quickcreate")]
+    public async Task<Guid> QuickCreate(CancellationToken cancellationToken)
+    {
+        var parameter = new CreatePersonDto() { };
+        return await _useCaseService.ExecuteAsync<QuickCreatePersonUseCase, Guid, CreatePersonDto>(parameter, cancellationToken);
+    }
 
     [HttpPost]
     public Task<PersonDto> Update(PersonDto dto)

@@ -15,6 +15,8 @@ public class Person : Entity, ISoftDelete, IAuditableEntity<PersonAudit>
     public string FirstName { get; set; }
     public string LastName { get; set; }
 
+    public virtual ICollection<Adress> Adresses { get; set; }
+
     public virtual ICollection<PersonAudit> Audits { get; set; }
 }
 
@@ -31,4 +33,12 @@ public class PersonAudit : EntityAudit<Person>
 
     public string FirstName { get; set; }
     public string LastName { get; set; }
+}
+
+public class Adress : Entity
+{
+    public bool IsMain { get; set; }
+    public string Street { get; set; }
+    public string City { get; set; }
+    public string ZipCode { get; set; }
 }

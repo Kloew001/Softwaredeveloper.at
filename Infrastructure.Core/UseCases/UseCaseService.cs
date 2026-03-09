@@ -21,57 +21,81 @@ public class UseCaseService
         _useCaseServiceResolver = useCaseServiceResolver;
     }
 
-    public async ValueTask<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<string> useCaseIdentifiers, Dictionary<string, object> parameter)
+    public async Task<object> ExecuteAsync(string useCaseIdentifier, Dictionary<string, object> parameter, CancellationToken cancellationToken = default)
     {
-        var useCaseInfos = new List<UseCaseInfo>();
+        var useCase = GetUseCase(useCaseIdentifier);
 
-        foreach (var useCaseIdentifier in useCaseIdentifiers)
+        return await useCase.ExecuteAsync(parameter, cancellationToken);
+    }
+
+    public async Task<TResult> ExecuteAsync<TUseCase, TResult, TParameter>(TParameter paramter, CancellationToken cancellationToken = default)
+        where TUseCase : IUseCase<TParameter, TResult>
+        where TParameter : new()
+    {
+        var useCase = _serviceProvider.GetService<TUseCase>();
+
+        return await useCase.ExecuteAsync(paramter, cancellationToken);
+    }
+
+    public async Task<object> ExecuteAsync<TUseCase>(Dictionary<string, object> paramter, CancellationToken cancellationToken = default)
+        where TUseCase : IUseCase
+    {
+        var useCase = _serviceProvider.GetService<TUseCase>();
+
+        return await useCase.ExecuteAsync(paramter, cancellationToken);
+    }
+
+    public async ValueTask<IEnumerable<UseCaseInfo>> EvaluateAsync(IEnumerable<string> useCaseIdentifiers, Dictionary<string, object> parameter, CancellationToken cancellationToken = default)
+    {
+        var evaluationTasks = useCaseIdentifiers.Select(async useCaseIdentifier =>
         {
-            var useCaseType = _useCaseServiceResolver.UseCases[useCaseIdentifier];
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var useCase = _serviceProvider.GetService(useCaseType) as IUseCase;
+            using var childScope = _serviceProvider.CreateChildScope();
 
-            var useCaseInfo = await EvaluateAsync(useCase, parameter);
-            useCaseInfos.Add(useCaseInfo);
-        }
+            var useCaseService = childScope.ServiceProvider.GetRequiredService<UseCaseService>();
 
+            return await useCaseService.EvaluateAsync(useCaseIdentifier, parameter, cancellationToken);
+        });
+
+        var useCaseInfos = await Task.WhenAll(evaluationTasks);
         return useCaseInfos;
     }
 
-    public async Task<object> ExecuteAsync(string useCaseIdentifier, Dictionary<string, object> parameter)
-    {
-        var useCaseType = _useCaseServiceResolver.UseCases[useCaseIdentifier];
-        var useCase = _serviceProvider.GetService(useCaseType) as IUseCase;
-
-        return await useCase.ExecuteAsync(parameter);
-    }
-
-    public async Task<object> ExecuteAsync<TUseCase>(Dictionary<string, object> paramter)
+    public async ValueTask<UseCaseInfo> EvaluateAsync<TUseCase>(Dictionary<string, object> paramter, CancellationToken cancellationToken = default)
         where TUseCase : IUseCase
     {
         var useCase = _serviceProvider.GetService<TUseCase>();
 
-        return await useCase.ExecuteAsync(paramter);
+        return await EvaluateAsync(useCase, paramter, cancellationToken);
     }
 
-    public async ValueTask<UseCaseInfo> EvaluateAsync<TUseCase>(Dictionary<string, object> paramter)
-        where TUseCase : IUseCase
+    public async ValueTask<UseCaseInfo> EvaluateAsync(string useCaseIdentifier, Dictionary<string, object> paramter, CancellationToken cancellationToken = default)
     {
-        var useCase = _serviceProvider.GetService<TUseCase>();
+        var useCase = GetUseCase(useCaseIdentifier);
 
-        return await EvaluateAsync(useCase, paramter);
+        return await EvaluateAsync(useCase, paramter, cancellationToken);
     }
 
-    private async ValueTask<UseCaseInfo> EvaluateAsync(IUseCase useCase, Dictionary<string, object> paramter)
+    private IUseCase GetUseCase(string useCaseIdentifier)
     {
-        var useCaseInfo = new UseCaseInfo()
+        if (!_useCaseServiceResolver.UseCases.TryGetValue(useCaseIdentifier, out var useCaseType))
+            throw new InvalidOperationException($"Unknown use case identifier '{useCaseIdentifier}'.");
+
+        var useCase = _serviceProvider.GetService(useCaseType) as IUseCase
+                      ?? throw new InvalidOperationException($"Use case '{useCaseIdentifier}' not registered in DI.");
+        return useCase;
+    }
+
+    public async ValueTask<UseCaseInfo> EvaluateAsync(IUseCase useCase, Dictionary<string, object> paramter, CancellationToken cancellationToken = default)
+    {
+        var useCaseInfo = new UseCaseInfo
         {
-            UseCaseIdentifier = useCase.UseCaseIdentifier
+            UseCaseIdentifier = useCase.UseCaseIdentifier,
+            IsAvailable =
+                        await useCase.IsAvailableAsync() &&
+                        await useCase.IsAvailableAsync(paramter)
         };
-
-        useCaseInfo.IsAvailable =
-                    await useCase.IsAvailableAsync() &&
-                    await useCase.IsAvailableAsync(paramter);
 
         useCaseInfo.CanExecute =
                  useCaseInfo.IsAvailable &&

@@ -226,6 +226,37 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     }
                 }
             }
+            else if (typeof(IEnumerable<Dto>).IsAssignableFrom(sourceValueType) &&
+                     typeof(IEnumerable<Entity>).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+            {
+                if (sourceValue == null)
+                {
+                    propertyMap.TargetProperty.SetValue(target, null);
+                    continue;
+                }
+
+                var entityType = propertyMap.TargetProperty.PropertyType.GenericTypeArguments.First();
+
+                var targetValue = propertyMap.TargetProperty.GetValue(target);
+
+                var iCollectionType = typeof(ICollection<>).MakeGenericType(entityType);
+                if (!iCollectionType.IsAssignableFrom(targetValue.GetType()))
+                {
+                    throw new Exception($"Target property {propertyMap.TargetProperty.Name} must implement ICollection<{entityType.Name}>");
+                }
+
+                var convertMethod = typeof(DtoFactoryResolver)
+                    .GetMethod(nameof(DtoFactoryResolver.ConvertToEntities))!
+                    .MakeGenericMethod(entityType);
+
+                var entities = convertMethod.Invoke(
+                    _factoryResolver,
+                    [sourceValue, targetValue]
+                );
+
+                propertyMap.TargetProperty
+                    .SetValue(target, entities);
+            }
         }
 
         return target;

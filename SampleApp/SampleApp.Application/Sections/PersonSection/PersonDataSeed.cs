@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DemoData;
+
 namespace SampleApp.Application.Sections.PersonSection;
 
 public class PersonDataSeed : IDataSeed
@@ -17,24 +19,48 @@ public class PersonDataSeed : IDataSeed
         _context = context;
     }
 
-    public Task SeedAsync(CancellationToken cancellationToken)
+    public async Task SeedAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        if (_context.Set<Person>().Any())
+            return;
 
-        //if (_context.Set<Person>().Any())
-        //    return;
+        for (int i = 0; i < 10; i++)
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
+                var service = scope.ServiceProvider.GetRequiredService<PersonService>();
 
-        //for (int i = 0; i < 10; i++)
-        //{
-        //    using (var scope = _scopeFactory.CreateScope())
-        //    {
-        //        var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-        //        var service = scope.ServiceProvider.GetRequiredService<PersonService>();
+                await service.CreateAsync(p =>
+                {
+                    p.FirstName = DemoDataHelper.GetRandomFirstName();
+                    p.LastName = DemoDataHelper.GetRandomLastName();
 
-        //        //TODO
+                    //Random get DemoDataHelper.Adressen und create adress
 
-        //        await context.SaveChangesAsync();
-        //    }
-        //}
+                    p.Adresses = new List<Adress>
+                    {
+                        new Adress
+                        {
+                            IsMain = true,
+                            Street = DemoDataHelper.Adressen[i].Street,
+                            City = DemoDataHelper.Adressen[i].City,
+                            ZipCode = DemoDataHelper.Adressen[i].ZipCode
+                        },
+                        new Adress
+                        {
+                            IsMain = false,
+                            Street = DemoDataHelper.Adressen[i+5].Street,
+                            City = DemoDataHelper.Adressen[i+5].City,
+                            ZipCode = DemoDataHelper.Adressen[i+5].ZipCode
+                        }
+                    };
+
+                    return ValueTask.CompletedTask;
+                });
+
+                await context.SaveChangesAsync(cancellationToken);
+            }
+        }
     }
 }

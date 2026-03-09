@@ -5,16 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
 [SingletonDependency]
-public class UseCaseServiceResolver : IAppStatupInit
+public class UseCaseServiceResolver(IServiceScopeFactory serviceScopeFactory) : IAppStatupInit
 {
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
-    public Dictionary<string, Type> UseCases { get; set; } = new Dictionary<string, Type>();
-
-    public UseCaseServiceResolver(IServiceScopeFactory serviceScopeFactory)
-    {
-        _serviceScopeFactory = serviceScopeFactory;
-    }
+    public Dictionary<string, Type> UseCases { get; set; } = [];
 
     public Task Init()
     {
@@ -29,8 +24,11 @@ public class UseCaseServiceResolver : IAppStatupInit
 
                 if (useCaseAttribute != null)
                 {
-                    var uniqueIdentifier = useCaseAttribute.UniqueIdentifier;
-                    UseCases.Add(uniqueIdentifier, useCaseType);
+                    UseCases.Add(useCaseAttribute.UniqueIdentifier, useCaseType);
+                }
+                else
+                {
+                    UseCases.Add(useCaseType.Name, useCaseType);
                 }
             }
         }

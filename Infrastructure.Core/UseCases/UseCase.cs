@@ -27,13 +27,13 @@ public interface IUseCase
     Task<object> ExecuteAsync(object paramter, CancellationToken cancellationToken = default);
 }
 
-public interface IUseCase<TParamter, TResult> : IUseCase
-    where TParamter : new()
+public interface IUseCase<TParameter, TResult> : IUseCase
+    where TParameter : new()
 {
-    ValueTask<bool> IsAvailableAsync(TParamter paramter);
+    ValueTask<bool> IsAvailableAsync(TParameter paramter);
 
-    ValueTask<bool> CanExecuteAsync(TParamter paramter);
-    Task<TResult> ExecuteAsync(TParamter paramter, CancellationToken cancellationToken = default);
+    ValueTask<bool> CanExecuteAsync(TParameter paramter);
+    Task<TResult> ExecuteAsync(TParameter paramter, CancellationToken cancellationToken = default);
 }
 
 public abstract class UseCase<TParamter, TResult> :
