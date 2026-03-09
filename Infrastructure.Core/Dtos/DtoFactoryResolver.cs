@@ -397,6 +397,21 @@ public class DtoFactoryResolver
         return itemsCollection;
     }
 
+    private static MethodInfo convertToEntitiesMethod = typeof(DtoFactoryResolver)
+        .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(m =>
+                m.Name == nameof(ConvertToEntities) &&
+                m.IsGenericMethodDefinition &&
+                m.GetGenericArguments().Length == 1 &&
+                m.GetParameters().Length == 2);
+
+    public IEnumerable<IEntity> ConvertToEntities(IEnumerable<IDto> dtos, IEnumerable<IEntity> entities, Type entityType)
+    {
+        return (IEnumerable<IEntity>)convertToEntitiesMethod
+            .MakeGenericMethod(entityType)
+            .Invoke(this, [dtos, entities]);
+    }
+
     public ICollection<TEntity> ConvertToEntities<TEntity>(IEnumerable<IDto> dtos, ICollection<TEntity> entities = null)
         where TEntity : class, IEntity
     {

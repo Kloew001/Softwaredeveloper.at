@@ -245,14 +245,10 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     throw new Exception($"Target property {propertyMap.TargetProperty.Name} must implement ICollection<{entityType.Name}>");
                 }
 
-                var convertMethod = typeof(DtoFactoryResolver)
-                    .GetMethod(nameof(DtoFactoryResolver.ConvertToEntities))!
-                    .MakeGenericMethod(entityType);
+                var dtos = sourceValue as IEnumerable<IDto>;
+                var entities = targetValue as IEnumerable<IEntity>;
 
-                var entities = convertMethod.Invoke(
-                    _factoryResolver,
-                    [sourceValue, targetValue]
-                );
+                entities = _factoryResolver.ConvertToEntities(dtos, entities, entityType);
 
                 propertyMap.TargetProperty
                     .SetValue(target, entities);
