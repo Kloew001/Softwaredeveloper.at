@@ -246,9 +246,8 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                 }
 
                 var dtos = sourceValue as IEnumerable<IDto>;
-                var entities = targetValue as IEnumerable<IEntity>;
 
-                entities = _factoryResolver.ConvertToEntities(dtos, entities, entityType);
+                var entities = _factoryResolver.ConvertToEntities(dtos, targetValue, entityType);
 
                 propertyMap.TargetProperty
                     .SetValue(target, entities);

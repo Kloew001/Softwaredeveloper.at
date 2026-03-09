@@ -6,10 +6,10 @@ public class PersonDto : Dto
     public string FirstName { get; set; }
     public string LastName { get; set; }
 
-    public IEnumerable<AdressDto> Adresses { get; set; }
+    public IEnumerable<AddressDto> Addresses { get; set; }
 }
 
-public class AdressDto : Dto
+public class AddressDto : Dto
 {
     public bool IsMain { get; set; }
     public string Street { get; set; }

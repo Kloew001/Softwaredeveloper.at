@@ -405,9 +405,9 @@ public class DtoFactoryResolver
                 m.GetGenericArguments().Length == 1 &&
                 m.GetParameters().Length == 2);
 
-    public IEnumerable<IEntity> ConvertToEntities(IEnumerable<IDto> dtos, IEnumerable<IEntity> entities, Type entityType)
+    public object ConvertToEntities(IEnumerable<IDto> dtos, object entities, Type entityType)
     {
-        return (IEnumerable<IEntity>)convertToEntitiesMethod
+        return convertToEntitiesMethod
             .MakeGenericMethod(entityType)
             .Invoke(this, [dtos, entities]);
     }

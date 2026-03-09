@@ -38,16 +38,16 @@ public class PersonDataSeed : IDataSeed
 
                     //Random get DemoDataHelper.Adressen und create adress
 
-                    p.Adresses = new List<Adress>
+                    p.Addresses = new List<Address>
                     {
-                        new Adress
+                        new Address
                         {
                             IsMain = true,
                             Street = DemoDataHelper.Adressen[i].Street,
                             City = DemoDataHelper.Adressen[i].City,
                             ZipCode = DemoDataHelper.Adressen[i].ZipCode
                         },
-                        new Adress
+                        new Address
                         {
                             IsMain = false,
                             Street = DemoDataHelper.Adressen[i+5].Street,
