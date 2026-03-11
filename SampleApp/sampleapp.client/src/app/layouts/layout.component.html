@@ -1,8 +1,6 @@
-<div fxLayout="column"
-  fxLayoutAlign="space-between stretch"
-  fxFill>
+<div class="layout-shell">
   <mat-toolbar #headerToolbar>
-    <div fxLayout="row" fxFill fxLayoutAlign="space-between center">
+    <div class="toolbar-row">
       @if (useSidebar && sidenav?.mode === 'over') {
         <button mat-icon-button
           (click)="sidenav.toggle()"
@@ -17,24 +15,21 @@
       }
 
       <span [routerLink]="'/'"
-        style="cursor: pointer;"
-        fxLayout="row"
-        fxLayoutAlign="start center"
-        fxLayoutGap="2">
+        class="app-link">
         <img src='/assets/logo.png'
-          style="width: 50px;"/>
+          class="app-logo"/>
           <!--<mat-icon svgIcon="app-logo">
         </mat-icon>-->
         <span class="apptitle">
           {{appTitle | async}}
         </span>
       </span>
-      <div fxFlex></div>
+      <div class="toolbar-spacer"></div>
     </div>
   </mat-toolbar>
 
   @if(useSidebar){
-    <div fxFlex>
+    <div class="layout-main layout-main--with-sidebar">
       <mat-sidenav-container autosize>
         <mat-sidenav #sidenav="matSidenav">
           <mat-nav-list>
@@ -57,16 +52,14 @@
           </mat-nav-list>
         </mat-sidenav>
         <mat-sidenav-content>
-          <div fxLayout="column"
-            fxLayoutAlign="space-between stretch"
-            fxFill>
+          <div class="layout-content">
           <!-- Body ------------------------------------------------------------------------->
-          <div id="main-content-container" fxFlex>
+          <div id="main-content-container" class="layout-body">
             <router-outlet></router-outlet>
           </div>
           <!-- Footer ------------------------------------------------------------------------->
-          <div fxFlex="none" id="footerToolbar">
-            <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
+          <div id="footerToolbar">
+            <span class="layout-footer-content">{{layoutFooterText | async}}</span>
           </div>
         </div>
       </mat-sidenav-content>
@@ -75,15 +68,18 @@
 }
 @else{
 
+<div class="layout-main layout-main--no-sidebar">
+
 <!-- Body ------------------------------------------------------------------------->
-<div id="main-content-container" fxFlex>
+<div id="main-content-container" class="layout-body">
   <router-outlet></router-outlet>
 </div>
 
 <!-- Footer ------------------------------------------------------------------------->
-<div fxFlex="none" id="footerToolbar">
-  <span fxFlex fxLayoutAlign="center center">{{layoutFooterText | async}}</span>
+<div id="footerToolbar">
+  <span class="layout-footer-content">{{layoutFooterText | async}}</span>
 </div>
+ </div>
 }
 
 </div>

@@ -9,7 +9,6 @@ import { EnumMetadataToArrayPipe, EnumToArrayPipe } from './pipes/enumToArrayPip
 
 import { MaterialModule } from './material.module';
 import { NgLetModule } from 'ng-let';
-import { FlexLayoutModule } from '@angular/flex-layout';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { AsyncButtonComponent } from './components/async-button-component';
 import { ErrorInterceptor } from './interceptor/error.interceptor';
@@ -32,7 +31,6 @@ import { JwtInterceptor } from './interceptor/jwt.interceptor';
 
     NgLetModule,
 
-    FlexLayoutModule,
     MaterialModule
   ],
   exports: [
@@ -47,7 +45,6 @@ import { JwtInterceptor } from './interceptor/jwt.interceptor';
     AsyncButtonComponent,
     IconSnackBarComponent,
 
-    FlexLayoutModule,
     MaterialModule
   ],
   providers: [

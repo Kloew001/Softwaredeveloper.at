@@ -1,8 +1,68 @@
 
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.layout-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 #headerToolbar {
   position: fixed;
   top: 0;
+  inset-inline: 0;
   z-index: 2;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.app-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-logo {
+  width: 50px;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.layout-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 64px;
+}
+
+.layout-content,
+.layout-main--no-sidebar {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-body {
+  flex: 1 1 auto;
+}
+
+.layout-footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 #footerToolbar {
@@ -27,7 +87,8 @@ mat-sidenav {
 }
 
 mat-sidenav-container {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   /*  height: calc(100vh - 65px);*/
 }
 
