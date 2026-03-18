@@ -43,8 +43,7 @@ public partial class BinaryContentDataSplit : Migration
         migrationBuilder.Sql("""
             INSERT INTO core."BinaryContentData" ("Id", "BinaryContentId", "Bytes", "ExtractedText")
             SELECT bc."Id", bc."Id", bc."Content", bc."ExtractedText"
-            FROM core."BinaryContent" bc
-            WHERE bc."Content" IS NOT NULL OR bc."ExtractedText" IS NOT NULL;
+            FROM core."BinaryContent" bc;
             """);
 
         migrationBuilder.DropColumn(

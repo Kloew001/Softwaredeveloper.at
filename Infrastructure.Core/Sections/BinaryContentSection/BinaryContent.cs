@@ -12,6 +12,14 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSecti
 [Table(nameof(BinaryContent), Schema = "core")]
 public class BinaryContent : ChangeTrackedEntity, IReferencedToEntity
 {
+    public BinaryContent()
+    {
+        Data = new BinaryContentData
+        {
+            BinaryContent = this,
+        };
+    }
+
     public string Name { get; set; }
     public string Description { get; set; }
 
@@ -53,7 +61,12 @@ public class BinaryContentConfiguration : IEntityTypeConfiguration<BinaryContent
             .HasOne(_ => _.Data)
             .WithOne(_ => _.BinaryContent)
             .HasForeignKey<BinaryContentData>(_ => _.BinaryContentId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .Navigation(_ => _.Data)
+            .IsRequired();
     }
 }
 
