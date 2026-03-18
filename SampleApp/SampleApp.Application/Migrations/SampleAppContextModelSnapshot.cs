@@ -393,9 +393,6 @@ namespace SampleApp.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("Content")
-                        .HasColumnType("bytea");
-
                     b.Property<long>("ContentSize")
                         .HasColumnType("bigint");
 
@@ -414,9 +411,6 @@ namespace SampleApp.Application.Migrations
                         .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExtractedText")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ExtractionHandledAt")
@@ -447,6 +441,29 @@ namespace SampleApp.Application.Migrations
                     b.HasIndex("ReferenceId", "ReferenceType");
 
                     b.ToTable("BinaryContent", "core");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContentData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BinaryContentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Bytes")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BinaryContentId")
+                        .IsUnique();
+
+                    b.ToTable("BinaryContentData", "core");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntry", b =>
@@ -1148,9 +1165,28 @@ namespace SampleApp.Application.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContentData", "Data")
+                        .WithOne("BinaryContent")
+                        .HasForeignKey("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContentData", "BinaryContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CreatedBy");
 
+                    b.Navigation("Data");
+
                     b.Navigation("ModifiedBy");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContentData", b =>
+                {
+                    b.HasOne("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContent", "BinaryContent")
+                        .WithOne("Data")
+                        .HasForeignKey("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.BinaryContentSection.BinaryContentData", "BinaryContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BinaryContent");
                 });
 
             modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChronologyEntries.ChronologyEntry", b =>

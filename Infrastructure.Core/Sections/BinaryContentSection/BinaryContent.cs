@@ -22,10 +22,20 @@ public class BinaryContent : ChangeTrackedEntity, IReferencedToEntity
 
     public string MimeType { get; set; }
 
-    public byte[] Content { get; set; }
     public long ContentSize { get; set; }
 
+    public virtual BinaryContentData Data { get; set; }
+
     public DateTime? ExtractionHandledAt { get; set; }
+}
+
+[Table(nameof(BinaryContentData), Schema = "core")]
+public class BinaryContentData : Entity
+{
+    public Guid BinaryContentId { get; set; }
+    public virtual BinaryContent BinaryContent { get; set; }
+
+    public byte[] Bytes { get; set; }
     public string ExtractedText { get; set; }
 }
 
@@ -38,6 +48,12 @@ public class BinaryContentConfiguration : IEntityTypeConfiguration<BinaryContent
             _.ReferenceId,
             _.ReferenceType
         });
+
+        builder
+            .HasOne(_ => _.Data)
+            .WithOne(_ => _.BinaryContent)
+            .HasForeignKey<BinaryContentData>(_ => _.BinaryContentId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -55,7 +71,13 @@ public static class BinaryContentExtensions
 
     public static void Fill(this BinaryContent binaryContent, byte[] content)
     {
-        binaryContent.Content = content;
+        binaryContent.Data ??= new BinaryContentData
+        {
+            BinaryContent = binaryContent,
+            BinaryContentId = binaryContent.Id,
+        };
+
+        binaryContent.Data.Bytes = content;
         binaryContent.ContentSize = content.Length;
     }
 }

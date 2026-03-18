@@ -33,7 +33,14 @@ public class BinaryContentService
 
         referencedEntity.BinaryContent.Name = name;
         referencedEntity.BinaryContent.MimeType = mimeType ?? MimeTypes.GetMimeType(name);
-        referencedEntity.BinaryContent.Content = content;
+
+        referencedEntity.BinaryContent.Data ??= new BinaryContentData
+        {
+            BinaryContent = referencedEntity.BinaryContent,
+            BinaryContentId = referencedEntity.BinaryContent.Id,
+        };
+
+        referencedEntity.BinaryContent.Data.Bytes = content;
         referencedEntity.BinaryContent.ContentSize = content.Length;
     }
 }

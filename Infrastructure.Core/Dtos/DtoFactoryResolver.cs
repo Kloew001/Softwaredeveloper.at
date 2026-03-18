@@ -337,6 +337,11 @@ public class DtoFactoryResolver
     private TDto CreateDto<TDto>(IDtoFactory dtoFactory, IEntity entity)
         where TDto : IDto
     {
+        if (typeof(TDto).IsAbstract)
+        {
+            throw new InvalidOperationException($"Konnte keinen konkreten DTO-Typ für {typeof(TDto)} finden. Bitte erstelle eine spezifische Factory.");
+        }
+
         var key = (dtoFactory.GetType(), entity.GetType());
 
         var activator = _dtoActivatorCache.GetOrAdd(key, k =>

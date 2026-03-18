@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Authorization;
 
@@ -17,6 +18,7 @@ public abstract class BaseAuthenticateController : BaseApiController
 
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicy.Sliding60per1Min)]
     public Task<Results<
         Ok<AccessTokenResponse>,
         EmptyHttpResult,

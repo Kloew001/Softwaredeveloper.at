@@ -74,8 +74,7 @@ public abstract class ApplicationUserDataSeed : IDataSeed
 
             foreach (var role in UserRoleType.GetAll())
             {
-                await EnsureUserAsync(Guid.NewGuid(),
-                                   "Test", role.DisplayName, role.Name, pw, [role.Name]);
+                await EnsureUserAsync(Guid.NewGuid(), "Test", role.DisplayName, role.Name, pw, [role.Name]);
             }
         }
     }

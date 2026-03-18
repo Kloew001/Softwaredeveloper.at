@@ -52,7 +52,9 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 
             var context = scope.ServiceProvider.GetService<IDbContext>();
 
-            var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id);
+            var binaryContent = await context.Set<BinaryContent>()
+                .Include(_ => _.Data)
+                .SingleOrDefaultAsync(_ => _.Id == id, ct);
 
             var textExtractor = scope.ServiceProvider.GetKeyedService<ITextExtractor>(binaryContent.MimeType);
 
@@ -64,7 +66,13 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
             binaryContent.ExtractionHandledAt = transactionDateTime;
 
             if (textExtractor != null)
-                binaryContent.ExtractedText = textExtractor.ExtractText(binaryContent.Content);
+            {
+                var contentBytes = binaryContent.Data?.Bytes;
+                if (contentBytes != null)
+                {
+                    binaryContent.Data.ExtractedText = textExtractor.ExtractText(contentBytes);
+                }
+            }
 
             await context.SaveChangesAsync(ct);
         }
@@ -78,7 +86,7 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 
             var context = errorScope.ServiceProvider.GetService<IDbContext>();
 
-            var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id);
+            var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id, ct);
             binaryContent.ExtractionHandledAt = _dateTimeService.Now();
 
             await context.SaveChangesAsync(ct);
