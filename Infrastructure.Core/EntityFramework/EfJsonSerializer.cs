@@ -13,11 +13,12 @@ public static class EfJsonSerializer
     public static async Task<string> Serialize(
         DbContext context, 
         Entity entity, 
-        int maxDepth = 10)
+        int maxDepth = 10,
+        JsonSerializerOptions options = null)
     {
         var jsonNode = await BuildTreeAsync(context, entity, maxDepth);
 
-        var options = new JsonSerializerOptions
+        options ??= new JsonSerializerOptions
         {
             WriteIndented = true,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
