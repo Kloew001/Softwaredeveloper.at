@@ -10,7 +10,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 
 public static class EfJsonSerializer
 {
-    public static async Task<string> Serializer(
+    public static async Task<string> Serialize(
         DbContext context, 
         Entity entity, 
         int maxDepth = 10)
