@@ -35,7 +35,7 @@ public class PersonController(
 
     [HttpPost]
     public async Task<Guid> Create(PersonDto dto)
-         => (await _service.CreateAsync(dto)).Id.Value;
+         => await _service.CreateAsync(dto);
 
     [HttpPost("quickcreate")]
     public async Task<Guid> QuickCreate(CancellationToken cancellationToken)
@@ -45,13 +45,11 @@ public class PersonController(
     }
 
     [HttpPost]
-    public Task<PersonDto> Update(PersonDto dto)
+    public Task Update(PersonDto dto)
         => _service.UpdateAsync(dto);
 
     [HttpPost]
-    [AllowAnonymous]
-    public async Task TestException([FromServices] IDbContext context)
-    {
-        throw new Exception("Test Exception");
-    }
+    public Task Delte(Guid id)
+        => _service.DeleteAsync(id);
+
 }

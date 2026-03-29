@@ -257,7 +257,7 @@ public class EntityService<TEntity>
         }
     }
 
-    public virtual async Task<TDto> CreateAsync<TDto>(TDto dto)
+    public virtual async Task<Guid> CreateAsync<TDto>(TDto dto)
         where TDto : Dto
     {
         var entity = await CreateAsync((e) =>
@@ -270,7 +270,7 @@ public class EntityService<TEntity>
 
         await SaveAsync(entity);
 
-        return _dtoFactoryResolver.ConvertToDto<TDto>(entity);
+        return entity.Id;
     }
 
     public virtual async Task<TEntity> CreateAsync(Func<TEntity, ValueTask> modifyEntity = null)
@@ -302,13 +302,12 @@ public class EntityService<TEntity>
         return Task.CompletedTask;
     }
 
-    public virtual async Task<TDto> QuickUpdateAsync<TDto>(TDto dto)
+    public virtual async Task QuickUpdateAsync<TDto>(TDto dto)
         where TDto : Dto
     {
         using (_sectionManager.CreateSectionScope<SuppressValidationSection>())
         {
-            var updatedDto = await UpdateAsync(dto);
-            return updatedDto;
+            await UpdateAsync(dto);
         }
     }
 
@@ -321,7 +320,7 @@ public class EntityService<TEntity>
         }
     }
 
-    public virtual async Task<TDto> UpdateAsync<TDto>(TDto dto)
+    public virtual async Task UpdateAsync<TDto>(TDto dto)
         where TDto : Dto
     {
         var entity = await GetSingleByIdAsync(dto.Id.Value) 
@@ -332,8 +331,6 @@ public class EntityService<TEntity>
         entity = await UpdateAsync(entity);
 
         await SaveAsync(entity);
-
-        return _dtoFactoryResolver.ConvertToDto<TDto>(entity);
     }
 
     public virtual async Task<TEntity> UpdateAsync(TEntity entity)
@@ -359,16 +356,6 @@ public class EntityService<TEntity>
         return Task.CompletedTask;
     }
 
-    public virtual async Task DeleteAsync(Guid id)
-    {
-        var entity = await GetSingleByIdAsync(id)
-            ?? throw new Exception("Entity not found");
-
-        await DeleteAsync(entity);
-
-        await SaveAsync(entity);
-    }
-
     public async Task SaveAsync(TEntity entity)
     {
         if (!_sectionManager.IsActive<SuppressSaveChangesSection>())
@@ -385,6 +372,24 @@ public class EntityService<TEntity>
     protected virtual Task OnSaveAsync(TEntity entity)
     {
         return Task.CompletedTask;
+    }
+
+    public virtual async Task DeleteAsync(Guid id)
+    {
+        var entity = await GetSingleByIdAsync(id)
+            ?? throw new Exception("Entity not found");
+
+        await DeleteAsync(entity);
+
+        await SaveAsync(entity);
+    }
+
+    public virtual async Task DeleteAsync(IEnumerable<TEntity> entities)
+    {
+        foreach (var entity in entities)
+        {
+            await DeleteAsync(entity);
+        }
     }
 
     public virtual async Task DeleteAsync(TEntity entity)

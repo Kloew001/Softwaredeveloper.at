@@ -1,8 +1,8 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
-public class DeleteUseCase<TEntity, TDto> : UseCase<TDto, bool>
+public abstract class DeleteUseCase<TEntity, TDto> : UseCase<TDto, bool>
     where TEntity : Entity
-   where TDto : Dto, new()
+    where TDto : Dto, new()
 {
     private readonly EntityService<TEntity> _service;
 

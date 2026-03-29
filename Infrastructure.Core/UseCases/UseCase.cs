@@ -36,6 +36,16 @@ public interface IUseCase<TParameter, TResult> : IUseCase
     Task<TResult> ExecuteAsync(TParameter paramter, CancellationToken cancellationToken = default);
 }
 
+public abstract class UseCase : UseCase<uint, bool>
+{
+    protected override Task<bool> OnExecute(uint paramter, CancellationToken cancellationToken)
+    {
+        return OnExecute(cancellationToken);
+    }
+
+    protected abstract Task<bool> OnExecute(CancellationToken cancellationToken);
+}
+
 public abstract class UseCase<TParamter, TResult> :
     IUseCase<TParamter, TResult>
     where TParamter : new()
@@ -61,13 +71,16 @@ public abstract class UseCase<TParamter, TResult> :
         return result;
     }
 
-    private TParamter CreateParamter(object paramter)
+    private static TParamter CreateParamter(object paramter)
     {
         if (paramter == null)
             return default;
 
         if (paramter is TParamter paramterParamter)
             return paramterParamter;
+
+        if(paramter.GetType().IsPrimitive || paramter is string)
+            return (TParamter)Convert.ChangeType(paramter, typeof(TParamter));
 
         var paramterJson = JsonConvert.SerializeObject(paramter);
         var obj = JsonConvert.DeserializeObject<TParamter>(paramterJson);

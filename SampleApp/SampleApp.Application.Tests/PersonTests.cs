@@ -25,6 +25,6 @@ public class PersonTests : SampleAppBaseTest
         persons = await personService.GetAllAsync();
 
         Assert.That(persons.Count() == countBefore + 1);
-        Assert.That(persons.Any(_ => _.Id == personId.Id));
+        Assert.That(persons.Any(_ => _.Id == personId));
     }
 }

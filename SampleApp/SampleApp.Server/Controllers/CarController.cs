@@ -1,6 +1,5 @@
 using SampleApp.Application.Sections.CarSection;
 
-using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace SampleApp.Server.Controllers;
@@ -32,9 +31,9 @@ public class CarController(CarService service) : BaseApiController
 
     [HttpPost]
     public async Task<Guid> Create(CarDto dto)
-         => (await _service.CreateAsync(dto)).Id.Value;
+         => await _service.CreateAsync(dto);
 
     [HttpPost]
-    public Task<CarDto> Update(CarDto dto)
+    public Task Update(CarDto dto)
         => _service.UpdateAsync(dto);
 }

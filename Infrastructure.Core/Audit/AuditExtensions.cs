@@ -13,7 +13,7 @@ public static class AuditExtensions
 
         if (entityType == null)
             return;
-
+        
         var entityAudit = context.As<IDbContext>()
                 .GetType()
                 .GetMethod(nameof(IDbContext.CreateEntity))
@@ -28,15 +28,15 @@ public static class AuditExtensions
         entityAudit.AuditId = auditableEntity.Id;
         entityAudit.Audit = auditableEntity;
 
-        entityAudit.ValidFrom = now;
+        entityAudit.AuditValidFrom = now;
 
         var lastAudit = context.GetDbSetByType<IEntityAudit>(entityAuditType)
             .Where(_ => _.AuditId == auditableEntity.Id)
-            .OrderBy(_ => _.ValidFrom)
+            .OrderBy(_ => _.AuditValidFrom)
             .LastOrDefault();
 
         if (lastAudit != null)
-            lastAudit.ValidTo = now;
+            lastAudit.AuditValidTo = now;
 
         entityAudit.AuditAction = auditAction;
 

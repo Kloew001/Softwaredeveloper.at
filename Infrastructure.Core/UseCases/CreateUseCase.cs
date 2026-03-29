@@ -1,10 +1,10 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
-public class CreateUseCase<TEntity, TDto> : UseCase<TDto, TDto>
+public abstract class CreateUseCase<TEntity, TDto> : UseCase<TDto, Guid>
     where TEntity : Entity
     where TDto : Dto, new()
 {
-    private readonly EntityService<TEntity> _service;
+    protected readonly EntityService<TEntity> _service;
 
     public CreateUseCase(EntityService<TEntity> service)
     {
@@ -19,8 +19,23 @@ public class CreateUseCase<TEntity, TDto> : UseCase<TDto, TDto>
         return await _service.CanCreateAsync(dto);
     }
 
-    protected override async Task<TDto> OnExecute(TDto dto, CancellationToken cancellationToken)
+    protected override async Task<Guid> OnExecute(TDto dto, CancellationToken cancellationToken)
     {
         return await _service.CreateAsync(dto);
+    }
+}
+
+public abstract class QuickCreateUseCase<TEntity, TDto> : CreateUseCase<TEntity, TDto>
+    where TEntity : Entity
+    where TDto : Dto, new()
+{
+    public QuickCreateUseCase(EntityService<TEntity> service)
+        : base(service)
+    {
+    }
+
+    protected override async Task<Guid> OnExecute(TDto dto, CancellationToken cancellationToken)
+    {
+        return await _service.QuickCreateAsync(dto);
     }
 }

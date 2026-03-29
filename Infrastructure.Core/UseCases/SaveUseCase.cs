@@ -1,6 +1,6 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
 
-public class SaveUseCase<TEntity, TDto> : UseCase<TDto, TDto>
+public abstract class SaveUseCase<TEntity, TDto> : UseCase<TDto, Guid>
      where TEntity : Entity
     where TDto : Dto, new()
 {
@@ -26,7 +26,7 @@ public class SaveUseCase<TEntity, TDto> : UseCase<TDto, TDto>
         }
     }
 
-    protected override async Task<TDto> OnExecute(TDto dto, CancellationToken cancellationToken)
+    protected override async Task<Guid> OnExecute(TDto dto, CancellationToken cancellationToken)
     {
         if (ShouldCreate(dto))
         {
@@ -34,7 +34,8 @@ public class SaveUseCase<TEntity, TDto> : UseCase<TDto, TDto>
         }
         else
         {
-            return await _service.UpdateAsync(dto);
+            await _service.UpdateAsync(dto);
+            return dto.Id.Value;
         }
     }
 

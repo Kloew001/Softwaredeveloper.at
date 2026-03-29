@@ -26,7 +26,7 @@ public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTri
     protected override HostedServicesConfiguration GetConfiguration()
     {
         var config = base.GetConfiguration();
-    
+
         config.BatchSize ??= 10;
         config.ExecuteMode ??= HostedServicesExecuteModeType.Trigger;
 
@@ -49,7 +49,7 @@ public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTri
         var parallelTasks = new List<Task>
         {
             asyncTaskExecutor.ExecuteNextOperationsAsync(_configuration.BatchSize.Value, cancellationToken),
-            asyncTaskExecutor.Delete(DateTime.Now.Subtract(TimeSpan.FromDays(100))),
+            asyncTaskExecutor.Delete(DateTime.Today.AddDays(-100)),
             asyncTaskExecutor.HandleTimeout()
         };
 
@@ -60,10 +60,15 @@ public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTri
 [ScopedDependency]
 public class AsyncTaskExecutor
 {
+    private const int _defaultMaxRetryCount = 0;
+    private const int _deleteBatchSize = 1000;
+
     private readonly ILogger<AsyncTaskExecutor> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IDbContext _context;
     private readonly IDateTimeService _dateTimeService;
+
+    private SemaphoreSlim _semaphore = null;
 
     public AsyncTaskExecutor(
         IServiceProvider serviceProvider,
@@ -87,8 +92,6 @@ public class AsyncTaskExecutor
 
         return handlerTypes;
     }
-
-    private SemaphoreSlim _semaphore = null;
 
     public async Task ExecuteNextOperationsAsync(int batchSize = 10, CancellationToken cancellationToken = default)
     {
@@ -384,8 +387,6 @@ public class AsyncTaskExecutor
         return await EnqueueAsync(asyncTaskOperationHandler, sortIndex, delay, retryCount: retryCount, priority: priority);
     }
 
-    private const int _defaultMaxRetryCount = 0;
-
     public async Task<IEnumerable<AsyncTaskOperation>> EnqueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler, int sortIndex = 0, TimeSpan? delay = null, int? retryCount = null, AsyncTaskOperationPriority priority = AsyncTaskOperationPriority.Medium)
     {
         if (await HasAsyncTaskInQueueAsync(asyncTaskOperationHandler))
@@ -441,14 +442,16 @@ public class AsyncTaskExecutor
         using var scope = _serviceProvider.CreateScope();
 
         var context = scope.ServiceProvider.GetService<IDbContext>();
+        int deletedRows;
 
-        var query = context.Set<AsyncTaskOperation>()
-            .Where(_ => _.CreatedAt < olderThen);
-
-        if (await query.AnyAsync())
+        do
         {
-            await query.ExecuteDeleteAsync();
+            deletedRows = await context.Set<AsyncTaskOperation>()
+                .Where(_ => _.CreatedAt < olderThen)
+                .Take(_deleteBatchSize)
+                .ExecuteDeleteAsync();
         }
+        while (deletedRows == _deleteBatchSize);
     }
 
     private async Task<bool> HasAsyncTaskInQueueAsync(IAsyncTaskOperationHandler asyncTaskOperationHandler)

@@ -325,7 +325,7 @@ public class DtoFactoryResolver
 
         if (stopwatch.ElapsedMilliseconds > 100)
         {
-            _logger.LogWarning("Converted entity of type {EntityType} to DTO of type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of 500 ms. Consider optimizing the DTO factory or caching the results.", entity.GetType().FullName, typeof(TDto).FullName, stopwatch.ElapsedMilliseconds);
+            _logger.LogWarning("Converted entity of type {EntityType} to DTO of type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of 100 ms. Consider optimizing the DTO factory or caching the results.", entity.GetType().Name, typeof(TDto).Name, stopwatch.ElapsedMilliseconds);
         }
 
         return dto;

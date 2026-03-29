@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
-using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SupportValidDate;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Audit;
 
@@ -18,15 +17,17 @@ public interface IAuditableEntity<TEntityAudit> : IAuditableEntity
     IEnumerable<IEntityAudit> IAuditableEntity.Audits => Audits.OfType<IEntityAudit>();
 }
 
-public interface IEntityAudit : ISupportValidDateRange
+public interface IEntityAudit
 {
     public Guid Id { get; set; }
 
     public Guid AuditId { get; set; }
     IEntity Audit { get; set; }
 
+    DateTime AuditValidFrom { get; set; }
+    DateTime? AuditValidTo { get; set; }
+
     string TransactionId { get; set; }
-    public Guid ModifiedById { get; set; }
     AuditActionType AuditAction { get; set; }
     string CallingMethod { get; set; }
     string MachineName { get; set; }
@@ -65,8 +66,8 @@ public abstract class EntityAudit<TEntity> : ChangeTrackedEntity, IEntityAudit<T
     public virtual TEntity Audit { get; set; }
 
     public string TransactionId { get; set; }
-    public DateTime? ValidFrom { get; set; }
-    public DateTime? ValidTo { get; set; }
+    public DateTime AuditValidFrom { get; set; }
+    public DateTime? AuditValidTo { get; set; }
 
     public AuditActionType AuditAction { get; set; }
     public string CallingMethod { get; set; }

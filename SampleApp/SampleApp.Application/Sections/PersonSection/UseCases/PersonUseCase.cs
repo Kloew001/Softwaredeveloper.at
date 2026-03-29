@@ -11,21 +11,16 @@ public class CreatePersonDto : Dto
 public class QuickCreatePersonUseCase(
     PersonService personService,
     AccessConditionService accessConditionService
-) : UseCase<CreatePersonDto, Guid>
+) : QuickCreateUseCase<Person, CreatePersonDto>(personService)
 {
     private readonly PersonService _personService = personService;
     private readonly AccessConditionService _accessConditionService = accessConditionService;
-
+    
     public override async ValueTask<bool> IsAvailableAsync()
     {
-        return await _personService.CanCreateAsync() &&
-            await _accessConditionService.IsAdminAsync();
-    }
+        if (await base.IsAvailableAsync() == false)
+            return false;
 
-    protected override async Task<Guid> OnExecute(CreatePersonDto dto, CancellationToken cancellationToken)
-    {
-        var personId = await _personService.QuickCreateAsync(dto);
-
-        return personId;
+        return await _accessConditionService.IsAdminAsync();
     }
 }

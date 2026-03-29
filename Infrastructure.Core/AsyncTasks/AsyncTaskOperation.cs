@@ -61,5 +61,11 @@ public class AsyncTaskOperationConfiguration : IEntityTypeConfiguration<AsyncTas
             {
                 c.OperationKey
             });
+
+        builder
+            .HasIndex(c => new
+            {
+                c.CreatedAt
+            });
     }
 }
