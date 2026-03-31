@@ -39,104 +39,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
         var sourceType = source.GetType();
         var targetType = target.GetType();
 
-        var cacheKey = $"{nameof(SimpleNameMapping)}_{nameof(sourceType.FullName)}_{targetType.FullName}";
-
-        if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
-        {
-            var isDtoToEntity =
-                     typeof(Dto).IsAssignableFrom(sourceType) &&
-                     typeof(Entity).IsAssignableFrom(targetType);
-
-            var isEntityToDto =
-                     typeof(Entity).IsAssignableFrom(sourceType) &&
-                     typeof(Dto).IsAssignableFrom(targetType);
-
-            propertyMaps = new List<PropertyMap>();
-
-            var targetProperties = targetType.GetProperties().ToList();
-            var sourceProperties = sourceType.GetProperties().ToList();
-
-            targetProperties
-            .ForEach(targetProperty =>
-            {
-                if (targetProperty.CanWrite == false)
-                    return;
-
-                if (targetProperty.GetCustomAttribute<DtoFactoryIgnoreAttribute>().IsNotNull())
-                    return;
-
-                var sourceProperty = sourceType.GetProperty(targetProperty.Name);
-
-                if (sourceProperty != null)
-                {
-                    propertyMaps.Add(new PropertyMap
-                    {
-                        TargetProperty = targetProperty,
-                        SourceProperties = new[] { sourceProperty.Name }
-                    });
-                }
-
-                if (AutoSubPropertyMapping &&
-                    sourceProperty == null && isEntityToDto)
-                {
-                    //PersonName -> Person.Name
-                    var sourcePropertyFirstLevel = sourceProperties
-                        .FirstOrDefault(_ => targetProperty.Name.StartsWith(_.Name));
-
-                    if (sourcePropertyFirstLevel != null)
-                    {
-                        var secondLevelPropertyName = targetProperty.Name.Substring(sourcePropertyFirstLevel.Name.Length);
-
-                        var sourcePropertySecoundLevel = sourcePropertyFirstLevel.PropertyType.GetProperty(secondLevelPropertyName);
-
-                        if (targetProperty.PropertyType == sourcePropertySecoundLevel?.PropertyType ||
-                            targetProperty.Name == "Id")
-                        {
-                            propertyMaps.Add(new PropertyMap
-                            {
-                                TargetProperty = targetProperty,
-                                SourceProperties = new[]
-                                {
-                                    sourcePropertyFirstLevel.Name,
-                                    sourcePropertySecoundLevel.Name
-                                }
-                            });
-                        }
-                        else
-                        {
-
-                        }
-                    }
-                }
-            });
-
-            //if (typeof(IMultiLingualEntity<>).IsAssignableFrom(sourceType))
-            //{
-            //    var translationType =
-            //        sourceType
-            //        .GetInterfaces()
-            //        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMultiLingualEntity<>))
-            //        .SelectMany(i => i.GetGenericArguments())
-            //        .Single();
-
-            //    targetProperties
-            //        .ForEach(targetProperty =>
-            //        {
-            //            var sourceProperty = translationType.GetProperty(targetProperty.Name);
-
-            //            if (sourceProperty != null)
-            //            {
-            //                propertyMaps.Add(new PropertyMap
-            //                {
-            //                    TargetProperty = targetProperty,
-            //                    SourceProperties = new[] { sourceProperty.Name }
-            //                });
-            //            }
-            //        });
-            //}
-
-            _memoryCache.Set(cacheKey, propertyMaps);
-        }
+        var propertyMaps = ResolvePropertyMaps(sourceType, targetType);
 
         foreach (var propertyMap in propertyMaps)
         {
@@ -155,7 +58,7 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                 propertyMap.TargetProperty.PropertyType == typeof(string))
             {
                 propertyMap.TargetProperty
-                    .SetValue(target, sourceValue);
+                    .SetValue(target, GetSimpleValue( propertyMap.TargetProperty, sourceValue));
             }
             else if (propertyMap.TargetProperty.PropertyType.IsExtendableEnum())
             {
@@ -255,6 +158,134 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
         }
 
         return target;
+    }
+
+    private object GetSimpleValue(PropertyInfo targetProperty, object sourceValue)
+    {
+        if(targetProperty.PropertyType == sourceValue.GetType())
+        {
+            return sourceValue;
+        }
+
+        var targetType = Nullable.GetUnderlyingType(targetProperty.PropertyType) ?? targetProperty.PropertyType;
+
+        if (targetType.IsAssignableFrom(sourceValue.GetType()))
+        {
+            return sourceValue;
+        }
+        else if (targetType.IsEnum)
+        {
+            var enumValue = sourceValue is string s ? Enum.Parse(targetType, s, true) : Enum.ToObject(targetType, sourceValue);
+            return enumValue;
+        }
+        else
+        {
+            return Convert.ChangeType(sourceValue, targetType);
+        }
+    }
+
+    private List<PropertyMap> ResolvePropertyMaps(Type sourceType, Type targetType)
+    {
+        var cacheKey = $"{nameof(SimpleNameMapping)}_{nameof(sourceType.FullName)}_{targetType.FullName}";
+
+        if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
+        {
+            var isDtoToEntity =
+                     typeof(Dto).IsAssignableFrom(sourceType) &&
+                     typeof(Entity).IsAssignableFrom(targetType);
+
+            var isEntityToDto =
+                     typeof(Entity).IsAssignableFrom(sourceType) &&
+                     typeof(Dto).IsAssignableFrom(targetType);
+
+            propertyMaps = new List<PropertyMap>();
+
+            var targetProperties = targetType.GetProperties().ToList();
+            var sourceProperties = sourceType.GetProperties().ToList();
+
+            targetProperties
+            .ForEach(targetProperty =>
+            {
+                if (targetProperty.CanWrite == false)
+                    return;
+
+                if (targetProperty.GetCustomAttribute<DtoFactoryIgnoreAttribute>() != null)
+                    return;
+
+                var sourceProperty = sourceType.GetProperty(targetProperty.Name);
+
+                if (sourceProperty != null)
+                {
+                    propertyMaps.Add(new PropertyMap
+                    {
+                        TargetProperty = targetProperty,
+                        SourceProperties = new[] { sourceProperty.Name }
+                    });
+                }
+
+                if (AutoSubPropertyMapping &&
+                    sourceProperty == null && isEntityToDto)
+                {
+                    //PersonName -> Person.Name
+                    var sourcePropertyFirstLevel = sourceProperties
+                        .FirstOrDefault(_ => targetProperty.Name.StartsWith(_.Name));
+
+                    if (sourcePropertyFirstLevel != null)
+                    {
+                        var secondLevelPropertyName = targetProperty.Name.Substring(sourcePropertyFirstLevel.Name.Length);
+
+                        var sourcePropertySecoundLevel = sourcePropertyFirstLevel.PropertyType.GetProperty(secondLevelPropertyName);
+
+                        if (targetProperty.PropertyType == sourcePropertySecoundLevel?.PropertyType ||
+                            targetProperty.Name == "Id")
+                        {
+                            propertyMaps.Add(new PropertyMap
+                            {
+                                TargetProperty = targetProperty,
+                                SourceProperties = new[]
+                                {
+                                    sourcePropertyFirstLevel.Name,
+                                    sourcePropertySecoundLevel.Name
+                                }
+                            });
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                }
+            });
+
+            //if (typeof(IMultiLingualEntity<>).IsAssignableFrom(sourceType))
+            //{
+            //    var translationType =
+            //        sourceType
+            //        .GetInterfaces()
+            //        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMultiLingualEntity<>))
+            //        .SelectMany(i => i.GetGenericArguments())
+            //        .Single();
+
+            //    targetProperties
+            //        .ForEach(targetProperty =>
+            //        {
+            //            var sourceProperty = translationType.GetProperty(targetProperty.Name);
+
+            //            if (sourceProperty != null)
+            //            {
+            //                propertyMaps.Add(new PropertyMap
+            //                {
+            //                    TargetProperty = targetProperty,
+            //                    SourceProperties = new[] { sourceProperty.Name }
+            //                });
+            //            }
+            //        });
+            //}
+
+            _memoryCache.Set(cacheKey, propertyMaps);
+        }
+
+        return propertyMaps;
     }
 
     private static object ResolveSourceValue(object source, PropertyMap propertyMap)

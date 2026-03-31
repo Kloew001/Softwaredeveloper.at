@@ -1,7 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
-using System.Collections.Concurrent;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -54,12 +55,12 @@ public class DtoFactoryResolver
                         if (entityTypeGeneric.IsGenericParameter)
                             entityTypeGeneric = entityTypeGeneric.BaseType;
 
-                        if(Exists(dtoTypeGeneric, entityTypeGeneric))
+                        if (Exists(dtoTypeGeneric, entityTypeGeneric))
                         {
                             throw new InvalidOperationException($"Multiple DTO factories found for DTO type '{dtoTypeGeneric.FullName}' and entity type '{entityTypeGeneric.FullName}'.");
                         }
 
-                        _store = [.._store, new (dtoTypeGeneric, entityTypeGeneric, factoryTyp)];
+                        _store = [.. _store, new(dtoTypeGeneric, entityTypeGeneric, factoryTyp)];
                     }
                 }
             }
@@ -110,9 +111,9 @@ public class DtoFactoryResolver
     protected readonly ILogger<DtoFactoryResolver> _logger;
 
     public DtoFactoryResolver(
-        IServiceProvider serviceProvider, 
-        DtoFactoryTypeStore dtoFactoryResolver, 
-        IMemoryCache memoryCache, 
+        IServiceProvider serviceProvider,
+        DtoFactoryTypeStore dtoFactoryResolver,
+        IMemoryCache memoryCache,
         IDbContext dbContext,
         ILogger<DtoFactoryResolver> logger)
     {
@@ -170,7 +171,7 @@ public class DtoFactoryResolver
 
         // Nicht kompatibel
         //GetInheritanceDistance(typeof(string), typeof(CarDto))          // => null
-        
+
         if (requestedType == candidateType)
             return 0;
 
@@ -273,7 +274,7 @@ public class DtoFactoryResolver
     {
         if (entities == null)
             return null;
-        
+
         var stopwatch = Stopwatch.StartNew();
 
         var dtos = entities
@@ -283,7 +284,7 @@ public class DtoFactoryResolver
             })
             .ToList();
 
-        if(stopwatch.ElapsedMilliseconds > 1000)
+        if (stopwatch.ElapsedMilliseconds > 1000)
         {
             _logger.LogWarning("Converted {Count} entities to dtos in {ElapsedMilliseconds} ms, which is longer than the threshold of 1000 ms. Consider optimizing the DTO factories or caching the results.", entities.Count(), stopwatch.ElapsedMilliseconds);
         }
@@ -331,30 +332,32 @@ public class DtoFactoryResolver
         return dto;
     }
 
-    private static readonly ConcurrentDictionary<(Type factoryType, Type entityType), Func<object>> _dtoActivatorCache
+    private static readonly ConcurrentDictionary<(Type factoryType, Type entityType), Type> _dtoActivatorCache
         = new();
 
     private TDto CreateDto<TDto>(IDtoFactory dtoFactory, IEntity entity)
         where TDto : IDto
     {
-        if (typeof(TDto).IsAbstract)
+        if (!typeof(TDto).IsAbstract)
         {
-            throw new InvalidOperationException($"Konnte keinen konkreten DTO-Typ für {typeof(TDto)} finden. Bitte erstelle eine spezifische Factory.");
+            return Activator.CreateInstance<TDto>();
         }
 
         var key = (dtoFactory.GetType(), entity.GetType());
 
-        var activator = _dtoActivatorCache.GetOrAdd(key, k =>
+        var dtoTypeFromFactory = _dtoActivatorCache.GetOrAdd(key, k =>
         {
             var dtoType = _dtoFactoryTypeStore.GetDtoType(dtoFactory, entity.GetType());
 
-            var ctor = dtoType.GetConstructor(Type.EmptyTypes)
-                      ?? throw new InvalidOperationException($"Type {dtoType.FullName} needs a parameterless constructor.");
+            if (dtoType.IsAbstract)
+            {
+                throw new InvalidOperationException($"Konnte keinen konkreten DTO-Typ für {dtoType.Name} finden. Bitte erstelle eine spezifische Factory.");
+            }
 
-            return () => ctor.Invoke(null);
+            return dtoType;
         });
 
-        return (TDto)activator();
+        return (TDto)Activator.CreateInstance(dtoTypeFromFactory);
     }
 
     public ICollection<TEntity> ConvertIdsToEntities<TEntity>(IEnumerable<Guid> dtoIds, ICollection<TEntity> entities = null)
@@ -424,7 +427,6 @@ public class DtoFactoryResolver
             dtos = Enumerable.Empty<IDto>();
 
         var itemsCollection = entities ?? new List<TEntity>();
-        var dtoCollection = dtos;
 
         var dtoIds = dtos.Where(_ => _.Id.HasValue).Select(_ => _.Id.Value).ToList();
 
@@ -432,36 +434,37 @@ public class DtoFactoryResolver
         entitiesToRemove
             .ForEach(_ => itemsCollection.Remove(_));
 
-        var dtoEntityJoin =
-            dtoCollection
-            .GroupJoin(itemsCollection, dto => dto.Id, entity => entity.Id,
-            (dto, entities) => new { dto, entity = entities.SingleOrDefault() })
-            .ToList();
+        foreach (var dto in dtos)
+        {
+            TEntity entity = null;
 
-        dtoEntityJoin
-            .ForEach(_ =>
+            if (dto.Id.HasValue)
             {
-                var entity = _.entity;
+                entity = itemsCollection.FirstOrDefault(e => e.Id == dto.Id.Value);
 
-                if (_.dto.Id.HasValue && entity == null)
+                if (entity == null)
                 {
                     entity = _dbContext.Set<TEntity>()
-                        .Where(db => db.Id == _.dto.Id.Value)
-                        .FirstOrDefault();
+                        .Where(db => db.Id == dto.Id.Value)
+                        .SingleOrDefault();
 
                     if (entity != null)
                         itemsCollection.Add(entity);
                 }
+            }
 
-                if (_.dto.Id.HasValue && entity == null)
-                {
-                    entity = _dbContext.CreateEntityAync<TEntity>().GetAwaiter().GetResult();
-                    entity.Id = _.dto.Id.Value;
-                    itemsCollection.Add(entity);
-                }
+            if (entity == null)
+            {
+                entity = _dbContext.Set<TEntity>().CreateProxy();
 
-                ConvertToEntity(_.dto, entity);
-            });
+                if (dto.Id.HasValue)
+                    entity.Id = dto.Id.Value;
+
+                itemsCollection.Add(entity);
+            }
+
+            entity = ConvertToEntity(dto, entity);
+        }
 
         return itemsCollection;
     }
