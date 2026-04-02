@@ -1,6 +1,18 @@
 ﻿using System.Data;
+using System.Reflection;
 
-namespace SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
+namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+
+[AttributeUsage(AttributeTargets.Property)]
+public class DataSetColumnAttribute : Attribute
+{
+    public DataSetColumnAttribute(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
+}
 
 public static class DataSetExtensions
 {
@@ -26,7 +38,13 @@ public static class DataSetExtensions
         return dataSet;
     }
 
-    public static void InitializeDataTableSchema(this DataTable dataTable, object record)
+    private static string GetColumnName(PropertyInfo property)
+    {
+        var columnNameAttribute = property.GetCustomAttribute<DataSetColumnAttribute>();
+        return columnNameAttribute?.Name ?? property.Name;
+    }
+
+    private static void InitializeDataTableSchema(this DataTable dataTable, object record)
     {
         var properties = record.GetType().GetProperties();
         foreach (var prop in properties)
@@ -35,14 +53,16 @@ public static class DataSetExtensions
             if (Nullable.GetUnderlyingType(propertyType) != null)
                 propertyType = Nullable.GetUnderlyingType(propertyType);
 
+            var columnName = GetColumnName(prop);
+
             if (propertyType.IsEnum)
-                dataTable.Columns.Add(prop.Name, typeof(string));
+                dataTable.Columns.Add(columnName, typeof(string));
             else
-                dataTable.Columns.Add(prop.Name, propertyType);
+                dataTable.Columns.Add(columnName, propertyType);
         }
     }
 
-    public static void AddRecordToDataTable(this DataTable dataTable, object record)
+    private static void AddRecordToDataTable(this DataTable dataTable, object record)
     {
         var row = dataTable.NewRow();
         var properties = record.GetType().GetProperties();
@@ -64,7 +84,8 @@ public static class DataSetExtensions
                 value = strValue.Substring(0, 1000);
             }
 
-            row[prop.Name] = value;
+            var columnName = GetColumnName(prop);
+            row[columnName] = value;
         }
         dataTable.Rows.Add(row);
     }
