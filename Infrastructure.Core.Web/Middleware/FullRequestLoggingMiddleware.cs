@@ -23,6 +23,38 @@ public static class FullRequestLoggingBuilderExtensions
 
 public class FullRequestLoggingMiddleware
 {
+    private const string RedactedValue = "***";
+
+    private static readonly string[] DefaultSensitiveHeaderNames =
+    {
+        "Authorization",
+        "Proxy-Authorization",
+        "Cookie",
+        "Set-Cookie",
+        "X-Api-Key",
+        "Api-Key",
+        "X-Auth-Token",
+        "X-Amz-Security-Token",
+        "X-Csrf-Token"
+    };
+
+    private static readonly string[] DefaultSensitiveFieldNames =
+    {
+        "password",
+        "passwd",
+        "pwd",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "apikey",
+        "api_key",
+        "key",
+        "jwt",
+        "code",
+        "client_secret"
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<FullRequestLoggingMiddleware> _logger;
     private readonly FullRequestLoggingConfiguration _configuration;
@@ -30,11 +62,11 @@ public class FullRequestLoggingMiddleware
     public FullRequestLoggingMiddleware(
         RequestDelegate next,
         ILogger<FullRequestLoggingMiddleware> logger,
-        FullRequestLoggingConfiguration configuration)
+        AppLoggingConfiguration configuration)
     {
         _next = next;
         _logger = logger;
-        _configuration = configuration;
+        _configuration = configuration.FullRequestLogging;
     }
 
     public async Task Invoke(HttpContext context)
@@ -74,17 +106,15 @@ public class FullRequestLoggingMiddleware
         var request = context.Request;
 
         var headers = request.Headers.ToDictionary(h => h.Key, h => SanitizeValue(h.Value.ToString()));
-        if (_configuration.SanitizeSensitiveHeaders)
-        {
-            foreach (var key in new[] { "Authorization" })
-            {
-                if (headers.ContainsKey(key))
-                    headers[key] = "***";
-            }
-        }
-
         var query = request.Query.ToDictionary(q => q.Key, q => SanitizeValue(q.Value.ToString()));
         var routeValues = request.RouteValues.ToDictionary(kvp => kvp.Key, kvp => SanitizeValue(kvp.Value?.ToString()));
+
+        if (_configuration.SanitizeSensitiveData)
+        {
+            RedactHeaders(headers);
+            RedactNamedValues(query);
+            RedactNamedValues(routeValues);
+        }
 
         var logMessage = new StringBuilder();
 
@@ -108,9 +138,70 @@ public class FullRequestLoggingMiddleware
 
         context.Response.Body = originalBodyStream;
     }
+
+    private void RedactHeaders(Dictionary<string, string> headers)
+    {
+        var sensitiveHeaderNames = GetMergedKeys(_configuration.SensitiveHeaderNames, DefaultSensitiveHeaderNames);
+
+        foreach (var key in headers.Keys.ToList())
+        {
+            if (MatchesSensitiveKey(key, sensitiveHeaderNames, containsMatch: false))
+            {
+                headers[key] = RedactedValue;
+            }
+        }
+    }
+
+    private void RedactNamedValues(Dictionary<string, string> values)
+    {
+        var sensitiveFieldNames = GetMergedKeys(_configuration.SensitiveFieldNames, DefaultSensitiveFieldNames);
+
+        foreach (var key in values.Keys.ToList())
+        {
+            if (MatchesSensitiveKey(key, sensitiveFieldNames, containsMatch: true))
+            {
+                values[key] = RedactedValue;
+            }
+        }
+    }
+
+    private static HashSet<string> GetMergedKeys(IEnumerable<string> configured, IEnumerable<string> defaults)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var item in defaults.Where(_ => !string.IsNullOrWhiteSpace(_)))
+        {
+            result.Add(item);
+        }
+
+        if (configured != null)
+        {
+            foreach (var item in configured.Where(_ => !string.IsNullOrWhiteSpace(_)))
+            {
+                result.Add(item);
+            }
+        }
+
+        return result;
+    }
+
+    private static bool MatchesSensitiveKey(string key, HashSet<string> sensitiveKeys, bool containsMatch)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return false;
+
+        if (sensitiveKeys.Contains(key))
+            return true;
+
+        if (!containsMatch)
+            return false;
+
+        return sensitiveKeys.Any(sensitive => key.Contains(sensitive, StringComparison.OrdinalIgnoreCase));
+    }
+
     private string FormatSection(string title, string content)
     {
-        return $"{title}:\n{(content ?? "(null)")}";
+        return $"{title}:\n{(content ?? "(null)")}".Trim();
     }
 
     private string FormatObject(string title, object obj)
