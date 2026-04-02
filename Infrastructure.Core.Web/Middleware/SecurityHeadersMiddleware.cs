@@ -22,7 +22,7 @@ public interface ISecurityHeadersService
 
 public class SecurityHeadersService : ISecurityHeadersService
 {
-    public void HandleHeaders(HttpContext context)
+    public virtual void HandleHeaders(HttpContext context)
     {
         context.Response.Headers.ContentSecurityPolicy = new StringValues(
             "default-src 'self' blob:;" +

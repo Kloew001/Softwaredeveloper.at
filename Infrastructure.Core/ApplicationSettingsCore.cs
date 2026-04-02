@@ -16,6 +16,7 @@ public interface IApplicationSettings
     MultilingualConfiguration Multilingual { get; }
     FeatureToggles FeatureToggles { get; }
     FullRequestLoggingConfiguration FullRequestLogging { get; }
+    AppLoggingConfiguration AppLogging { get; }
 }
 
 public abstract class CoreApplicationSettings : IApplicationSettings
@@ -29,6 +30,7 @@ public abstract class CoreApplicationSettings : IApplicationSettings
     public MultilingualConfiguration Multilingual { get; set; } = new MultilingualConfiguration();
     public FeatureToggles FeatureToggles { get; set; } = new FeatureToggles();
     public FullRequestLoggingConfiguration FullRequestLogging { get; set; } = new();
+    public AppLoggingConfiguration AppLogging { get; set; } = new();
 }
 
 [ApplicationConfiguration]
@@ -87,4 +89,17 @@ public class FullRequestLoggingConfiguration
     public bool IncludeBody { get; set; } = false;
     public int MaxBodyLength { get; set; } = 4096;
     public bool SanitizeSensitiveHeaders { get; set; } = true;
+}
+
+[ApplicationConfiguration]
+public class AppLoggingConfiguration
+{
+    public bool EnableExceptionDetails { get; set; } = false;
+    public EntityFrameworkLoggingConfiguration EntityFramework { get; set; } = new();
+}
+
+public class EntityFrameworkLoggingConfiguration
+{
+    public bool EnableDetailedErrors { get; set; } = false;
+    public bool EnableSensitiveDataLogging { get; set; } = false;
 }

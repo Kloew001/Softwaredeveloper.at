@@ -10,8 +10,10 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Serilog.Exceptions.Core;
 using Serilog.Formatting.Json;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Serilog;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web;
@@ -297,6 +299,8 @@ public class WebStartupCore<TDomainStartup>
     {
         Builder.Host.UseSerilog((ctx, services, cfg) =>
         {
+            var applicationSettings = services.GetService<IApplicationSettings>();
+
             cfg
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -305,9 +309,19 @@ public class WebStartupCore<TDomainStartup>
             .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Routing.EndpointMiddleware", LogEventLevel.Warning)
 
-            .Enrich.FromLogContext()
-            .Enrich.WithExceptionDetails()
+            .Enrich.FromLogContext();
 
+            var enableExceptionDetails = ctx.HostingEnvironment.IsDevelopment() ||
+                (applicationSettings?.AppLogging?.EnableExceptionDetails ?? false);
+
+            if (enableExceptionDetails)
+            {
+                cfg.Enrich.WithExceptionDetails(new DestructuringOptionsBuilder()
+                    .WithDefaultDestructurers()
+                    .WithDestructurers([new DbUpdateExceptionDestructurer()]));
+            }
+
+            cfg
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Exception}")
 
             .WriteTo.Logger(lc => lc

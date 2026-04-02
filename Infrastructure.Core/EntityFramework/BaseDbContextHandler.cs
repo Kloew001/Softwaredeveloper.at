@@ -33,6 +33,8 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
     public virtual async Task UpdateDatabaseAsync(DbContext context)
     {
+        context.Database.SetCommandTimeout(TimeSpan.FromMinutes(60));
+
         var databaseCreator = context.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
 
         var dbExists = false;
@@ -70,15 +72,27 @@ public abstract class BaseDbContextHandler : IDbContextHandler
         options.UseLoggerFactory(loggerFactory);
 
         var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
-        if (hostEnvironment.IsDevelopment())
+        var applicationSettings = serviceProvider.GetService<IApplicationSettings>();
+
+        var enableDetailedErrors = (hostEnvironment?.IsDevelopment() ?? false) ||
+            (applicationSettings?.AppLogging?.EntityFramework?.EnableDetailedErrors ?? false);
+
+        if (enableDetailedErrors)
         {
             options.EnableDetailedErrors();
+        }
+
+        var enableSensitiveDataLogging = (hostEnvironment?.IsDevelopment() ?? false) ||
+            (applicationSettings?.AppLogging?.EntityFramework?.EnableSensitiveDataLogging ?? false);
+
+        if (enableSensitiveDataLogging)
+        {
             options.EnableSensitiveDataLogging();
         }
 
         options.ConfigureWarnings(warnings =>
         {
-            warnings.Ignore(RelationalEventId.MultipleCollectionIncludeWarning);
+
         });
     }
 

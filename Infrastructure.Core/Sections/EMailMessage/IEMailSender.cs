@@ -69,8 +69,10 @@ public class SmtpEMailSender : IEMailSender
 
                 mailMessage.Subject = message.Subject;
 
-                var builder = new BodyBuilder();
-                builder.HtmlBody = message.HtmlContent;
+                var builder = new BodyBuilder
+                {
+                    HtmlBody = message.HtmlContent
+                };
 
                 foreach (var attachment in message.Attachments)
                 {
