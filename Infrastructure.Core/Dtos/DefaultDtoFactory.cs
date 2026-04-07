@@ -70,10 +70,10 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                 propertyMap.TargetProperty
                     .SetValue(target, sourceValue);
             }
-            else if (typeof(Entity).IsAssignableFrom(sourceValueType) &&
-                     typeof(Dto).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+            else if (typeof(IEntity).IsAssignableFrom(sourceValueType) &&
+                     typeof(IDto).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
             {
-                var sourceEntity = sourceValue as Entity;
+                var sourceEntity = sourceValue as IEntity;
                 if (sourceEntity == null)
                 {
                     propertyMap.TargetProperty.SetValue(target, null);
@@ -85,10 +85,10 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                 propertyMap.TargetProperty
                     .SetValue(target, dto);
             }
-            else if (typeof(IEnumerable<Entity>).IsAssignableFrom(sourceValueType) &&
-                     typeof(IEnumerable<Dto>).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+            else if (typeof(IEnumerable<IEntity>).IsAssignableFrom(sourceValueType) &&
+                     typeof(IEnumerable<IDto>).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
             {
-                var sourceEntity = sourceValue as IEnumerable<Entity>;
+                var sourceEntity = sourceValue as IEnumerable<IEntity>;
                 if (sourceEntity == null)
                 {
                     propertyMap.TargetProperty.SetValue(target, null);
@@ -102,10 +102,10 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                 propertyMap.TargetProperty
                     .SetValue(target, dtos);
             }
-            else if (typeof(Dto).IsAssignableFrom(sourceValueType) &&
-                     typeof(Entity).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+            else if (typeof(IDto).IsAssignableFrom(sourceValueType) &&
+                     typeof(IEntity).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
             {
-                var sourceDto = sourceValue as Dto;
+                var sourceDto = sourceValue as IDto;
                 if (sourceDto == null)
                 {
                     propertyMap.TargetProperty.SetValue(target, null);
@@ -129,8 +129,8 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
                     }
                 }
             }
-            else if (typeof(IEnumerable<Dto>).IsAssignableFrom(sourceValueType) &&
-                     typeof(IEnumerable<Entity>).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
+            else if (typeof(IEnumerable<IDto>).IsAssignableFrom(sourceValueType) &&
+                     typeof(IEnumerable<IEntity>).IsAssignableFrom(propertyMap.TargetProperty.PropertyType))
             {
                 if (sourceValue == null)
                 {
@@ -191,12 +191,12 @@ public class DefaultDtoFactory<TDto, TEntity> : IDtoFactory<TDto, TEntity>
         if (!_memoryCache.TryGetValue(cacheKey, out List<PropertyMap> propertyMaps))
         {
             var isDtoToEntity =
-                     typeof(Dto).IsAssignableFrom(sourceType) &&
-                     typeof(Entity).IsAssignableFrom(targetType);
+                     typeof(IDto).IsAssignableFrom(sourceType) &&
+                     typeof(IEntity).IsAssignableFrom(targetType);
 
             var isEntityToDto =
-                     typeof(Entity).IsAssignableFrom(sourceType) &&
-                     typeof(Dto).IsAssignableFrom(targetType);
+                     typeof(IEntity).IsAssignableFrom(sourceType) &&
+                     typeof(IDto).IsAssignableFrom(targetType);
 
             propertyMaps = new List<PropertyMap>();
 
