@@ -166,6 +166,8 @@ public class WebStartupCore<TDomainStartup>
         UseCurrentCulture(app);
 
         UseSecurityHeaders(app);
+        
+        UseRequestLogging(app);
 
         UseSwagger(app);
 
@@ -495,9 +497,12 @@ public class WebStartupCore<TDomainStartup>
         // Ensure correlation token is available early in the pipeline
         app.UseMiddleware<CorrelationIdMiddleware>();
 
-        app.UseFullRequestLogging();
-
         app.UseSerilogAdditionalContext();
+    }
+
+    protected virtual void UseRequestLogging(WebApplication app)
+    {
+        app.UseFullRequestLogging();
 
         app.UseSerilogRequestLogging(opts =>
         {

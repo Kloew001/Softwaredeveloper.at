@@ -42,9 +42,7 @@ public static class HttpContextExtension
     }
 
     public static string ResolveAccountIdOrAnon(this HttpContext ctx)
-    {
-        return ResolveAccountId(ctx) ?? "anon";
-    }
+        => ResolveAccountId(ctx) ?? "anon";
 
     public static string ResolveActionPath(this HttpContext ctx)
         => ctx.Request.Path;
