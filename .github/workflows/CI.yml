@@ -40,6 +40,10 @@ jobs:
 #      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build
 
     - name: Dependency vulnerability audit
-      run: dotnet list SoftwaredeveloperDotAt.sln package --vulnerable --include-transitive
+      shell: bash
+      run: |
+        find . -name '*.csproj' -print0 | while IFS= read -r -d '' project; do
+          dotnet list "$project" package --vulnerable --include-transitive
+        done
 
       
