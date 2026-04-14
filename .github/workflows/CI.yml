@@ -27,13 +27,19 @@ jobs:
       with:
         dotnet-version: 10.0.x
         
-    - name: Restore dependencies 
-      run: dotnet restore
+    - name: Restore dependencies
+      run: dotnet restore SoftwaredeveloperDotAt.sln
       
     - name: Build
-      run: dotnet build --configuration Release
-      
-#    - name: Test
-#      run: dotnet test --configuration Release --no-build
+      run: dotnet build SoftwaredeveloperDotAt.sln --configuration Release --no-restore
+
+    - name: Test Infrastructure.Core.Tests
+      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build
+
+    - name: Test SampleApp.Application.Tests
+      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build
+
+    - name: Dependency vulnerability audit
+      run: dotnet list SoftwaredeveloperDotAt.sln package --vulnerable --include-transitive
 
       

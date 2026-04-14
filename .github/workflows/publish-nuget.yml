@@ -1,72 +1,108 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: Publish Nuget
+name: Publish NuGet
 
 on:
   push:
     tags:
-    - "v[0-9]+.[0-9]+.[0-9]+.[0-9]+" 
+    - "v*"
 
   workflow_dispatch:
   
+permissions:
+  contents: write
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
         
-    - name: Restore dependencies 
-      run: dotnet restore
+    - name: Validate tag format
+      run: |
+        if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Tag '${GITHUB_REF_NAME}' does not match required format vMAJOR.MINOR.PATCH.REVISION"
+          exit 1
+        fi
+
+    - name: Restore dependencies
+      run: dotnet restore SoftwaredeveloperDotAt.sln
       
     - name: Set VERSION variable from tag
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
       
     - name: Build
-      run: dotnet build --configuration Release /p:Version=${VERSION}
-      
-#    - name: Test
-#      run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
+      run: dotnet build SoftwaredeveloperDotAt.sln --configuration Release --no-restore /p:Version=${VERSION}
+
+    - name: Test Infrastructure.Core.Tests
+      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
+
+    - name: Test SampleApp.Application.Tests
+      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
 
     - name: Pack
-      run: dotnet pack Infrastructure.Core --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Pack
-      run: dotnet pack Infrastructure.Core.PostgreSQL --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Pack
-      run: dotnet pack Infrastructure.Core.SqlServer --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Pack
-      run: dotnet pack Infrastructure.Core.Web --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Pack
-      run: dotnet pack Infrastructure.Core.Tests --configuration Release /p:Version=${VERSION} --no-build --output .
+      run: dotnet pack Infrastructure.Core --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts
 
-    - name: Push
-      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
+    - name: Pack
+      run: dotnet pack Infrastructure.Core.PostgreSQL --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts
+
+    - name: Pack
+      run: dotnet pack Infrastructure.Core.SqlServer --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts
+
+    - name: Pack
+      run: dotnet pack Infrastructure.Core.Web --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts
+
+    - name: Pack
+      run: dotnet pack Infrastructure.Core.Tests --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts
+
+    - name: Create SBOM (SPDX JSON)
+      uses: anchore/sbom-action@v0
+      with:
+        path: ./artifacts
+        format: spdx-json
+        output-file: ./artifacts/sbom.spdx.json
+
+    # - name: Decode signing certificate
+    #   if: ${{ secrets.NUGET_SIGN_CERT_BASE64 != '' && secrets.NUGET_SIGN_CERT_PASSWORD != '' }}
+    #   shell: bash
+    #   run: |
+    #     echo "${NUGET_SIGN_CERT_BASE64}" | base64 --decode > ./codesign.pfx
+    #   env:
+    #     NUGET_SIGN_CERT_BASE64: ${{ secrets.NUGET_SIGN_CERT_BASE64 }}
+
+    # - name: Sign NuGet packages
+    #   if: ${{ secrets.NUGET_SIGN_CERT_BASE64 != '' && secrets.NUGET_SIGN_CERT_PASSWORD != '' }}
+    #   shell: bash
+    #   run: |
+    #     shopt -s nullglob
+    #     for package in ./artifacts/*.nupkg; do
+    #       dotnet nuget sign "$package" \
+    #         --certificate-path ./codesign.pfx \
+    #         --certificate-password "${NUGET_SIGN_CERT_PASSWORD}" \
+    #         --timestamper "http://timestamp.digicert.com" \
+    #         --overwrite
+    #     done
+    #   env:
+    #     NUGET_SIGN_CERT_PASSWORD: ${{ secrets.NUGET_SIGN_CERT_PASSWORD }}
+
+    - name: Push packages
+      run: dotnet nuget push "./artifacts/*.nupkg" --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json --skip-duplicate
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
 
-    - name: Push
-      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-        
-    - name: Push
-      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-        
-    - name: Push
-      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.Web.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-
-    - name: Push
-      run: dotnet nuget push SoftwaredeveloperDotAt.Infrastructure.Core.Tests.${VERSION}.nupkg --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+        files: |
+          ./artifacts/*.nupkg
+          ./artifacts/sbom.spdx.json
 
       
