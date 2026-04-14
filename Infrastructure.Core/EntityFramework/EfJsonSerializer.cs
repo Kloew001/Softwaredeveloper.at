@@ -52,7 +52,7 @@ public static class EfJsonSerializer
     private static async Task<JsonObject?> BuildNodeAsync(
         DbContext db,
         object entity,
-        INavigationBase? cameFromInverse,
+        INavigationBase cameFromInverse,
         HashSet<object> visited,
         int depth,
         int maxDepth,
@@ -136,7 +136,7 @@ public static class EfJsonSerializer
                     continue;
                 }
 
-                INavigationBase? inverse = nav switch
+                INavigationBase inverse = nav switch
                 {
                     INavigation n => n.Inverse,
                     ISkipNavigation s => s.Inverse,
@@ -163,7 +163,7 @@ public static class EfJsonSerializer
     {
         public static readonly ReferenceEqualityComparer Instance = new();
 
-        public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+        public new bool Equals(object x, object y) => ReferenceEquals(x, y);
 
         public int GetHashCode(object obj) =>
             System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);

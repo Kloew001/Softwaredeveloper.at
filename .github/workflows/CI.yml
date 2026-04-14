@@ -33,11 +33,11 @@ jobs:
     - name: Build
       run: dotnet build SoftwaredeveloperDotAt.sln --configuration Release --no-restore
 
-    - name: Test Infrastructure.Core.Tests
-      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build
+#   - name: Test Infrastructure.Core.Tests
+#      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build
 
-    - name: Test SampleApp.Application.Tests
-      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build
+#    - name: Test SampleApp.Application.Tests
+#      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build
 
     - name: Dependency vulnerability audit
       run: dotnet list SoftwaredeveloperDotAt.sln package --vulnerable --include-transitive

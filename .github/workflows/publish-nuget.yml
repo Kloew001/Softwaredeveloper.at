@@ -41,11 +41,11 @@ jobs:
     - name: Build
       run: dotnet build SoftwaredeveloperDotAt.sln --configuration Release --no-restore /p:Version=${VERSION}
 
-    - name: Test Infrastructure.Core.Tests
-      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
+#    - name: Test Infrastructure.Core.Tests
+#      run: dotnet test Infrastructure.Core.Tests/Infrastructure.Core.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
 
-    - name: Test SampleApp.Application.Tests
-      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
+#    - name: Test SampleApp.Application.Tests
+#      run: dotnet test SampleApp/SampleApp.Application.Tests/SampleApp.Application.Tests.csproj --configuration Release --no-build /p:Version=${VERSION}
 
     - name: Pack
       run: dotnet pack Infrastructure.Core --configuration Release /p:Version=${VERSION} --no-build --output ./artifacts

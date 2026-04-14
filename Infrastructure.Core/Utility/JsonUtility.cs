@@ -21,17 +21,17 @@ public static class JsonUtility
 
     public static class JsonComparer
     {
-        public static bool AreEqual(string leftJson, string rightJson, JsonComparisonOptions? options = null)
+        public static bool AreEqual(string leftJson, string rightJson, JsonComparisonOptions options = null)
         {
             return GetDifferences(leftJson, rightJson, options).Count == 0;
         }
 
-        public static bool AreEqual(JsonNode? left, JsonNode? right, JsonComparisonOptions? options = null)
+        public static bool AreEqual(JsonNode left, JsonNode right, JsonComparisonOptions options = null)
         {
             return GetDifferences(left, right, options).Count == 0;
         }
 
-        public static IReadOnlyList<string> GetDifferences(string leftJson, string rightJson, JsonComparisonOptions? options = null)
+        public static IReadOnlyList<string> GetDifferences(string leftJson, string rightJson, JsonComparisonOptions options = null)
         {
             var leftNode = JsonNode.Parse(leftJson);
             var rightNode = JsonNode.Parse(rightJson);
@@ -39,7 +39,7 @@ public static class JsonUtility
             return GetDifferences(leftNode, rightNode, options);
         }
 
-        public static IReadOnlyList<string> GetDifferences(JsonNode? left, JsonNode? right, JsonComparisonOptions? options = null)
+        public static IReadOnlyList<string> GetDifferences(JsonNode left, JsonNode right, JsonComparisonOptions options = null)
         {
             options ??= new JsonComparisonOptions();
 
@@ -49,7 +49,7 @@ public static class JsonUtility
             return differences;
         }
 
-        private static void CompareInternal(JsonNode? left, JsonNode? right, JsonComparisonOptions options, string path, List<string> differences)
+        private static void CompareInternal(JsonNode left, JsonNode right, JsonComparisonOptions options, string path, List<string> differences)
         {
             if (left is null && right is null)
                 return;
@@ -125,7 +125,7 @@ public static class JsonUtility
             }
         }
 
-        private static bool TryGetPropertyValueIgnoreCase(JsonObject jsonObject, string propertyName, out JsonNode? value)
+        private static bool TryGetPropertyValueIgnoreCase(JsonObject jsonObject, string propertyName, out JsonNode value)
         {
             if (jsonObject.TryGetPropertyValue(propertyName, out value))
                 return true;
@@ -142,7 +142,7 @@ public static class JsonUtility
             return jsonObject.TryGetPropertyValue(actualName, out value);
         }
 
-        private static bool ShouldIgnoreProperty(string propertyName, JsonNode? leftValue, JsonNode? rightValue, JsonComparisonOptions options)
+        private static bool ShouldIgnoreProperty(string propertyName, JsonNode leftValue, JsonNode rightValue, JsonComparisonOptions options)
         {
             if (options.IgnoredPropertyNames.Contains(propertyName))
                 return true;
@@ -176,7 +176,7 @@ public static class JsonUtility
             return false;
         }
 
-        private static bool IsGuidValue(JsonNode? node)
+        private static bool IsGuidValue(JsonNode node)
         {
             if (node is null)
                 return false;
