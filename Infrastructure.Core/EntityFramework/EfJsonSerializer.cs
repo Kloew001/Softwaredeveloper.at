@@ -49,7 +49,7 @@ public static class EfJsonSerializer
             cancellationToken);
     }
 
-    private static async Task<JsonObject?> BuildNodeAsync(
+    private static async Task<JsonObject> BuildNodeAsync(
         DbContext db,
         object entity,
         INavigationBase cameFromInverse,
@@ -100,7 +100,7 @@ public static class EfJsonSerializer
                     {
                         if (child == null) continue;
 
-                        INavigationBase? inverse = nav switch
+                        INavigationBase inverse = nav switch
                         {
                             INavigation n => n.Inverse,
                             ISkipNavigation s => s.Inverse,

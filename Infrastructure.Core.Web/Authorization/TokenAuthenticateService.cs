@@ -45,6 +45,7 @@ public class TokenAuthenticateService : ITokenAuthenticateService
 {
     public const string TokenProviderName = "TokenProvider";
     private const string RefreshTokenName = "RefreshToken";
+    private const string RefreshTokenExpiryName = "RefreshTokenExpiry";
 
     protected readonly SignInManager<ApplicationUser> _signInManager;
     protected readonly UserManager<ApplicationUser> _userManager;
@@ -159,8 +160,6 @@ public class TokenAuthenticateService : ITokenAuthenticateService
     }
 
     public const string JwtSecurityStampClaim = "secstamp";
-    public const string RefreshTokenExpiryClaim = "refreshTokenExpiry";
-
     private AccessTokenResponse GetAccessTokenResponse(ApplicationUser user)
     {
         var claims = GetClaims(user);
@@ -192,10 +191,7 @@ public class TokenAuthenticateService : ITokenAuthenticateService
             return TypedResults.Challenge();
 
         await _userManager.RemoveAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenName);
-
-        var expiryClaim = await GetRefreshTokenExpiryClaimAsync(user);
-        if (expiryClaim != null)
-            await _userManager.RemoveClaimAsync(user, expiryClaim);
+        await _userManager.RemoveAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenExpiryName);
 
         await _userManager.UpdateSecurityStampAsync(user);
 
@@ -234,38 +230,25 @@ public class TokenAuthenticateService : ITokenAuthenticateService
         await _userManager.RemoveAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenName);
         await _userManager.SetAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenName, refreshToken);
 
-        var expiryClaim = await GetRefreshTokenExpiryClaimAsync(user);
-        if (expiryClaim != null)
-            await _userManager.RemoveClaimAsync(user, expiryClaim);
-
         var expires = DateTime.UtcNow.AddMinutes(_jwtSettings.RefreshTokenExpirationMinutes);
-
-        expiryClaim = new Claim(RefreshTokenExpiryClaim, expires.ToString("o")); // "o" formats DateTime as ISO 8601
-
-        await _userManager.AddClaimAsync(user, expiryClaim);
+        await _userManager.RemoveAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenExpiryName);
+        await _userManager.SetAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenExpiryName, expires.ToString("o"));
     }
 
     private async Task<(string refreshToken, DateTimeOffset? expires)> GetRefreshTokenAsync(ApplicationUser user)
     {
-        // Get the refresh token
         var refreshToken = await _userManager.GetAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenName);
-
-        var expiryClaim = await GetRefreshTokenExpiryClaimAsync(user);
+        var expiryValue = await _userManager.GetAuthenticationTokenAsync(user, TokenProviderName, RefreshTokenExpiryName);
 
         DateTimeOffset? expires = null;
-        if (expiryClaim != null)
+        if (expiryValue != null)
         {
-            if (DateTimeOffset.TryParse(expiryClaim.Value, out var parsedExpiry))
+            if (DateTimeOffset.TryParse(expiryValue, out var parsedExpiry))
             {
                 expires = parsedExpiry;
             }
         }
 
         return (refreshToken, expires);
-    }
-
-    private async Task<Claim> GetRefreshTokenExpiryClaimAsync(ApplicationUser user)
-    {
-        return (await _userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == RefreshTokenExpiryClaim);
     }
 }

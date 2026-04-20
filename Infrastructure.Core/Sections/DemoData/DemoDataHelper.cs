@@ -437,11 +437,6 @@ public static class DemoDataHelper
 
     public static string[] FirstNames = MaleFirstNames.Concat(FemaleFirstNames).ToArray();
 
-    public static string GetRandomLastName()
-    {
-        return LastNames[new Random().Next(LastNames.Length)];
-    }
-
     public static string[] LastNames = [
         "Müller",
         "Schmidt",
@@ -744,9 +739,14 @@ public static class DemoDataHelper
         "Wittmann",
         "Schober"];
 
+    public static string GetRandomLastName()
+    {
+        return LastNames.GetRandom();
+    }
+
     public static string GetRandomFirstName()
     {
-        return FirstNames[new Random().Next(FirstNames.Length)];
+        return FirstNames.GetRandom();
     }
 
     public static Adresse[] Adressen =
