@@ -72,6 +72,10 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
                 {
                     binaryContent.Data.ExtractedText = textExtractor.ExtractText(contentBytes);
                 }
+                else
+                {
+                    binaryContent.Data.ExtractedText = null;
+                }
             }
 
             await context.SaveChangesAsync(ct);
@@ -82,11 +86,20 @@ public class BinaryContentExtractionHostedService : HandleBatchTimeHostedService
 
             using var errorScope = _serviceScopeFactory.CreateScope();
 
-            errorScope.ServiceProvider.GetService<ICurrentUserService>().SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
+            errorScope.ServiceProvider.GetService<ICurrentUserService>()
+                .SetCurrentUserId(ApplicationUserIds.ServiceAdminId);
 
             var context = errorScope.ServiceProvider.GetService<IDbContext>();
 
             var binaryContent = await context.Set<BinaryContent>().SingleOrDefaultAsync(_ => _.Id == id, ct);
+
+            binaryContent.Data ??= new BinaryContentData
+            {
+                BinaryContent = binaryContent,
+                BinaryContentId = binaryContent.Id,
+            };
+
+            binaryContent.Data.ExtractedText = null;
             binaryContent.ExtractionHandledAt = _dateTimeService.Now();
 
             await context.SaveChangesAsync(ct);

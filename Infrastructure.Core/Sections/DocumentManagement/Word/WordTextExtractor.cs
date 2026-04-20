@@ -18,36 +18,27 @@ public class WordTextExtractor : ITextExtractor
 
     public string ExtractText(byte[] content)
     {
-        try
+        var fullText = new StringBuilder();
+
+        using (var memoryStream = new MemoryStream(content))
+        using (var wordDoc = WordprocessingDocument.Open(memoryStream, false))
         {
-            var fullText = new StringBuilder();
+            var body = wordDoc.MainDocumentPart.Document.Body;
+            fullText.Append(body.InnerText);
 
-            using (var memoryStream = new MemoryStream(content))
-            using (var wordDoc = WordprocessingDocument.Open(memoryStream, false))
+            var headers = wordDoc.MainDocumentPart.HeaderParts;
+            foreach (var header in headers)
             {
-                var body = wordDoc.MainDocumentPart.Document.Body;
-                fullText.Append(body.InnerText);
-
-                var headers = wordDoc.MainDocumentPart.HeaderParts;
-                foreach (var header in headers)
-                {
-                    fullText.Append(header.Header.InnerText);
-                }
-
-                var footers = wordDoc.MainDocumentPart.FooterParts;
-                foreach (var footer in footers)
-                {
-                    fullText.Append(footer.Footer.InnerText);
-                }
+                fullText.Append(header.Header.InnerText);
             }
 
-            return fullText.ToString();
+            var footers = wordDoc.MainDocumentPart.FooterParts;
+            foreach (var footer in footers)
+            {
+                fullText.Append(footer.Footer.InnerText);
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
 
-            return null;
-        }
+        return fullText.ToString();
     }
 }

@@ -16,30 +16,18 @@ public class HtmlTextExtractor : ITextExtractor
 
     public string ExtractText(byte[] content)
     {
-        if (content == null)
-            return null;
-
-        try
+        using (var memoryStream = new MemoryStream(content))
         {
-            using (var memoryStream = new MemoryStream(content))
-            {
-                var doc = new HtmlDocument();
-                doc.Load(memoryStream);
+            var doc = new HtmlDocument();
+            doc.Load(memoryStream);
 
-                var sw = new StringWriter();
+            var sw = new StringWriter();
 
-                ConvertTo(doc.DocumentNode, sw);
+            ConvertTo(doc.DocumentNode, sw);
 
-                sw.Flush();
+            sw.Flush();
 
-                return sw.ToString();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-
-            return null;
+            return sw.ToString();
         }
     }
 

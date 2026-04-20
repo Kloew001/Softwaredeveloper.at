@@ -16,29 +16,17 @@ public class PdfTextExtractor : ITextExtractor
 
     public string ExtractText(byte[] content)
     {
-        if (content == null)
-            return null;
-
-        try
+        using (var memoryStream = new MemoryStream(content))
+        using (var pdfReader = new PdfReader(memoryStream))
+        using (var pdfDoc = new PdfDocument(pdfReader))
         {
-            using (var memoryStream = new MemoryStream(content))
-            using (var pdfReader = new PdfReader(memoryStream))
-            using (var pdfDoc = new PdfDocument(pdfReader))
+            var extractedText = "";
+            for (var page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
             {
-                var extractedText = "";
-                for (var page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
-                {
-                    extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
-                        .GetTextFromPage(pdfDoc.GetPage(page));
-                }
-                return extractedText;
+                extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
+                    .GetTextFromPage(pdfDoc.GetPage(page));
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-
-            return null;
+            return extractedText;
         }
     }
 }

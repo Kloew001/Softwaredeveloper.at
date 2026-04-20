@@ -32,7 +32,7 @@
     <PackageReference Include="ClosedXML" />
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="HtmlAgilityPack" />
-    <PackageReference Include="itext7" />
+    <PackageReference Include="itext" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
