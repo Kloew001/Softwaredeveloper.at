@@ -24,27 +24,80 @@ public class SecurityHeadersService : ISecurityHeadersService
 {
     public virtual void HandleHeaders(HttpContext context)
     {
-        context.Response.Headers.ContentSecurityPolicy = new StringValues(
-            "default-src 'self' blob:;" +
-              "object-src 'none';" +
-              "style-src 'self' 'unsafe-inline';" +
-              "script-src 'self' 'unsafe-inline';" +
-              "font-src 'self' https://fonts.gstatic.com https://cdn.materialdesignicons.com;");
+        ArgumentNullException.ThrowIfNull(context);
 
+        SetContentSecurityPolicy(context);
+        SetXContentTypeOptions(context);
+        SetXFrameOptions(context);
+        SetReferrerPolicy(context);
+        SetCacheControl(context);
+        SetPragma(context);
+        SetStrictTransportSecurity(context);
+        RemoveResponseHeaders(context);
+    }
+
+    protected virtual void SetContentSecurityPolicy(HttpContext context)
+    {
+        context.Response.Headers.ContentSecurityPolicy = new StringValues(string.Concat(GetContentSecurityPolicyDirectives(context)));
+    }
+
+    protected virtual IEnumerable<string> GetContentSecurityPolicyDirectives(HttpContext context)
+    {
+        yield return "default-src 'self';";
+        yield return "object-src 'none';";
+        yield return "base-uri 'self';";
+        yield return "frame-ancestors 'self';";
+        yield return "form-action 'self';";
+        yield return "script-src 'self';";
+        yield return "style-src 'self';";
+        yield return "font-src 'self' https://fonts.gstatic.com https://cdn.materialdesignicons.com;";
+        yield return "img-src 'self' data:;";
+    }
+
+    protected virtual void SetXContentTypeOptions(HttpContext context)
+    {
         context.Response.Headers.XContentTypeOptions = new StringValues("nosniff");
-        context.Response.Headers.XFrameOptions = new StringValues("SAMEORIGIN");
-        context.Response.Headers.Append("Referrer-Policy", new StringValues("strict-origin-when-cross-origin"));
-        context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
-        context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
+    }
 
+    protected virtual void SetXFrameOptions(HttpContext context)
+    {
+        context.Response.Headers.XFrameOptions = new StringValues("SAMEORIGIN");
+    }
+
+    protected virtual void SetReferrerPolicy(HttpContext context)
+    {
+        context.Response.Headers.Append("Referrer-Policy", new StringValues("strict-origin-when-cross-origin"));
+    }
+
+    protected virtual void SetCacheControl(HttpContext context)
+    {
+        context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
+    }
+
+    protected virtual void SetPragma(HttpContext context)
+    {
+        context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
+    }
+
+    protected virtual void SetStrictTransportSecurity(HttpContext context)
+    {
         if (context.Response.Headers.ContainsKey(HeaderNames.StrictTransportSecurity))
             context.Response.Headers.StrictTransportSecurity = new StringValues("max-age=31536000; includeSubDomains; preload");
+    }
 
-        if (context.Response.Headers.ContainsKey(HeaderNames.Server))
-            context.Response.Headers.Remove(HeaderNames.Server);
+    protected virtual void RemoveResponseHeaders(HttpContext context)
+    {
+        foreach (var header in GetResponseHeadersToRemove(context))
+        {
+            if (context.Response.Headers.ContainsKey(header))
+                context.Response.Headers.Remove(header);
+        }
+    }
 
-        if (context.Response.Headers.ContainsKey(HeaderNames.XPoweredBy))
-            context.Response.Headers.Remove(HeaderNames.XPoweredBy);
+    protected virtual IEnumerable<string> GetResponseHeadersToRemove(HttpContext context)
+    {
+        yield return HeaderNames.Server;
+        yield return HeaderNames.XPoweredBy;
     }
 }
 
