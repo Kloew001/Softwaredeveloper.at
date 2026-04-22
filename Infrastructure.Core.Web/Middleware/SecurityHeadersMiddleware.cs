@@ -51,7 +51,7 @@ public class SecurityHeadersService : ISecurityHeadersService
         yield return "script-src 'self';";
         yield return "style-src 'self';";
         yield return "font-src 'self' https://fonts.gstatic.com https://cdn.materialdesignicons.com;";
-        yield return "img-src 'self' data:;";
+        yield return "img-src 'self' blob: data:;";
     }
 
     protected virtual void SetXContentTypeOptions(HttpContext context)

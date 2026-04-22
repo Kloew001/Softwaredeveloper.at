@@ -142,6 +142,8 @@ public class WebStartupCore<TDomainStartup>
 
         UseForwardedHeaders(app);
 
+        UseSecurityHeaders(app);
+
         UseLogging(app);
 
         UseExceptionHandling(app);
@@ -152,9 +154,9 @@ public class WebStartupCore<TDomainStartup>
 
         UseResponseCompression(app);
 
-        UseSpaStaticFiles(app);
-
         UseCors(app);
+
+        UseSpaStaticFiles(app);
 
         UseRateLimiting(app);
 
@@ -165,8 +167,6 @@ public class WebStartupCore<TDomainStartup>
 
         UseCurrentCulture(app);
 
-        UseSecurityHeaders(app);
-        
         UseRequestLogging(app);
 
         UseSwagger(app);
