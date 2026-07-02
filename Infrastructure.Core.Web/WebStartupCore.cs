@@ -405,7 +405,9 @@ public class WebStartupCore<TDomainStartup>
         }
         else if (OperatingSystem.IsMacOS())
         {
-            logFolder = Path.Combine("/usr/local/var/log", projectName);
+            logFolder = Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                "Library", "Logs", projectName);
         }
         else
         {

@@ -134,6 +134,8 @@ public class ApplicationUserService : EntityService<ApplicationUser>, IApplicati
     {
         var userRoleIds = await _cacheService.MemoryCache.GetOrCreateAsync(_getRoleIdsCacheKey + userId, async (entry) =>
         {
+            entry.AbsoluteExpirationRelativeToNow = RoleIdCacheTime();
+
             return await _context
                 .Set<ApplicationUserRole>()
                     .Where(_ => _.UserId == userId)
@@ -143,6 +145,11 @@ public class ApplicationUserService : EntityService<ApplicationUser>, IApplicati
         });
 
         return userRoleIds;
+    }
+
+    protected virtual TimeSpan RoleIdCacheTime()
+    {
+        return TimeSpan.FromMinutes(15);
     }
 
     public virtual async ValueTask<bool> IsInRoleAsync(Guid userId, params Guid[] roleIds)
