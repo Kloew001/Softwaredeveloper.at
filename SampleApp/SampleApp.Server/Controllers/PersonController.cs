@@ -1,9 +1,12 @@
 ﻿
+using Microsoft.AspNetCore.RateLimiting;
+
 using SampleApp.Application.Sections.PersonSection;
 using SampleApp.Application.Sections.PersonSection.UseCases;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.UseCases;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Web;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Controllers;
 
 namespace SampleApp.Server.Controllers;
@@ -26,6 +29,7 @@ public class PersonController(
         => _service.GetOverviewAsync(filter);
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicy.Fixed5per1Hour)]
     public Task<PersonDto> GetSingleById(Guid id)
         => _service.GetSingleByIdAsync<PersonDto>(id);
 

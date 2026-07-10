@@ -1,4 +1,6 @@
-﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core;
+﻿using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SensitiveData;
+
+namespace SoftwaredeveloperDotAt.Infrastructure.Core;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public class ApplicationConfigurationAttribute : Attribute
@@ -16,6 +18,7 @@ public interface IApplicationSettings
     MultilingualConfiguration Multilingual { get; }
     FeatureToggles FeatureToggles { get; }
     AppLoggingConfiguration AppLogging { get; }
+    SensitiveDataConfiguration SensitiveData { get; }
 }
 
 public abstract class CoreApplicationSettings : IApplicationSettings
@@ -29,6 +32,7 @@ public abstract class CoreApplicationSettings : IApplicationSettings
     public MultilingualConfiguration Multilingual { get; set; } = new MultilingualConfiguration();
     public FeatureToggles FeatureToggles { get; set; } = new FeatureToggles();
     public AppLoggingConfiguration AppLogging { get; set; } = new();
+    public SensitiveDataConfiguration SensitiveData { get; set; } = new();
 }
 
 [ApplicationConfiguration]

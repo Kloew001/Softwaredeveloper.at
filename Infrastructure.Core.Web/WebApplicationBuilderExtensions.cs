@@ -347,6 +347,38 @@ public static class WebApplicationBuilderExtensions
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+            options.OnRejected = async (ctx, cancellationToken) =>
+            {
+                var loggerFactory = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>();
+                var logger = loggerFactory.CreateLogger("RateLimiter");
+
+                var ip = ctx.HttpContext.ResolveIpOrAnon();
+                var path = ctx.HttpContext.Request.Path;
+                var method = ctx.HttpContext.Request.Method;
+
+                var formValues = await ctx.HttpContext.TryGetFormValuesAsync(cancellationToken);
+                var queryValues = ctx.HttpContext.TryGetQueryValues();
+
+                if (!formValues.Any() && !queryValues.Any())
+                {
+                    logger.LogWarning(
+                        "Rate limit reached for {Method} {Path} from IP {Ip}.",
+                        method,
+                        path,
+                        ip);
+                }
+                else
+                {
+                    logger.LogWarning(
+                        "Rate limit reached for {Method} {Path} from IP {Ip}. QueryValues: {QueryValues}. FormValues: {FormValues}",
+                        method,
+                        path,
+                        ip,
+                        string.Join("|", queryValues),
+                        string.Join("|", formValues));
+                }
+            };
+
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
                 var ip = httpContext.ResolveIpOrAnon();

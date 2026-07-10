@@ -61,4 +61,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Infrastructure.Core\Infrastructure.Core.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Services\" />
+	</ItemGroup>
 </Project>

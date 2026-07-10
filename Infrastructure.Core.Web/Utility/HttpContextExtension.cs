@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SensitiveData;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Utility;
@@ -113,5 +114,55 @@ public static class HttpContextExtension
         }
 
         return ip.ToString();
+    }
+
+    public static async Task<IEnumerable<string>> TryGetFormValuesAsync(this HttpContext ctx, CancellationToken cancellationToken)
+    {
+        if (!ctx.Request.HasFormContentType)
+            return [];
+
+        try
+        {
+            var form = await ctx.Request.ReadFormAsync(cancellationToken);
+
+            return form.Count > 0
+                ? FormatKeyValuePairsForLog(ctx, form)
+                : [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public static IEnumerable<string> TryGetQueryValues(this HttpContext ctx)
+    {
+        if (ctx.Request.Query.Count == 0)
+            return [];
+
+        try
+        {
+            return FormatKeyValuePairsForLog(ctx, ctx.Request.Query);
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static IEnumerable<string> FormatKeyValuePairsForLog(
+        HttpContext ctx,
+        IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> collection)
+    {
+        var sensitiveDataService = ctx.RequestServices.GetService<ISensitiveDataService>();
+
+        foreach (var entry in collection)
+        {
+            var value = sensitiveDataService?.IsSensitive(SensitiveDataType.Field, entry.Key) == true
+                ? sensitiveDataService.RedactedValue
+                : string.Join("|", entry.Value);
+
+            yield return $"{entry.Key}={value}";
+        }
     }
 }

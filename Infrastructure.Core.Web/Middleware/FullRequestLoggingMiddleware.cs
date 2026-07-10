@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
+using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.SensitiveData;
+
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Web.Middleware;
 
 public static class FullRequestLoggingBuilderExtensions
@@ -23,49 +25,20 @@ public static class FullRequestLoggingBuilderExtensions
 
 public class FullRequestLoggingMiddleware
 {
-    private const string RedactedValue = "***";
-
-    private static readonly string[] DefaultSensitiveHeaderNames =
-    {
-        "Authorization",
-        "Proxy-Authorization",
-        "Cookie",
-        "Set-Cookie",
-        "X-Api-Key",
-        "Api-Key",
-        "X-Auth-Token",
-        "X-Amz-Security-Token",
-        "X-Csrf-Token"
-    };
-
-    private static readonly string[] DefaultSensitiveFieldNames =
-    {
-        "password",
-        "passwd",
-        "pwd",
-        "secret",
-        "token",
-        "access_token",
-        "refresh_token",
-        "apikey",
-        "api_key",
-        "key",
-        "jwt",
-        "code",
-        "client_secret"
-    };
-
     private readonly RequestDelegate _next;
     private readonly ILogger<FullRequestLoggingMiddleware> _logger;
     private readonly FullRequestLoggingConfiguration _configuration;
+    private readonly ISensitiveDataService _sensitiveDataService;
 
     public FullRequestLoggingMiddleware(
         RequestDelegate next,
         ILogger<FullRequestLoggingMiddleware> logger,
+        ISensitiveDataService sensitiveDataService,
         AppLoggingConfiguration configuration)
     {
         _next = next;
         _logger = logger;
+        _sensitiveDataService = sensitiveDataService;
         _configuration = configuration.FullRequestLogging;
     }
 
@@ -141,62 +114,32 @@ public class FullRequestLoggingMiddleware
 
     private void RedactHeaders(Dictionary<string, string> headers)
     {
-        var sensitiveHeaderNames = GetMergedKeys(_configuration.SensitiveHeaderNames, DefaultSensitiveHeaderNames);
+        var sensitiveHeaderNames = _sensitiveDataService.GetMergedKeywords(
+            SensitiveDataType.Header,
+            _configuration.SensitiveHeaderNames);
 
         foreach (var key in headers.Keys.ToList())
         {
-            if (MatchesSensitiveKey(key, sensitiveHeaderNames, containsMatch: false))
+            if (_sensitiveDataService.MatchesKeyword(key, sensitiveHeaderNames, useContainsMatch: false))
             {
-                headers[key] = RedactedValue;
+                headers[key] = _sensitiveDataService.RedactedValue;
             }
         }
     }
 
     private void RedactNamedValues(Dictionary<string, string> values)
     {
-        var sensitiveFieldNames = GetMergedKeys(_configuration.SensitiveFieldNames, DefaultSensitiveFieldNames);
+        var sensitiveFieldNames = _sensitiveDataService.GetMergedKeywords(
+            SensitiveDataType.Field,
+            _configuration.SensitiveFieldNames);
 
         foreach (var key in values.Keys.ToList())
         {
-            if (MatchesSensitiveKey(key, sensitiveFieldNames, containsMatch: true))
+            if (_sensitiveDataService.MatchesKeyword(key, sensitiveFieldNames, useContainsMatch: true))
             {
-                values[key] = RedactedValue;
+                values[key] = _sensitiveDataService.RedactedValue;
             }
         }
-    }
-
-    private static HashSet<string> GetMergedKeys(IEnumerable<string> configured, IEnumerable<string> defaults)
-    {
-        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var item in defaults.Where(_ => !string.IsNullOrWhiteSpace(_)))
-        {
-            result.Add(item);
-        }
-
-        if (configured != null)
-        {
-            foreach (var item in configured.Where(_ => !string.IsNullOrWhiteSpace(_)))
-            {
-                result.Add(item);
-            }
-        }
-
-        return result;
-    }
-
-    private static bool MatchesSensitiveKey(string key, HashSet<string> sensitiveKeys, bool containsMatch)
-    {
-        if (string.IsNullOrWhiteSpace(key))
-            return false;
-
-        if (sensitiveKeys.Contains(key))
-            return true;
-
-        if (!containsMatch)
-            return false;
-
-        return sensitiveKeys.Any(sensitive => key.Contains(sensitive, StringComparison.OrdinalIgnoreCase));
     }
 
     private string FormatSection(string title, string content)
