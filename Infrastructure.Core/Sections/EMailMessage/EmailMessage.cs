@@ -24,6 +24,7 @@ public class EmailMessage : Entity, IReferencedToEntity
     public DateTime? SentAt { get; set; } = null;
 
     public EmailMessageStatusType Status { get; set; } = EmailMessageStatusType.Created;
+    public EmailMessagePriorityType Priority { get; set; } = EmailMessagePriorityType.Normal;
 
     public Guid? ReferenceId { get; set; }
     public string ReferenceType { get; set; }
@@ -54,6 +55,7 @@ public class EmailMessageConfiguration : IEntityTypeConfiguration<EmailMessage>
         builder.HasIndex(_ => new
         {
             _.Status,
+            _.Priority,
             _.SendAt
         });
 
@@ -132,6 +134,14 @@ public class EMailMessageTemplateTranslation : EntityTranslation<EMailMessageTem
 {
     public string Subject { get; set; }
     public string HtmlContent { get; set; }
+}
+
+public enum EmailMessagePriorityType
+{
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3,
 }
 
 public enum EmailMessageStatusType

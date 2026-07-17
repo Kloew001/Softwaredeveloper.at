@@ -70,7 +70,8 @@ public class EMailSendHandler : IEMailSendHandler
         if (batchSize == 1)
         {
             return await baseQuery
-                .OrderBy(_ => _.DateCreated)
+                .OrderByDescending(_ => _.Priority)
+                .ThenBy(_ => _.SendAt)
                 .Select(_ => _.Id)
                 .Take(batchSize)
                 .ToListAsync(ct);
@@ -81,13 +82,15 @@ public class EMailSendHandler : IEMailSendHandler
         var fifoCount = batchSize - lifoCount;
 
         var fifoIds = await baseQuery
-            .OrderBy(_ => _.DateCreated)
+            .OrderByDescending(_ => _.Priority)
+            .ThenBy(_ => _.SendAt)
             .Select(_ => _.Id)
             .Take(fifoCount)
                 .ToListAsync(ct);
 
         var lifoIds = await baseQuery
-            .OrderByDescending(_ => _.DateCreated)
+            .OrderByDescending(_ => _.Priority)
+            .ThenByDescending(_ => _.SendAt)
             .Select(_ => _.Id)
             .Take(lifoCount)
                 .ToListAsync(ct);

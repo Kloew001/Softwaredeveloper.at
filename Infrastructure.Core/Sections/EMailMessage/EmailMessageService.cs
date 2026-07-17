@@ -99,14 +99,17 @@ public class EmailMessageService
     private readonly EmailMessageIgnoreSection _emailMessageIgnoreSection;
     private readonly IEmailMessageBookmarkReplacer _emailMessageBookmarkReplacer;
     private readonly ICurrentLanguageService _currentLanguageService;
+    private readonly IDateTimeService _dateTimeService;
 
     public EmailMessageService(
         IDbContext context,
         ICurrentLanguageService currentLanguageService,
+        IDateTimeService dateTimeService,
         EmailMessageIgnoreSection emailMessageIgnoreSection,
         IEmailMessageBookmarkReplacer emailMessageBookmarkReplacer)
     {
         _context = context;
+        _dateTimeService = dateTimeService;
         _currentLanguageService = currentLanguageService;
         _emailMessageIgnoreSection = emailMessageIgnoreSection;
         _emailMessageBookmarkReplacer = emailMessageBookmarkReplacer;
@@ -121,6 +124,9 @@ public class EmailMessageService
         var email = await _context.CreateEntityAync<EmailMessage>();
 
         email.Status = EmailMessageStatusType.Created;
+        email.Priority = EmailMessagePriorityType.Normal;
+        email.SendAt = _dateTimeService.Now();
+
         email.SetReference(referenceEntity);
 
         return email;
