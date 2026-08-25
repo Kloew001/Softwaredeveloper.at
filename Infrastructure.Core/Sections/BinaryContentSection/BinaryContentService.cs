@@ -19,26 +19,32 @@ public class BinaryContentService
         _context = context;
     }
 
+    public async Task CreateContentAsync(IReferencedToBinaryContent referencedEntity, string name, byte[] content, string mimeType = null)
+    {
+        var binaryContent = await _context.CreateEntityAync<BinaryContent>();
+
+        referencedEntity.BinaryContentId = binaryContent.Id;
+        referencedEntity.BinaryContent = binaryContent;
+
+        referencedEntity.BinaryContent.ReferenceType = referencedEntity.GetType().UnProxy().Name;
+        referencedEntity.BinaryContent.ReferenceId = referencedEntity.Id;
+
+        referencedEntity.BinaryContent.Data = await _context.CreateEntityAync<BinaryContentData>();
+        referencedEntity.BinaryContent.Data.BinaryContent = referencedEntity.BinaryContent;
+        referencedEntity.BinaryContent.Data.BinaryContentId = referencedEntity.BinaryContent.Id;
+
+        await this.ApplyContentAsync(referencedEntity, name, content, mimeType);
+    }
+
     public async Task ApplyContentAsync(IReferencedToBinaryContent referencedEntity, string name, byte[] content, string mimeType = null)
     {
         if (referencedEntity.BinaryContent == null)
         {
-            var binaryContent = await _context.CreateEntityAync<BinaryContent>();
-            referencedEntity.BinaryContentId = binaryContent.Id;
-            referencedEntity.BinaryContent = binaryContent;
-
-            referencedEntity.BinaryContent.ReferenceType = referencedEntity.GetType().UnProxy().Name;
-            referencedEntity.BinaryContent.ReferenceId = referencedEntity.Id;
+            await CreateContentAsync(referencedEntity, name, content, mimeType);
         }
 
         referencedEntity.BinaryContent.Name = name;
         referencedEntity.BinaryContent.MimeType = mimeType ?? MimeTypes.GetMimeType(name);
-
-        referencedEntity.BinaryContent.Data ??= new BinaryContentData
-        {
-            BinaryContent = referencedEntity.BinaryContent,
-            BinaryContentId = referencedEntity.BinaryContent.Id,
-        };
 
         referencedEntity.BinaryContent.Data.Bytes = content;
         referencedEntity.BinaryContent.ContentSize = content.Length;
