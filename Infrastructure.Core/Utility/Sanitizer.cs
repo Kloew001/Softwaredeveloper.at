@@ -53,9 +53,10 @@ public static class StringSanitizer
                 case UnicodeCategory.PrivateUse:
                 case UnicodeCategory.OtherNotAssigned:
                     continue;
+                default:
+                    sb.Append(ch);
+                    break;
             }
-
-            sb.Append(ch);
         }
 
         return sb.ToString();

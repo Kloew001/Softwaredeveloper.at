@@ -46,24 +46,41 @@ public class SmtpEMailSender : IEMailSender
                 var mailMessage = new MimeMessage();
                 mailMessage.From.Add(new MailboxAddress(_config.FromName, _config.FromEmail));
 
+                var addedAddresses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 foreach (var anAdress in message.AnAdress.Split(';'))
                 {
-                    mailMessage.To.Add(MailboxAddress.Parse(anAdress));
+                    var mailboxAddress = MailboxAddress.Parse(anAdress);
+
+                    if (addedAddresses.Add(mailboxAddress.Address))
+                    {
+                        mailMessage.To.Add(mailboxAddress);
+                    }
                 }
 
                 if (message.CcAdress.IsNullOrEmpty() == false)
                 {
                     foreach (var ccAdress in message.CcAdress.Split(';'))
                     {
-                        mailMessage.Cc.Add(MailboxAddress.Parse(ccAdress));
+                        var mailboxAddress = MailboxAddress.Parse(ccAdress);
+
+                        if (addedAddresses.Add(mailboxAddress.Address))
+                        {
+                            mailMessage.Cc.Add(mailboxAddress);
+                        }
                     }
                 }
 
                 if (message.BccAdress.IsNullOrEmpty() == false)
                 {
-                    foreach (var bcAdress in message.CcAdress.Split(';'))
+                    foreach (var bcAdress in message.BccAdress.Split(';'))
                     {
-                        mailMessage.Bcc.Add(MailboxAddress.Parse(bcAdress));
+                        var mailboxAddress = MailboxAddress.Parse(bcAdress);
+
+                        if (addedAddresses.Add(mailboxAddress.Address))
+                        {
+                            mailMessage.Bcc.Add(mailboxAddress);
+                        }
                     }
                 }
 

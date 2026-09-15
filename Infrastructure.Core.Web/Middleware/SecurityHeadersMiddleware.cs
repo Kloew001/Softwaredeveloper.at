@@ -71,12 +71,37 @@ public class SecurityHeadersService : ISecurityHeadersService
 
     protected virtual void SetCacheControl(HttpContext context)
     {
-        context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
+        // Don't set no-store for static resources (CSS, JS, images, fonts, etc.)
+        if (!IsStaticResource(context))
+        {
+            context.Response.Headers.Append("Cache-Control", new StringValues("no-store"));
+        }
+    }
+
+    protected virtual bool IsStaticResource(HttpContext context)
+    {
+        var path = context.Request.Path.Value?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(path))
+            return false;
+
+        // Common static file extensions
+        var staticExtensions = new[] 
+        { 
+            ".css", ".js", ".map",
+            ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico",
+            ".woff", ".woff2", ".ttf", ".eot", ".otf"
+        };
+
+        return staticExtensions.Any(ext => path.EndsWith(ext));
     }
 
     protected virtual void SetPragma(HttpContext context)
     {
-        context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
+        // Don't set no-cache pragma for static resources
+        if (!IsStaticResource(context))
+        {
+            context.Response.Headers.Append("Pragma", new StringValues("no-cache"));
+        }
     }
 
     protected virtual void SetStrictTransportSecurity(HttpContext context)
