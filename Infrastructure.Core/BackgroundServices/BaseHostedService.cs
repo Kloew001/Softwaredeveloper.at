@@ -130,7 +130,11 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             }
 
             _appLifetime.ApplicationStarted.Register(async () =>
-                await ExecuteAsync(cancellationToken));
+            {
+                using var executionCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken, _cancellationToken.Token, _appLifetime.ApplicationStopping);
+                await ExecuteAsync(executionCancellationTokenSource.Token);
+            });
 
             return Task.CompletedTask;
         }
@@ -180,19 +184,27 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
                 await StartBackgroundServiceInfoAsync(cancellationToken);
 
-                using var heartbeatCancellationTokenSource = new CancellationTokenSource();
+                using var heartbeatCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var heartbeatTask = StartHeartbeatAsync(heartbeatCancellationTokenSource.Token);
 
-                using (var scopeInner = _serviceScopeFactory.CreateScope())
+                try
                 {
+                    using var scopeInner = _serviceScopeFactory.CreateScope();
                     await ExecuteInternalAsync(scopeInner, cancellationToken);
                 }
-                heartbeatCancellationTokenSource.Cancel();
-                await heartbeatTask;
+                finally
+                {
+                    heartbeatCancellationTokenSource.Cancel();
+                    await heartbeatTask;
+                }
 
                 await FinishedBackgroundServiceInfoAsync(cancellationToken);
 
                 _logger.LogInformation("Finished HostedService {Name} in {ElapsedMilliseconds} ms", Name, stopWatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -202,8 +214,13 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             }
             finally
             {
-                await CheckExecutingAsync(cancellationToken);
+                if (!cancellationToken.IsCancellationRequested)
+                    await CheckExecutingAsync(cancellationToken);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Normal shutdown.
         }
         catch (Exception ex)
         {
@@ -258,7 +275,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             }
             while (!cancellationToken.IsCancellationRequested);
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             //ignore
         }

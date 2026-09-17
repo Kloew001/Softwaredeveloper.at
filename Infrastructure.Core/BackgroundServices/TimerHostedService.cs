@@ -105,11 +105,17 @@ public abstract class TimerHostedService : BaseHostedService, IBackgroundTrigger
                     await _trigger.WaitAsync(_configuration.TriggerExecuteWaitTimeout.Value, cancellationToken);
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 await base.ExecuteAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var delay = await GetWaitIntervalAsync();
                 await Task.Delay(delay, cancellationToken);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation($"HostedService '{Name}' is stopping due to cancellation.");
         }
         catch (Exception ex)
         {
