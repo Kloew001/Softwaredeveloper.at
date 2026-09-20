@@ -55,3 +55,30 @@ public static class IQueryableExtensions
         return source.Where(_ => _ != null);
     }
 }
+
+public static class DbContextLocalExtensions
+{
+    public static T? FindLocalOrDefault<T>(
+        this DbContext context,
+        Expression<Func<T, bool>> predicate)
+        where T : class
+    {
+        var set = context.Set<T>();
+        var local = set.Local.SingleOrDefault(predicate.Compile());
+
+        return local ?? set.SingleOrDefault(predicate);
+    }
+
+    public static async Task<T?> FindLocalOrDefaultAsync<T>(
+        this DbContext context,
+        Expression<Func<T, bool>> predicate,
+        CancellationToken cancellationToken = default)
+        where T : class
+    {
+        var set = context.Set<T>();
+
+        var local = set.Local.SingleOrDefault(predicate.Compile());
+
+        return local ?? await set.SingleOrDefaultAsync(predicate, cancellationToken);
+    }
+}

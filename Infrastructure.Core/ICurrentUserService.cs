@@ -33,7 +33,7 @@ public class AlwaysServiceUserCurrentUserService : ICurrentUserService
 
 public class CurrentUserService : ICurrentUserService
 {
-    private Guid? _currentUserId = ApplicationUserIds.ServiceAdminId;
+    private Guid? _currentUserId = null;
     private Guid? _previousUserId = null;
 
     private readonly IDbContext _context;
@@ -60,7 +60,7 @@ public class CurrentUserService : ICurrentUserService
 
     public ApplicationUser GetCurrentUser()
     {
-        return _context.Set<ApplicationUser>().SingleOrDefault(u => u.Id == _currentUserId);
+        return _context.Set<ApplicationUser>().Find(_currentUserId);
     }
 
     public void SetCurrentUser(Guid? id)
