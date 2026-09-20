@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core;
 
@@ -60,7 +61,9 @@ public class CurrentUserService : ICurrentUserService
 
     public ApplicationUser GetCurrentUser()
     {
-        return _context.Set<ApplicationUser>().Find(_currentUserId);
+        return _context.FindOrDefault<ApplicationUser>(_ => _.Id == _currentUserId,
+            query => query
+                .Include(u => u.UserRoles));
     }
 
     public void SetCurrentUser(Guid? id)

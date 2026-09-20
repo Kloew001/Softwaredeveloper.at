@@ -4,7 +4,6 @@ using System.Reflection;
 
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
@@ -12,11 +11,11 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 public sealed partial class EfCommandInterceptor : DbCommandInterceptor
 {
     private readonly ILogger<EfCommandInterceptor> _logger;
-    private readonly IOptionsMonitor<AppLoggingConfiguration> _settings;
+    private readonly AppLoggingConfiguration _settings;
 
     public EfCommandInterceptor(
         ILogger<EfCommandInterceptor> logger,
-        IOptionsMonitor<AppLoggingConfiguration> settings)
+        AppLoggingConfiguration settings)
     {
         _logger = logger;
         _settings = settings;
@@ -122,7 +121,7 @@ public sealed partial class EfCommandInterceptor : DbCommandInterceptor
         else if (!_logger.IsEnabled(LogLevel.Warning) && !_logger.IsEnabled(LogLevel.Debug))
             return;
 
-        var settings = _settings.CurrentValue.EntityFramework;
+        var settings = _settings.EntityFramework;
         var durationMilliseconds = duration.TotalMilliseconds;
         var level = forcedLevel
             ?? (settings?.CommandStackTraceWarningThresholdMilliseconds is { } threshold

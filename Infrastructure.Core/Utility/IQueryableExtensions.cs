@@ -58,27 +58,42 @@ public static class IQueryableExtensions
 
 public static class DbContextLocalExtensions
 {
-    public static T? FindLocalOrDefault<T>(
-        this DbContext context,
-        Expression<Func<T, bool>> predicate)
+    public static T? FindOrDefault<T>(
+        this IDbContext context,
+        Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IQueryable<T>>? includes = null)
         where T : class
     {
         var set = context.Set<T>();
-        var local = set.Local.SingleOrDefault(predicate.Compile());
+        if (includes is null)
+        {
+            var local = set.Local.SingleOrDefault(predicate.Compile());
+            if (local is not null)
+                return local;
+        }
 
-        return local ?? set.SingleOrDefault(predicate);
+        var query = includes is null ? set : includes(set);
+
+        return query.SingleOrDefault(predicate);
     }
 
-    public static async Task<T?> FindLocalOrDefaultAsync<T>(
-        this DbContext context,
+    public static async Task<T?> FindOrDefaultAsync<T>(
+        this IDbContext context,
         Expression<Func<T, bool>> predicate,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<IQueryable<T>, IQueryable<T>>? includes = null)
         where T : class
     {
         var set = context.Set<T>();
+        if (includes is null)
+        {
+            var local = set.Local.SingleOrDefault(predicate.Compile());
+            if (local is not null)
+                return local;
+        }
 
-        var local = set.Local.SingleOrDefault(predicate.Compile());
+        var query = includes is null ? set : includes(set);
 
-        return local ?? await set.SingleOrDefaultAsync(predicate, cancellationToken);
+        return await query.SingleOrDefaultAsync(predicate, cancellationToken);
     }
 }
