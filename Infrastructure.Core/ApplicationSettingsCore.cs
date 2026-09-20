@@ -96,6 +96,8 @@ public class EntityFrameworkLoggingConfiguration
 {
     public bool EnableDetailedErrors { get; set; } = false;
     public bool EnableSensitiveDataLogging { get; set; } = false;
+    public bool EnableCommandStackTraceLogging { get; set; } = false;
+    public int? CommandStackTraceWarningThresholdMilliseconds { get; set; } = 100;
 }
 
 public class FullRequestLoggingConfiguration

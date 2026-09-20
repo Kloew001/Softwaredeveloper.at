@@ -66,6 +66,7 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
     public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
     {
+        options.AddInterceptors(serviceProvider.GetRequiredService<EfCommandInterceptor>());
         options.UseLazyLoadingProxies();
 
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
