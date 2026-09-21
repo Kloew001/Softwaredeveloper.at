@@ -67,7 +67,9 @@ public abstract class BaseHostedService : IHostedService, IDisposable
     protected readonly HostedServicesConfiguration _configuration;
     protected readonly IHostApplicationLifetime _appLifetime;
     protected readonly IDateTimeService _dateTimeService;
-    private readonly CancellationTokenSource _cancellationToken = new();
+    private readonly CancellationTokenSource _stoppingCts = new();
+    private Task _executeTask;
+    private bool _disposed;
 
     public virtual string Name { get => GetType().Name; }
 
@@ -129,15 +131,36 @@ public abstract class BaseHostedService : IHostedService, IDisposable
                 return Task.CompletedTask;
             }
 
-            _appLifetime.ApplicationStarted.Register(async () =>
-            {
-                using var executionCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken, _cancellationToken.Token, _appLifetime.ApplicationStopping);
-                await ExecuteAsync(executionCancellationTokenSource.Token);
-            });
+            _appLifetime.ApplicationStarted.Register(() => RunExecuteAsync(cancellationToken));
 
             return Task.CompletedTask;
         }
+    }
+
+    private void RunExecuteAsync(CancellationToken startCancellationToken)
+    {
+        var executionCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            startCancellationToken, _stoppingCts.Token, _appLifetime.ApplicationStopping);
+
+        _executeTask = Task.Run(async () =>
+        {
+            try
+            {
+                await ExecuteAsync(executionCancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) when (executionCancellationTokenSource.IsCancellationRequested)
+            {
+                //ignore, expected during shutdown
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "HostedService {Name} execution failed unexpectedly.", Name);
+            }
+            finally
+            {
+                executionCancellationTokenSource.Dispose();
+            }
+        });
     }
 
     protected virtual bool CanStart()
@@ -246,19 +269,39 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     protected abstract Task ExecuteInternalAsync(IServiceScope scope, CancellationToken cancellationToken);
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Stop HostedService {Name}", Name);
 
-        _cancellationToken.Cancel();
+        _stoppingCts.Cancel();
+
+        if (_executeTask != null)
+        {
+            var tcs = new TaskCompletionSource();
+            using (cancellationToken.Register(() => tcs.TrySetResult()))
+            {
+                await Task.WhenAny(_executeTask, tcs.Task);
+            }
+        }
 
         Dispose();
-
-        return Task.CompletedTask;
     }
 
     public virtual void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (!_stoppingCts.IsCancellationRequested)
+        {
+            _stoppingCts.Cancel();
+        }
+
+        _stoppingCts.Dispose();
     }
 
     protected virtual TimeSpan HearthBeatInterval { get; set; } = TimeSpan.FromSeconds(10);
