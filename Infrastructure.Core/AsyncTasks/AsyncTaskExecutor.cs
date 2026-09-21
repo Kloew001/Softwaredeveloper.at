@@ -108,7 +108,7 @@ public class AsyncTaskExecutor
             {
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
+                    await using var scope = _serviceProvider.CreateAsyncScope();
                     var asyncTaskExecutor = scope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
                     await asyncTaskExecutor.ExecuteNextOperationAsync(cancellationToken);
@@ -142,10 +142,10 @@ public class AsyncTaskExecutor
         var now = _dateTimeService.Now();
         var asyncTaskOperationId = Guid.Empty;
 
-        using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
+        await using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
         {
             var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteNextOperationAsync)}";
-            if (await distributedLock.TryAcquireLockAsync(lockName, 1000) == false)
+            if (await distributedLock.TryAcquireLockAsync(lockName, 1000, cancellationToken) == false)
                 throw new TimeoutException();
 
             await RemoveDuplicatesAsync(now, cancellationToken);
@@ -160,7 +160,7 @@ public class AsyncTaskExecutor
             await SetExecutingAsync(asyncTaskOperationId);
         }
 
-        using var childScope = _serviceProvider.CreateScope();
+        await using var childScope = _serviceProvider.CreateAsyncScope();
         var asyncTaskExecutor = childScope.ServiceProvider.GetService<AsyncTaskExecutor>();
 
         await asyncTaskExecutor.ExecuteAsyncTaskOperationIdAsync(asyncTaskOperationId, cancellationToken);
@@ -168,9 +168,9 @@ public class AsyncTaskExecutor
 
     public async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
     {
-        using var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>();
+        await using var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>();
         var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteAsyncTaskOperationIdAsync)}_{asyncTaskOperationId}";
-        if (distributedLock.TryAcquireLock(lockName, 3) == false)
+        if (await distributedLock.TryAcquireLockAsync(lockName, 3, cancellationToken) == false)
             throw new InvalidOperationException();
 
         try

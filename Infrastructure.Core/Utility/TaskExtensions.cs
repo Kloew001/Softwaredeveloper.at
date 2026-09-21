@@ -15,7 +15,7 @@ public static class TaskExtension
         this IServiceProvider parentServiceProvider,
         Func<IServiceProvider, CancellationToken, Task> innerAction, CancellationToken cancellationToken = default)
     {
-        using (var childScope = parentServiceProvider.CreateChildScope())
+        await using (var childScope = new AsyncServiceScope(parentServiceProvider.CreateChildScope()))
         {
             await innerAction(childScope.ServiceProvider, cancellationToken);
         }
@@ -24,7 +24,7 @@ public static class TaskExtension
         this IServiceProvider parentServiceProvider,
         Func<IServiceProvider, T1, CancellationToken, Task> innerAction, CancellationToken cancellationToken = default)
     {
-        using (var childScope = parentServiceProvider.CreateChildScope())
+        await using (var childScope = new AsyncServiceScope(parentServiceProvider.CreateChildScope()))
         {
             var t1 = childScope.ServiceProvider.GetService<T1>();
 
@@ -35,7 +35,7 @@ public static class TaskExtension
         this IServiceProvider parentServiceProvider,
         Func<IServiceProvider, T1, T2, CancellationToken, Task> innerAction, CancellationToken cancellationToken = default)
     {
-        using (var childScope = parentServiceProvider.CreateChildScope())
+        await using (var childScope = new AsyncServiceScope(parentServiceProvider.CreateChildScope()))
         {
             var t1 = childScope.ServiceProvider.GetService<T1>();
             var t2 = childScope.ServiceProvider.GetService<T2>();
@@ -47,7 +47,7 @@ public static class TaskExtension
         this IServiceProvider parentServiceProvider,
         Func<IServiceProvider, T1, T2, T3, CancellationToken, Task> innerAction, CancellationToken cancellationToken = default)
     {
-        using (var childScope = parentServiceProvider.CreateChildScope())
+        await using (var childScope = new AsyncServiceScope(parentServiceProvider.CreateChildScope()))
         {
             var t1 = childScope.ServiceProvider.GetService<T1>();
             var t2 = childScope.ServiceProvider.GetService<T2>();

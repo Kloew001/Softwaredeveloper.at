@@ -1,8 +1,6 @@
 ﻿namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
-public interface IDistributedLock : IDisposable
+public interface IDistributedLock : IAsyncDisposable
 {
-    bool TryExecuteInDistributedLock(string lockId, Func<Task> exclusiveLockTask);
-    bool TryAcquireLock(string lockId, int retry = 0);
-    Task<bool> TryAcquireLockAsync(string lockId, int retry = 0, CancellationToken cancellationToken = default);
+    Task<bool> TryAcquireLockAsync(string lockId, int retry = 3, CancellationToken cancellationToken = default);
 }

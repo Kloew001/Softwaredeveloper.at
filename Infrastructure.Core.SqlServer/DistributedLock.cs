@@ -1,9 +1,7 @@
 ﻿using System.Data;
-using System.Text;
 
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 using SoftwaredeveloperDotAt.Infrastructure.Core.DependencyInjection;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
@@ -12,156 +10,166 @@ using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer;
 
 [TransientDependency<IDistributedLock>]
-public sealed class SQLServerDistributedLock : IDistributedLock, IDisposable
+public sealed class SQLServerDistributedLock : IDistributedLock
 {
-    private const string _lockMode = "Exclusive";
-    private const string _lockOwner = "Transaction";
-    private const string _lockDbPrincipal = "public";
-
-    private string _lockId;
-
-    private int _lockTimeout = 180000;
-
+    private const int _lockTimeout = 180000;
+    private readonly string _connectionString;
     private SqlConnection _connection;
     private SqlTransaction _transaction;
+    private bool _disposed;
+    private int _operationInProgress;
 
-    private bool _lockCreated = false;
-    private readonly ILogger<SQLServerDistributedLock> _logger;
-
-    public SQLServerDistributedLock(IDbContext context, ILogger<SQLServerDistributedLock> logger)
+    public SQLServerDistributedLock(IDbContext context)
     {
-        _logger = logger;
-
+        ArgumentNullException.ThrowIfNull(context);
         var connectionString = context.Database.GetConnectionString();
-        _connection = new SqlConnection(connectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        _connectionString = connectionString;
     }
 
-    public bool TryExecuteInDistributedLock(string lockId, Func<Task> exclusiveLockTask)
+    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 3, CancellationToken cancellationToken = default)
     {
-        var hasLockedAcquired = TryAcquireLock(lockId);
-
-        if (!hasLockedAcquired)
-        {
-            return false;
-        }
+        EnterOperation();
 
         try
         {
-            exclusiveLockTask();
+            return await TryAcquireLockCoreAsync(lockId, retry, cancellationToken);
         }
         finally
         {
-            ReleaseLock();
+            Volatile.Write(ref _operationInProgress, 0);
         }
-
-        return true;
     }
 
-    public async Task<bool> TryAcquireLockAsync(string lockId, int retry = 0, CancellationToken cancellationToken = default)
+    private async Task<bool> TryAcquireLockCoreAsync(string lockId, int retry, CancellationToken cancellationToken)
     {
-        _lockId = lockId;
+        ArgumentException.ThrowIfNullOrWhiteSpace(lockId);
+        ArgumentOutOfRangeException.ThrowIfNegative(retry);
 
-        if (_connection.State != ConnectionState.Open)
-            await _connection.OpenAsync();
+        if (lockId.Length > 255)
+            throw new ArgumentException("SQL application lock names must not exceed 255 characters.", nameof(lockId));
 
-        _transaction = (SqlTransaction)await _connection.BeginTransactionAsync();
+        if (_transaction is not null)
+            throw new InvalidOperationException("This instance already holds a SQL application lock.");
 
-        using (var createCmd = _connection.CreateCommand())
+        while (true)
         {
-            createCmd.Transaction = _transaction;
-            createCmd.CommandTimeout = _lockTimeout;
-            createCmd.CommandType = System.Data.CommandType.Text;
-
-            var sbCreateCommand = new StringBuilder();
-            sbCreateCommand.AppendLine("DECLARE @res INT");
-            sbCreateCommand.AppendLine("EXEC @res = sp_getapplock");
-            sbCreateCommand.Append("@Resource = '").Append(_lockId).AppendLine("',");
-            sbCreateCommand.Append("@LockMode = '").Append(_lockMode).AppendLine("',");
-            sbCreateCommand.Append("@LockOwner = '").Append(_lockOwner).AppendLine("',");
-            sbCreateCommand.Append("@LockTimeout = ").Append(_lockTimeout).AppendLine(",");
-            sbCreateCommand.Append("@DbPrincipal = '").Append(_lockDbPrincipal).AppendLine("'");
-            sbCreateCommand.AppendLine("IF @res NOT IN (0, 1)");
-            sbCreateCommand.AppendLine("BEGIN");
-            sbCreateCommand.AppendLine("RAISERROR ( 'Unable to acquire Lock', 16, 1 )");
-            sbCreateCommand.AppendLine("END");
-
-            createCmd.CommandText = sbCreateCommand.ToString();
-
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await createCmd.ExecuteNonQueryAsync(cancellationToken);
-
-                _lockCreated = true;
-            }
-            catch (Exception ex)
-            {
-                if (_transaction != null &&
-                    _transaction.Connection != null &&
-                    _transaction.Connection.State == System.Data.ConnectionState.Open)
-                    _transaction.Rollback();
-
-                throw new Exception(string.Format("Unable to get SQL Application Lock on '{0}'", _lockId), ex);
-            }
-        }
-
-        if (_lockCreated == false)
-        {
-            for (var r = 0; r < retry; r++)
-            {
-                await Task.Delay(100);
-
-                if (await TryAcquireLockAsync(lockId, 0, cancellationToken))
+                if (await TryCreateLockAsync(lockId, cancellationToken))
                     return true;
             }
+            catch (Exception acquisitionException)
+            {
+                try
+                {
+                    await ReleaseLockAsync();
+                }
+                catch (Exception cleanupException)
+                {
+                    throw new AggregateException("SQL application lock acquisition and cleanup failed.", acquisitionException, cleanupException);
+                }
+
+                throw;
+            }
+
+            await ReleaseLockAsync();
+
+            if (retry == 0)
+                return false;
+
+            retry--;
+            await Task.Delay(100, cancellationToken);
         }
-
-        return _lockCreated;
     }
 
-    public bool TryAcquireLock(string lockId, int retry = 0)
+    private async Task<bool> TryCreateLockAsync(string lockId, CancellationToken cancellationToken)
     {
-        return TryAcquireLockAsync(lockId, retry).GetAwaiter().GetResult();
+        _connection = new SqlConnection(_connectionString);
+        await _connection.OpenAsync(cancellationToken);
+        _transaction = (SqlTransaction)await _connection.BeginTransactionAsync(cancellationToken);
+
+        await using var command = _connection.CreateCommand();
+        command.Transaction = _transaction;
+        command.CommandType = CommandType.StoredProcedure;
+        command.CommandText = "sys.sp_getapplock";
+        command.CommandTimeout = (int)Math.Ceiling(_lockTimeout / 1000d) + 30;
+        command.Parameters.Add("@Resource", SqlDbType.NVarChar, 255).Value = lockId;
+        command.Parameters.Add("@LockMode", SqlDbType.VarChar, 32).Value = "Exclusive";
+        command.Parameters.Add("@LockOwner", SqlDbType.VarChar, 32).Value = "Transaction";
+        command.Parameters.Add("@LockTimeout", SqlDbType.Int).Value = _lockTimeout;
+        command.Parameters.Add("@DbPrincipal", SqlDbType.NVarChar, 128).Value = "public";
+        var returnValue = command.Parameters.Add("@RETURN_VALUE", SqlDbType.Int);
+        returnValue.Direction = ParameterDirection.ReturnValue;
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return returnValue.Value switch
+        {
+            0 or 1 => true,
+            -1 => false,
+            _ => throw new InvalidOperationException($"Unable to acquire SQL application lock '{lockId}' (result: {returnValue.Value}).")
+        };
     }
 
-    private void ReleaseLock()
+    private void EnterOperation()
     {
-        using var releaseCmd = _connection.CreateCommand();
-        releaseCmd.Transaction = _transaction;
-        releaseCmd.CommandType = System.Data.CommandType.StoredProcedure;
-        releaseCmd.CommandText = "sp_releaseapplock";
+        if (Interlocked.CompareExchange(ref _operationInProgress, 1, 0) != 0)
+            throw new InvalidOperationException("Concurrent operations on a SQLServerDistributedLock instance are not supported.");
 
-        releaseCmd.Parameters.AddWithValue("@Resource", _lockId);
-        releaseCmd.Parameters.AddWithValue("@LockOwner", _lockOwner);
-        releaseCmd.Parameters.AddWithValue("@DbPrincipal", _lockDbPrincipal);
+        if (_disposed)
+        {
+            Volatile.Write(ref _operationInProgress, 0);
+            throw new ObjectDisposedException(nameof(SQLServerDistributedLock));
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.CompareExchange(ref _operationInProgress, 1, 0) != 0)
+            throw new InvalidOperationException("Cannot dispose a SQLServerDistributedLock instance while an operation is running.");
 
         try
         {
-            releaseCmd.ExecuteNonQuery();
-            _transaction.Commit();
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            await ReleaseLockAsync();
         }
-        catch (Exception)
+        finally
         {
+            Volatile.Write(ref _operationInProgress, 0);
         }
     }
 
-    private bool _disposed;
-    public void Dispose()
+    private async Task ReleaseLockAsync()
     {
-        if (_disposed == true)
-        {
-        }
+        var transaction = _transaction;
+        var connection = _connection;
+        _transaction = null;
+        _connection = null;
 
-        if (_disposed == false)
+        try
         {
-            if (_lockCreated)
+            // Ending the dedicated transaction releases the lock, even during cancellation.
+            if (transaction?.Connection is not null)
+                await transaction.RollbackAsync(CancellationToken.None);
+        }
+        finally
+        {
+            try
             {
-                ReleaseLock();
+                if (transaction is not null)
+                    await transaction.DisposeAsync();
             }
-
-            _connection?.Close();
-            _connection?.Dispose();
-            _connection = null;
+            finally
+            {
+                if (connection is not null)
+                    await connection.DisposeAsync();
+            }
         }
-        _disposed = true;
     }
 }
