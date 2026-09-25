@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Dtos;
 
 [ScopedDependency]
-public class DtoFactoryResolver
+public partial class DtoFactoryResolver
 {
     [SingletonDependency]
     public class DtoFactoryTypeStore
@@ -109,17 +109,20 @@ public class DtoFactoryResolver
     protected readonly IMemoryCache _memoryCache;
     protected readonly IDbContext _dbContext;
     protected readonly ILogger<DtoFactoryResolver> _logger;
+    protected readonly IApplicationSettings _settings;
 
     public DtoFactoryResolver(
         IServiceProvider serviceProvider,
         DtoFactoryTypeStore dtoFactoryResolver,
         IMemoryCache memoryCache,
         IDbContext dbContext,
-        ILogger<DtoFactoryResolver> logger)
+        ILogger<DtoFactoryResolver> logger,
+        IApplicationSettings settings)
     {
         _serviceProvider = serviceProvider;
         _dtoFactoryTypeStore = dtoFactoryResolver;
         _memoryCache = memoryCache;
+        _settings = settings;
         _dbContext = dbContext;
         _logger = logger;
     }
@@ -284,9 +287,31 @@ public class DtoFactoryResolver
             })
             .ToList();
 
-        if (stopwatch.ElapsedMilliseconds > 1000)
+        var dtoConversionSettings = _settings.AppLogging?.DtoConversion;
+        var warningThreshold = dtoConversionSettings?.CollectionWarningThresholdMilliseconds ?? 500;
+
+        if (stopwatch.ElapsedMilliseconds > warningThreshold)
         {
-            _logger.LogWarning("Converted {Count} entities to dtos in {ElapsedMilliseconds} ms, which is longer than the threshold of 1000 ms. Consider optimizing the DTO factories or caching the results.", entities.Count(), stopwatch.ElapsedMilliseconds);
+            if (dtoConversionSettings?.EnableStackTraceLogging == true)
+            {
+                LogConvertToDtosWithTrace(
+                    _logger,
+                    dtos.Count,
+                    typeof(TDto).Name,
+                    stopwatch.ElapsedMilliseconds,
+                    warningThreshold,
+                    Environment.NewLine,
+                    StackTraceHelper.GetExecutingAssemblyCallStack());
+            }
+            else
+            {
+                LogConvertToDtosWithoutTrace(
+                    _logger,
+                    dtos.Count,
+                    typeof(TDto).Name,
+                    stopwatch.ElapsedMilliseconds,
+                    warningThreshold);
+            }
         }
 
         return dtos;
@@ -324,9 +349,33 @@ public class DtoFactoryResolver
 
         dto = (TDto)dtoFactory.ConvertToDto(entity, dto);
 
-        if (stopwatch.ElapsedMilliseconds > 100)
+        var dtoConversionSettings = _settings.AppLogging?.DtoConversion;
+        var warningThreshold = dtoConversionSettings?.WarningThresholdMilliseconds ?? 100;
+
+        if (stopwatch.ElapsedMilliseconds > warningThreshold)
         {
-            _logger.LogWarning("Converted entity of type {EntityType} to DTO of type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of 100 ms. Consider optimizing the DTO factory or caching the results.", entity.GetType().Name, typeof(TDto).Name, stopwatch.ElapsedMilliseconds);
+            if (dtoConversionSettings?.EnableStackTraceLogging == true)
+            {
+                LogConvertToDtoWithTrace(
+                    _logger,
+                    entity.GetType().Name,
+                    typeof(TDto).Name,
+                    dtoFactory.GetType().Name,
+                    stopwatch.ElapsedMilliseconds,
+                    warningThreshold,
+                    Environment.NewLine,
+                    StackTraceHelper.GetExecutingAssemblyCallStack());
+            }
+            else
+            {
+                LogConvertToDtoWithoutTrace(
+                    _logger,
+                    entity.GetType().Name,
+                    typeof(TDto).Name,
+                    dtoFactory.GetType().Name,
+                    stopwatch.ElapsedMilliseconds,
+                    warningThreshold);
+            }
         }
 
         return dto;
@@ -484,6 +533,62 @@ public class DtoFactoryResolver
 
         return (TEntity)factory.ConvertToEntity(dto, entity);
     }
+
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Warning,
+        Message = "Converted {Count} entities to dto type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of {ThresholdMilliseconds} ms. Consider optimizing the DTO factories or caching the results." +
+            "{NewLine}C# completion stack:{NewLine}{DtoConversionStackTrace}",
+        SkipEnabledCheck = true)]
+    private static partial void LogConvertToDtosWithTrace(
+        ILogger logger,
+        int count,
+        string dtoType,
+        long elapsedMilliseconds,
+        int thresholdMilliseconds,
+        string newLine,
+        string dtoConversionStackTrace);
+
+    [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Warning,
+        Message = "Converted {Count} entities to dto type {DtoType} in {ElapsedMilliseconds} ms, which is longer than the threshold of {ThresholdMilliseconds} ms. Consider optimizing the DTO factories or caching the results.",
+        SkipEnabledCheck = true)]
+    private static partial void LogConvertToDtosWithoutTrace(
+        ILogger logger,
+        int count,
+        string dtoType,
+        long elapsedMilliseconds,
+        int thresholdMilliseconds);
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Warning,
+        Message = "Converted entity of type {EntityType} to DTO of type {DtoType} with factoty {FactoryType} in {ElapsedMilliseconds} ms, which is longer than the threshold of {ThresholdMilliseconds} ms. Consider optimizing the DTO factory or caching the results.",
+        SkipEnabledCheck = true)]
+    private static partial void LogConvertToDtoWithoutTrace(
+        ILogger logger,
+        string entityType,
+        string dtoType,
+        string factoryType,
+        long elapsedMilliseconds,
+        int thresholdMilliseconds);
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Warning,
+        Message = "Converted entity of type {EntityType} to DTO of type {DtoType} with factoty {FactoryType} in {ElapsedMilliseconds} ms, which is longer than the threshold of {ThresholdMilliseconds} ms. Consider optimizing the DTO factory or caching the results." +
+            "{NewLine}C# completion stack:{NewLine}{DtoConversionStackTrace}",
+        SkipEnabledCheck = true)]
+    private static partial void LogConvertToDtoWithTrace(
+        ILogger logger,
+        string entityType,
+        string dtoType,
+        string factoryType,
+        long elapsedMilliseconds,
+        int thresholdMilliseconds,
+        string newLine,
+        string dtoConversionStackTrace);
 }
 
 [ScopedDependency]

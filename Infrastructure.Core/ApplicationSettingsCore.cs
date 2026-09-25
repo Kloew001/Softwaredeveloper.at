@@ -90,6 +90,7 @@ public class AppLoggingConfiguration
     public bool EnableExceptionDetails { get; set; } = false;
     public EntityFrameworkLoggingConfiguration EntityFramework { get; set; } = new();
     public FullRequestLoggingConfiguration FullRequestLogging { get; set; } = new();
+    public DtoConversionLoggingConfiguration DtoConversion { get; set; } = new DtoConversionLoggingConfiguration();
 }
 
 public class EntityFrameworkLoggingConfiguration
@@ -98,6 +99,13 @@ public class EntityFrameworkLoggingConfiguration
     public bool EnableSensitiveDataLogging { get; set; } = false;
     public bool EnableCommandStackTraceLogging { get; set; } = false;
     public int? CommandStackTraceWarningThresholdMilliseconds { get; set; } = 100;
+}
+
+public class DtoConversionLoggingConfiguration
+{
+    public bool EnableStackTraceLogging { get; set; } = true;
+    public int WarningThresholdMilliseconds { get; set; } = 150;
+    public int CollectionWarningThresholdMilliseconds { get; set; } = 500;
 }
 
 public class FullRequestLoggingConfiguration

@@ -6,6 +6,15 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public static class StackTraceHelper
 {
+    public static string GetExecutingAssemblyCallStack()
+    {
+        var prefix = Assembly.GetExecutingAssembly()
+            .GetName().Name!
+            .Split('.')[0];
+
+        return GetApplicationStack(prefix);
+    }
+
     public static string GetApplicationStack(params string[] assemblyPrefixes)
     {
         var frames = new StackTrace(fNeedFileInfo: true).GetFrames();
