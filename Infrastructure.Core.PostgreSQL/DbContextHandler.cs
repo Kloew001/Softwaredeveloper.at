@@ -72,11 +72,13 @@ public class PostgreSQLDbContextHandler : BaseDbContextHandler
             modelBuilder.Entity(entityType.ClrType)
                 .HasOne(nameof(ChangeTrackedEntity.CreatedBy))
                 .WithMany()
+                .HasForeignKey(nameof(ChangeTrackedEntity.CreatedById))
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity(entityType.ClrType)
                 .HasOne(nameof(ChangeTrackedEntity.ModifiedBy))
                 .WithMany()
+                .HasForeignKey(nameof(ChangeTrackedEntity.ModifiedById))
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }
