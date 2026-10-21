@@ -36,4 +36,6 @@ public abstract class SoftwaredeveloperDotAtDbContext : SoftwaredeveloperDotAtDb
 
     public virtual DbSet<MultilingualCulture> MultilingualCultures { get; set; }
     public virtual DbSet<MultilingualGlobalText> MultilingualGlobalTexts { get; set; }
+
+    public virtual DbSet<DistributedLock> DistributedLocks { get; set; }
 }

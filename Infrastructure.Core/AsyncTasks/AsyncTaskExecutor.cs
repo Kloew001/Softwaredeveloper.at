@@ -142,7 +142,7 @@ public class AsyncTaskExecutor
         var now = _dateTimeService.Now();
         var asyncTaskOperationId = Guid.Empty;
 
-        await using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>())
+        await using (var distributedLock = _serviceProvider.GetRequiredService<IDistributedLockService>())
         {
             var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteNextOperationAsync)}";
             if (await distributedLock.TryAcquireLockAsync(lockName, 1000, cancellationToken) == false)
@@ -168,7 +168,7 @@ public class AsyncTaskExecutor
 
     public async Task<bool> ExecuteAsyncTaskOperationIdAsync(Guid asyncTaskOperationId, CancellationToken cancellationToken)
     {
-        await using var distributedLock = _serviceProvider.GetRequiredService<IDistributedLock>();
+        await using var distributedLock = _serviceProvider.GetRequiredService<IDistributedLockService>();
         var lockName = $"{nameof(AsyncTaskExecutor)}_{nameof(ExecuteAsyncTaskOperationIdAsync)}_{asyncTaskOperationId}";
         if (await distributedLock.TryAcquireLockAsync(lockName, 3, cancellationToken) == false)
             throw new InvalidOperationException();

@@ -193,7 +193,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             var stopWatch = Stopwatch.StartNew();
 
             await using var scope = _serviceScopeFactory.CreateAsyncScope();
-            await using var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLock>();
+            await using var distributedLock = scope.ServiceProvider.GetRequiredService<IDistributedLockService>();
 
             if (await distributedLock.TryAcquireLockAsync($"{nameof(BackgroundserviceInfo)}_{Name}", 3, cancellationToken) == false)
                 throw new InvalidOperationException($"HostedService {Name} Could not acquire distributed lock.");

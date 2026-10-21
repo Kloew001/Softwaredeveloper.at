@@ -17,7 +17,7 @@ namespace SampleApp.Application.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.6")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -1021,6 +1021,27 @@ namespace SampleApp.Application.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("ApplicationUserToken", "identity");
+                });
+
+            modelBuilder.Entity("SoftwaredeveloperDotAt.Infrastructure.Core.Utility.DistributedLock", b =>
+                {
+                    b.Property<string>("LockId")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP WITHOUT TIME ZONE");
+
+                    b.Property<string>("Owner")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("LockId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("DistributedLock", "core");
                 });
 
             modelBuilder.Entity("SampleApp.Application.Sections.CarSection.CombustionCar", b =>
