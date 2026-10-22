@@ -2,19 +2,12 @@
 
 ## Package / Library Licensing Policy
 
-Only use third-party NuGet packages or libraries that are free for commercial use and licensed under
-permissive, non-restrictive licenses such as:
+Only use permissive, commercially-free licenses (MIT, Apache 2.0, BSD). Never introduce AGPL/GPL/LGPL,
+copyleft, paid/commercial, or unclear-license dependencies (e.g. iText → use `PdfPig` instead).
 
-- MIT
-- Apache 2.0
-- BSD (2-Clause / 3-Clause)
+Before adding, replacing, or changing the version of a package in `Directory.Packages.props`, verify the
+license (incl. transitive dependencies) stays within the allowed set. If a version change alters the
+license model to a non-compliant one, don't apply it — find a compliant alternative or ask the user.
 
-Do **not** introduce dependencies that:
-
-- Require a paid/commercial license (e.g. iText, which is AGPL/commercial dual-licensed and not free for commercial closed-source use)
-- Are licensed under AGPL, GPL, LGPL, or any other copyleft license that imposes restrictions on commercial or proprietary use
-- Have unclear, proprietary, or "contact us for pricing" licensing terms
-
-When adding or replacing a dependency, verify the license of the package (and its transitive dependencies)
-before adding it to `Directory.Packages.props` / the project file. If an existing dependency violates this
-policy, prefer replacing it with a suitable MIT/Apache-2.0 licensed alternative (e.g. `PdfPig` instead of `iText` for PDF text extraction).
+Keep `Directory.Packages.props` entries grouped into `ItemGroup`s by `Label` (license model, e.g.
+`"MIT License"`, `"Apache License 2.0"`), sorted alphabetically by package name within each group.
