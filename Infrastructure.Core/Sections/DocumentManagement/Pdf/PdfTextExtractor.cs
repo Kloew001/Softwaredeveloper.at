@@ -1,6 +1,6 @@
-﻿using iText.Kernel.Pdf;
+﻿using Microsoft.Extensions.Logging;
 
-using Microsoft.Extensions.Logging;
+using UglyToad.PdfPig;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.DocumentManagement.Pdf;
 
@@ -17,14 +17,12 @@ public class PdfTextExtractor : ITextExtractor
     public string ExtractText(byte[] content)
     {
         using (var memoryStream = new MemoryStream(content))
-        using (var pdfReader = new PdfReader(memoryStream))
-        using (var pdfDoc = new PdfDocument(pdfReader))
+        using (var pdfDoc = PdfDocument.Open(memoryStream))
         {
             var extractedText = "";
-            for (var page = 1; page <= pdfDoc.GetNumberOfPages(); page++)
+            foreach (var page in pdfDoc.GetPages())
             {
-                extractedText += iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor
-                    .GetTextFromPage(pdfDoc.GetPage(page));
+                extractedText += page.Text;
             }
             return extractedText;
         }

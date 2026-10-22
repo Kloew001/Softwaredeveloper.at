@@ -46,7 +46,7 @@ Je nach Anwendung können einzelne Sections verwendet werden, u.a.:
 - Multilingual (Mehrsprachigkeit, inkl. Excel-Import/Export)
 - DocumentManagement Utilities
   - Excel (`ExcelUtility`, ClosedXML)
-  - PDF (`PdfTextExtractor`, iText)
+  - PDF (`PdfTextExtractor`, PdfPig)
   - Word (`WordTextExtractor`)
 - E-Mail (`EmailMessage`, `IEMailSender`)
 - Caching-Utilities (z.B. `MemoryCacheExtensions`)
@@ -70,7 +70,7 @@ Das Projekt ist für NuGet-Packing vorbereitet (`PackageReadmeFile` -> `readme.md
 
 ## Voraussetzungen
 
-- .NET SDK 8
+- .NET SDK 10
 
 ## Repository
 
