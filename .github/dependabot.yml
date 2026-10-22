@@ -3,10 +3,8 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "monthly"
-    cooldown:
-      default-days: 90
-    open-pull-requests-limit: 1
+      interval: "weekly"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "security"
@@ -25,10 +23,8 @@ updates:
   - package-ecosystem: "npm"
     directory: "/SampleApp/sampleapp.client"
     schedule:
-      interval: "monthly"
-    cooldown:
-      default-days: 90
-    open-pull-requests-limit: 1
+      interval: "weekly"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "security"
@@ -47,10 +43,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
-    cooldown:
-      default-days: 90
-    open-pull-requests-limit: 1
+      interval: "weekly"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "ci"
