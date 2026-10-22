@@ -7,7 +7,9 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
 
 public class DistributedLockCleanupHostedService : TimerHostedService
 {
+    public override bool BackgroundServiceInfoEnabled => false;
     private static readonly TimeSpan RetentionBuffer = TimeSpan.FromMinutes(15);
+    private const int DeleteBatchSize = 1000;
 
     public DistributedLockCleanupHostedService(
         IServiceScopeFactory serviceScopeFactory,
@@ -37,11 +39,22 @@ public class DistributedLockCleanupHostedService : TimerHostedService
 
         var threshold = dateTimeService.Now().Subtract(RetentionBuffer);
 
-        var deleted = await context.Set<DistributedLock>()
-            .Where(_ => _.ExpiresAt < threshold)
-            .ExecuteDeleteAsync(cancellationToken);
+        var totalDeleted = 0;
 
-        if (deleted > 0)
-            _logger.LogInformation("Removed {Count} expired distributed lock lease(s).", deleted);
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var deleted = await context.Set<DistributedLock>()
+                .Where(_ => _.ExpiresAt < threshold)
+                .Take(DeleteBatchSize)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            totalDeleted += deleted;
+
+            if (deleted < DeleteBatchSize)
+                break;
+        }
+
+        if (totalDeleted > 0)
+            _logger.LogInformation("Removed {Count} expired distributed lock lease(s).", totalDeleted);
     }
 }

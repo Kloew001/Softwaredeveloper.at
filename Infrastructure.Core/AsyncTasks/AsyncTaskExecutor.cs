@@ -13,6 +13,8 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.AsyncTasks;
 
 public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTriggerable<AsyncTaskOperation>
 {
+    public override bool BackgroundServiceInfoEnabled => false;
+
     public AsyncTaskExecutorHostedService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<AsyncTaskExecutorHostedService> logger,
@@ -20,7 +22,6 @@ public class AsyncTaskExecutorHostedService : TimerHostedService, IBackgroundTri
         IHostApplicationLifetime appLifetime)
         : base(serviceScopeFactory, appLifetime, logger, applicationSettings)
     {
-        BackgroundServiceInfoEnabled = false;
     }
 
     protected override HostedServicesConfiguration GetConfiguration()

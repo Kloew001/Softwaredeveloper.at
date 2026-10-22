@@ -27,9 +27,19 @@ public interface IBackgroundTrigger<T> : IBackgroundTrigger
 public class BackgroundTrigger<T> : IBackgroundTrigger<T>
     where T : IBackgroundTriggerable
 {
-    private readonly SemaphoreSlim _signal = new(0, int.MaxValue);
+    private readonly SemaphoreSlim _signal = new(0, 1);
 
-    public void Trigger() => _signal.Release();
+    public void Trigger()
+    {
+        try
+        {
+            _signal.Release();
+        }
+        catch (SemaphoreFullException)
+        {
+            // already signaled and not yet consumed, nothing to do
+        }
+    }
 
     public Task<bool> WaitAsync(TimeSpan timeout, CancellationToken token)
         => _signal.WaitAsync(timeout, token);

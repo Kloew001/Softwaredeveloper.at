@@ -207,181 +207,6 @@ function Test-PackageVersionDeprecated {
     return $false
 }
 
-# ==============================================
-# Helper: Cross-Package Dependency-Kompatibilität
-# (z.B. Swashbuckle.AspNetCore -> Microsoft.OpenApi)
-# ==============================================
-$script:NuspecDepsCache = @{}
-
-function Get-NuspecDependencies {
-    param(
-        [string]$PackageId,
-        [string]$Version
-    )
-
-    $cacheKey = "$($PackageId.ToLowerInvariant())|$($Version.ToLowerInvariant())"
-    if ($script:NuspecDepsCache.ContainsKey($cacheKey)) {
-        return $script:NuspecDepsCache[$cacheKey]
-    }
-
-    $idLower = $PackageId.ToLowerInvariant()
-    $vLower  = $Version.ToLowerInvariant()
-    $url = "https://api.nuget.org/v3-flatcontainer/$idLower/$vLower/$idLower.nuspec"
-
-    $deps = @()
-
-    try {
-        [xml]$nuspec = Invoke-RestMethod -Uri $url -Method Get -UseBasicParsing -ErrorAction Stop
-
-        $ns = $nuspec.package.NamespaceURI
-        $metadata = $nuspec.package.metadata
-
-        $depNodes = @()
-        if ($metadata.dependencies) {
-            if ($metadata.dependencies.group) {
-                $depNodes += $metadata.dependencies.group | ForEach-Object { $_.dependency } | Where-Object { $_ }
-            }
-            if ($metadata.dependencies.dependency) {
-                $depNodes += $metadata.dependencies.dependency
-            }
-        }
-
-        foreach ($d in $depNodes) {
-            if ($d.id) {
-                $deps += [PSCustomObject]@{
-                    Id    = $d.id
-                    Range = $d.version
-                }
-            }
-        }
-    }
-    catch {
-        Write-Warning "    -> Failed to load nuspec dependencies for $PackageId $Version : $_"
-    }
-
-    $script:NuspecDepsCache[$cacheKey] = $deps
-    return $deps
-}
-
-function Test-NuGetVersionInRange {
-    param(
-        [string]$Version,
-        [string]$Range
-    )
-
-    if ([string]::IsNullOrWhiteSpace($Range)) { return $true }
-
-    try {
-        $v = [version]($Version -replace '-.*$', '')
-    }
-    catch {
-        return $true
-    }
-
-    $r = $Range.Trim()
-
-    # Einfache Form: "1.2.3" bedeutet laut NuGet-Spec minimale Version (inklusiv, ohne Obergrenze).
-    # Das ist uns zu großzügig: ein Major-Sprung (z.B. 2.x -> 3.x) gilt bei fehlender
-    # expliziter Obergrenze NICHT automatisch als kompatibel, da Autoren i.d.R. nur
-    # innerhalb der gleichen Major-Version SemVer-Kompatibilität garantieren.
-    if ($r -notmatch '^[\[\(]') {
-        try {
-            $min = [version]($r -replace '-.*$', '')
-            return ($v -ge $min) -and ($v.Major -eq $min.Major)
-        }
-        catch {
-            return $true
-        }
-    }
-
-    # Range-Form: [1.0,2.0) / (1.0,2.0] / [1.0] / [1.0,)
-    $m = [regex]::Match($r, '^([\[\(])\s*([^,\]\)]*)\s*(?:,\s*([^,\]\)]*)\s*)?([\]\)])$')
-    if (-not $m.Success) { return $true }
-
-    $openInclusive  = ($m.Groups[1].Value -eq '[')
-    $lowerRaw       = $m.Groups[2].Value
-    $upperRaw       = $m.Groups[3].Value
-    $closeInclusive = ($m.Groups[4].Value -eq ']')
-
-    if ([string]::IsNullOrWhiteSpace($upperRaw) -and -not $m.Groups[3].Success -and $r -notmatch ',') {
-        # Form "[1.0]" -> exakte Version
-        try {
-            $exact = [version]($lowerRaw -replace '-.*$', '')
-            return ($v -eq $exact)
-        }
-        catch {
-            return $true
-        }
-    }
-
-    $ok = $true
-
-    if (-not [string]::IsNullOrWhiteSpace($lowerRaw)) {
-        try {
-            $lower = [version]($lowerRaw -replace '-.*$', '')
-            if ($openInclusive) { $ok = $ok -and ($v -ge $lower) }
-            else { $ok = $ok -and ($v -gt $lower) }
-        }
-        catch {}
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($upperRaw)) {
-        try {
-            $upper = [version]($upperRaw -replace '-.*$', '')
-            if ($closeInclusive) { $ok = $ok -and ($v -le $upper) }
-            else { $ok = $ok -and ($v -lt $upper) }
-        }
-        catch {}
-    }
-
-    return $ok
-}
-
-function Test-CrossPackageDependencyCompatible {
-    param(
-        [string]$PackageId,
-        [string]$Version
-    )
-
-    if (-not $script:DirectoryPackageMap -or $script:DirectoryPackageMap.Count -eq 0) {
-        return $true
-    }
-
-    # (a) Hängt das Kandidatenpaket selbst von bereits gepinnten Paketen ab?
-    #     -> gepinnte Version muss im geforderten Range liegen.
-    $ownDeps = Get-NuspecDependencies -PackageId $PackageId -Version $Version
-    foreach ($dep in $ownDeps) {
-        if ($script:DirectoryPackageMap.ContainsKey($dep.Id)) {
-            $pinnedVersion = $script:DirectoryPackageMap[$dep.Id].Version
-            if ($pinnedVersion -and -not (Test-NuGetVersionInRange -Version $pinnedVersion -Range $dep.Range)) {
-                Write-Host "      -> incompatible: $PackageId $Version requires $($dep.Id) $($dep.Range), but $pinnedVersion is pinned"
-                return $false
-            }
-        }
-    }
-
-    # (b) Hängen bereits gepinnte Pakete von diesem Paket ab?
-    #     -> Kandidatenversion muss deren Range erfüllen (z.B. Swashbuckle -> Microsoft.OpenApi).
-    foreach ($otherId in $script:DirectoryPackageMap.Keys) {
-        if ($otherId -ieq $PackageId) { continue }
-
-        $otherVersion = $script:DirectoryPackageMap[$otherId].Version
-        if (-not $otherVersion) { continue }
-
-        $otherDeps = Get-NuspecDependencies -PackageId $otherId -Version $otherVersion
-        foreach ($dep in $otherDeps) {
-            if ($dep.Id -ieq $PackageId) {
-                if (-not (Test-NuGetVersionInRange -Version $Version -Range $dep.Range)) {
-                    Write-Host "      -> incompatible: $otherId $otherVersion requires $PackageId $($dep.Range), candidate $Version does not satisfy this"
-                    return $false
-                }
-            }
-        }
-    }
-
-    return $true
-}
-
 function Get-LatestCompatibleVersion {
     param(
         [string]$PackageId,
@@ -434,18 +259,13 @@ function Get-LatestCompatibleVersion {
             }
         }
 
-        if (-not $allProjectCompatible) {
-            Write-Host " not compatible (TFM)"
-            continue
+        if ($allProjectCompatible) {
+            Write-Host " compatible"
+            return $v
         }
-
-        if (-not (Test-CrossPackageDependencyCompatible -PackageId $PackageId -Version $v)) {
-            Write-Host " not compatible (dependency conflict)"
-            continue
+        else {
+            Write-Host " not compatible"
         }
-
-        Write-Host " compatible"
-        return $v
     }
 
     return $null
@@ -654,10 +474,7 @@ function Update-ProjectPackages {
             continue
         }
 
-        Write-Host "    -> Updating " -NoNewline
-        Write-Host "$currentVersion" -ForegroundColor Green -NoNewline
-        Write-Host " -> " -NoNewline
-        Write-Host "$best" -ForegroundColor Green
+        Write-Host "    -> Updating to $best"
 
         if ($managedByProps -and $script:DirectoryPropsXml) {
             # zentrale Version pflegen

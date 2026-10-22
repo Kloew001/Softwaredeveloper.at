@@ -16,6 +16,8 @@ public interface IDistributedLockService : IAsyncDisposable
         CancellationToken cancellationToken = default,
         TimeSpan? leaseDuration = null,
         TimeSpan? renewInterval = null);
+
+    CancellationToken LockLost { get; }
 }
 
 [Table(nameof(DistributedLock), Schema = "core")]
@@ -61,6 +63,9 @@ public sealed class DistributedLockService : IDistributedLockService
     private Task _renewTask;
     private bool _disposed;
     private int _operationInProgress;
+    private readonly CancellationTokenSource _lockLostCts = new();
+
+    public CancellationToken LockLost => _lockLostCts.Token;
 
     public DistributedLockService(
         IServiceScopeFactory serviceScopeFactory,
@@ -190,9 +195,9 @@ public sealed class DistributedLockService : IDistributedLockService
         {
             try
             {
-                while (!token.IsCancellationRequested)
+                while (!token.IsCancellationRequested && !_lockLostCts.IsCancellationRequested)
                 {
-                    await Task.Delay(renewInterval, token);
+                    await Task.Delay(renewInterval.GetJitteredInterval(), token);
                     await RenewLeaseAsync(lockId, token);
                 }
             }
@@ -203,6 +208,7 @@ public sealed class DistributedLockService : IDistributedLockService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to renew distributed lock {@LockId}", lockId);
+                _lockLostCts.Cancel();
             }
         });
     }
@@ -220,7 +226,10 @@ public sealed class DistributedLockService : IDistributedLockService
             .ExecuteUpdateAsync(setters => setters.SetProperty(_ => _.ExpiresAt, expiresAt), cancellationToken);
 
         if (updated == 0)
+        {
             _logger.LogWarning("Lost ownership of distributed lock {@LockId} while renewing its lease.", lockId);
+            _lockLostCts.Cancel();
+        }
     }
 
     private void EnterOperation()
@@ -246,7 +255,16 @@ public sealed class DistributedLockService : IDistributedLockService
                 return;
 
             _disposed = true;
-            await ReleaseLockAsync();
+
+            try
+            {
+                await ReleaseLockAsync();
+            }
+            finally
+            {
+                _lockLostCts.Cancel();
+                _lockLostCts.Dispose();
+            }
         }
         finally
         {

@@ -73,7 +73,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     public virtual string Name { get => GetType().Name; }
 
-    public bool BackgroundServiceInfoEnabled { get; protected set; } = true;
+    public virtual bool BackgroundServiceInfoEnabled { get; protected set; } = true;
 
     protected BaseHostedService(
         IServiceScopeFactory serviceScopeFactory,
@@ -198,6 +198,9 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             if (await distributedLock.TryAcquireLockAsync($"{nameof(BackgroundserviceInfo)}_{Name}", 3, cancellationToken) == false)
                 throw new InvalidOperationException($"HostedService {Name} Could not acquire distributed lock.");
 
+            using var lockLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, distributedLock.LockLost);
+            cancellationToken = lockLinkedCts.Token;
+
             try
             {
                 if (await CanStartBackgroundServiceInfoAsync(cancellationToken) == false)
@@ -225,6 +228,10 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
                 _logger.LogInformation("Finished HostedService {Name} in {ElapsedMilliseconds} ms", Name, stopWatch.ElapsedMilliseconds);
             }
+            catch (OperationCanceledException) when (distributedLock.LockLost.IsCancellationRequested)
+            {
+                _logger.LogError("HostedService {Name} lost ownership of its distributed lock; aborting execution without touching shared state.", Name);
+            }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
@@ -239,7 +246,7 @@ public abstract class BaseHostedService : IHostedService, IDisposable
             {
                 if (!cancellationToken.IsCancellationRequested)
                     await CheckExecutingAsync(cancellationToken);
-            }
+        }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -308,11 +315,14 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
     private async Task StartHeartbeatAsync(CancellationToken cancellationToken)
     {
+        if (BackgroundServiceInfoEnabled == false)
+            return;
+
         try
         {
             do
             {
-                await Task.Delay(HearthBeatInterval, cancellationToken);
+                await Task.Delay(HearthBeatInterval.GetJitteredInterval(), cancellationToken);
 
                 await UpdateHeartbeatBackgroundServiceInfoAsync(cancellationToken);
             }
@@ -446,11 +456,9 @@ public abstract class BaseHostedService : IHostedService, IDisposable
 
         var context = scope.ServiceProvider.GetService<IDbContext>();
 
-        var backgroundServiceInfo = await GetBackgroundServiceInfoAsync(context);
-
-        backgroundServiceInfo.LastHeartbeat = _dateTimeService.Now();
-
-        await context.SaveChangesAsync(cancellationToken);
+        await context.Set<BackgroundserviceInfo>()
+            .Where(_ => _.Name == Name)
+            .ExecuteUpdateAsync(_ => _.SetProperty(x => x.LastHeartbeat, _dateTimeService.Now()), cancellationToken);
     }
 
     protected virtual async Task ErrorBackgroundServiceInfoAsync(Exception ex, CancellationToken cancellationToken)
