@@ -31,7 +31,7 @@ export class BehaviourSubjectCacheResolverService extends BaseCacheResolverServi
       .pipe(
         shareReplay(1),
       )
-      .subscribe(data => {
+      .subscribe((data: any) => {
         //console.log(key);
         //console.log(data);
         cache$.next(data);

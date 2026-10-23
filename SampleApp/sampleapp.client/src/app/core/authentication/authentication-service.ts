@@ -14,20 +14,20 @@ export class LoginInfo {
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
 
-  public loginInfo$ = new BehaviorSubject<LoginInfo>(null);
+  public loginInfo$ = new BehaviorSubject<LoginInfo | null>(null);
 
-  public curentUser$ = new BehaviorSubject<ApplicationUserDto>(null);
+  public curentUser$ = new BehaviorSubject<ApplicationUserDto | null>(null);
 
 
   get isAuthorized$(): Observable<boolean> {
     return this.loginInfo$.pipe(map(loginInfo => loginInfo ? true : false));
   }
 
-  get accessToken(): string {
+  get accessToken(): string | undefined {
     return this.loginInfo$.value?.accessToken;
   }
 
-  get accessToken$(): Observable<string> {
+  get accessToken$(): Observable<string | undefined> {
     return this.loginInfo$.pipe(map(loginInfo => loginInfo?.accessToken));
   }
 
@@ -91,8 +91,10 @@ export class AuthenticationService {
     this.http.post<void>('api/applicationUser/setPreferedCulture?cultureName=' + cultureName, {})
       .subscribe(_ => {
         var next = this.curentUser$.value;
-        next.preferedCultureName = cultureName;
-        this.curentUser$.next(next);
+        if (next) {
+          next.preferedCultureName = cultureName;
+          this.curentUser$.next(next);
+        }
       });
   }
 
@@ -106,7 +108,7 @@ export class AuthenticationService {
       roleNames.includes(_.name)) != null));
   }
 
-  attemptLogin(): Observable<LoginInfo> {
+  attemptLogin(): Observable<LoginInfo | null> {
     return this.isAuthorized$.pipe(
       first(),
       switchMap(isAuthorized => {
@@ -145,7 +147,7 @@ export class AuthenticationService {
     this.loginInfo$.next(null);
   }
 
-  refreshToken(): Observable<LoginInfo> {
+  refreshToken(): Observable<LoginInfo | never> {
 
 
     if (!this.loginInfo$.value) {
@@ -176,7 +178,7 @@ export class AuthenticationService {
     );
   }
 
-  handleAuthenticate(loginInfo) {
+  handleAuthenticate(loginInfo: LoginInfo | null) {
     if (loginInfo && loginInfo.accessToken) {
       localStorage.setItem('loginInfo', JSON.stringify(loginInfo));
       this.loginInfo$.next(loginInfo);

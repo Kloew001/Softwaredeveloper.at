@@ -32,7 +32,7 @@ export class PersonEditComponent implements OnInit {
 
   personId: string;
 
-  model$ = new BehaviorSubject<PersonDto>(null);
+  model$ = new BehaviorSubject<PersonDto | null>(null);
   modelChanged$ = new Subject<void>();
 
   quickUpdating$ = new BehaviorSubject<boolean>(false);
@@ -70,7 +70,7 @@ export class PersonEditComponent implements OnInit {
       debounceTime(400),
       //distinctUntilChanged(),
       tap(_ => { this.quickUpdating$.next(true); }),
-      switchMap(_ => this.personService.quickUpdate(this.model$.value)),
+      switchMap(_ => this.personService.quickUpdate(this.model$.value!)),
     )
       .subscribe(_ => {
         this.model$.next(_);
