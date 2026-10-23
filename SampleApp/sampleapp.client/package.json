@@ -27,7 +27,7 @@
     "@angular/material": "21.2.14",
     "@angular/platform-browser": "21.2.14",
     "@angular/platform-browser-dynamic": "21.2.14",
-    "@angular/router": "21.2.14",
+    "@angular/router": "22.2.3",
     "class-transformer": "0.5.1",
     "jest-editor-support": "^31.1.2",
     "ng-let": "^20.0.1",
