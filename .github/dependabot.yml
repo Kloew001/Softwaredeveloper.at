@@ -8,17 +8,11 @@ updates:
     labels:
       - "dependencies"
       - "security"
-    groups:
-      nuget-minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
     ignore:
       - dependency-name: "*"
         update-types:
-          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: "npm"
     directory: "/SampleApp/sampleapp.client"
@@ -28,17 +22,11 @@ updates:
     labels:
       - "dependencies"
       - "security"
-    groups:
-      npm-minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
     ignore:
       - dependency-name: "*"
         update-types:
-          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -48,14 +36,8 @@ updates:
     labels:
       - "dependencies"
       - "ci"
-    groups:
-      github-actions-minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
     ignore:
       - dependency-name: "*"
         update-types:
-          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
