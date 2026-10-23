@@ -22,6 +22,12 @@ updates:
     labels:
       - "dependencies"
       - "security"
+    groups:
+      angular-major:
+        patterns:
+          - "@angular/*"
+        update-types:
+          - "major"
     ignore:
       - dependency-name: "*"
         update-types:
