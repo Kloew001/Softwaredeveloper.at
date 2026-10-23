@@ -4,7 +4,7 @@ import { map, shareReplay } from 'rxjs';
 export class CacheItem<T> {
   constructor(
     public value: T,
-    public expiresIn: Date,
+    public expiresIn: Date | null,
     public valueAction: any) { }
 }
 
@@ -12,8 +12,8 @@ export class BaseCacheResolverService<T> {
   constructor() { }
 
   protected cache = new Map<String, CacheItem<T>>();
-  
-  resolve(key, valueAction, reload: boolean | null = null, timeToLeave: number | null = null) {
+
+  resolve(key: string, valueAction: any, reload: boolean | null = null, timeToLeave: number | null = null) {
 
     var cache$ = this.get(key);
 
@@ -33,7 +33,7 @@ export class BaseCacheResolverService<T> {
     return cache$;
   }
 
-  set(key, value, valueAction, timeToLeave: number | null = null) {
+  set(key: string, value: any, valueAction: any, timeToLeave: number | null = null) {
     if (timeToLeave) {
       const expiresIn = new Date;
       expiresIn.setSeconds(expiresIn.getSeconds() + timeToLeave);
@@ -44,7 +44,7 @@ export class BaseCacheResolverService<T> {
     }
   }
 
-  get(key) {
+  get(key: string) {
     var cache$ = this.cache.get(key);
 
     if (!cache$)

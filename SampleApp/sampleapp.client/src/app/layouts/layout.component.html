@@ -1,7 +1,7 @@
 <div class="layout-shell">
   <mat-toolbar #headerToolbar>
     <div class="toolbar-row">
-      @if (useSidebar && sidenav?.mode === 'over') {
+      @if (useSidebar && sidenav.mode === 'over') {
         <button mat-icon-button
           (click)="sidenav.toggle()"
           >
