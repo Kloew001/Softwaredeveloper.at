@@ -41,7 +41,7 @@
   "devDependencies": {
     "@angular/build": "21.2.14",
     "@angular/cli": "21.2.14",
-    "@angular/compiler-cli": "21.2.14",
+    "@angular/compiler-cli": "22.2.3",
     "@types/jasmine": "~5.1.15",
     "baseline-browser-mapping": "^2.10.13",
     "jasmine-core": "~5.13.0",
