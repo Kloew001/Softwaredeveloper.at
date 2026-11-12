@@ -7,7 +7,7 @@
 	<PackageVersion Include="ClosedXML" Version="0.105.1" />
 	<PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
 	<PackageVersion Include="coverlet.collector" Version="10.1.0" />
-	<PackageVersion Include="CsvHelper" Version="33.1.0" />
+	<PackageVersion Include="CsvHelper" Version="34.0.0" />
 	<PackageVersion Include="ExtendableEnums" Version="9.1.13" />
 	<PackageVersion Include="ExtendableEnums.EntityFrameworkCore" Version="9.1.13" />
 	<PackageVersion Include="ExtendableEnums.Microsoft.AspNetCore" Version="9.1.13" />
