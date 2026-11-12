@@ -13,7 +13,7 @@
 	<PackageVersion Include="ExtendableEnums.Microsoft.AspNetCore" Version="9.1.13" />
 	<PackageVersion Include="FuzzySharp" Version="2.0.2" />
 	<PackageVersion Include="HtmlAgilityPack" Version="1.13.1" />
-	<PackageVersion Include="MailKit" Version="4.18.1" />
+	<PackageVersion Include="MailKit" Version="5.0.0" />
 	<PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.13" />
