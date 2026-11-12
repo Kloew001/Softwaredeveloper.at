@@ -29,11 +29,11 @@
 	<PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
-	<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
+	<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0" />
 	<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13" />
 	<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.13" />
-	<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13" />
+	<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="11.0.0" />
 	<PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.23.0" />
 	<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
 	<PackageVersion Include="Microsoft.OpenApi" Version="2.13.0" />
