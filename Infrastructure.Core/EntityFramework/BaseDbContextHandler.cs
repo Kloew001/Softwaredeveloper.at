@@ -66,14 +66,19 @@ public abstract class BaseDbContextHandler : IDbContextHandler
 
     public virtual void DBContextOptions(IServiceProvider serviceProvider, DbContextOptionsBuilder options, string connectionStringKey = "DbContextConnection")
     {
-        options.AddInterceptors(serviceProvider.GetRequiredService<EfCommandInterceptor>());
+        var applicationSettings = serviceProvider.GetService<IApplicationSettings>();
+
+        if (applicationSettings?.AppLogging?.EntityFramework?.EnableCommandInterceptor == true)
+        {
+            options.AddInterceptors(serviceProvider.GetRequiredService<EfCommandInterceptor>());
+        }
+
         options.UseLazyLoadingProxies();
 
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         options.UseLoggerFactory(loggerFactory);
 
         var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
-        var applicationSettings = serviceProvider.GetService<IApplicationSettings>();
 
         var enableDetailedErrors = (hostEnvironment?.IsDevelopment() ?? false) ||
             (applicationSettings?.AppLogging?.EntityFramework?.EnableDetailedErrors ?? false);
