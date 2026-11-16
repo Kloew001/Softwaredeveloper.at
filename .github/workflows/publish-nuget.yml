@@ -93,8 +93,14 @@ jobs:
     #   env:
     #     NUGET_SIGN_CERT_PASSWORD: ${{ secrets.NUGET_SIGN_CERT_PASSWORD }}
 
+    - name: NuGet login (OIDC -> temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: Kloew
+
     - name: Push packages
-      run: dotnet nuget push "./artifacts/*.nupkg" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: dotnet nuget push "./artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2.6.1
