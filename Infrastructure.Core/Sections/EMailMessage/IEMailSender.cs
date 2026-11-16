@@ -1,6 +1,7 @@
 ﻿using MailKit.Net.Smtp;
 
 using MimeKit;
+using MailKit;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Sections.EMailMessage;
 
