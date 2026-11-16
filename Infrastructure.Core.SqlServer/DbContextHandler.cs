@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+using SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.SqlServer;
 
@@ -14,6 +16,7 @@ public static class SqlServerDbContextHandlerExtensions
     public static void UseSqlServerDbContextHandler(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IDbContextHandler, SqlServerDbContextHandler>();
+        services.AddTransient<IDistributedLockStore, SqlServerDistributedLockStore>();
         services.UseDistributedCache(configuration);
     }
 }

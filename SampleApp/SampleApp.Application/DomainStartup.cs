@@ -13,7 +13,7 @@ public class DomainStartup : DomainStartupCore<ApplicationSettings>
         base.ConfigureServices(services, configuration, hostEnvironment);
 
         services.UsePostgreSQLDbContextHandler(configuration);
-
+        
         services.RegisterDBContext<SampleAppContext>();
 
         //Services.AddScoped<IEMailSendHandler, MailToolEMailSendHandler>();

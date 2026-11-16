@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
@@ -51,7 +50,7 @@ public sealed class DistributedLockService : IDistributedLockService
     public static readonly TimeSpan DefaultLeaseDuration = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan DefaultRenewInterval = TimeSpan.FromSeconds(10);
 
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IDistributedLockStore _lockStore;
     private readonly ILogger<DistributedLockService> _logger;
     private readonly IDateTimeService _dateTimeService;
     private readonly string _owner = Guid.NewGuid().ToString("N");
@@ -68,15 +67,15 @@ public sealed class DistributedLockService : IDistributedLockService
     public CancellationToken LockLost => _lockLostCts.Token;
 
     public DistributedLockService(
-        IServiceScopeFactory serviceScopeFactory,
+        IDistributedLockStore lockStore,
         ILogger<DistributedLockService> logger,
         IDateTimeService dateTimeService)
     {
-        ArgumentNullException.ThrowIfNull(serviceScopeFactory);
+        ArgumentNullException.ThrowIfNull(lockStore);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(dateTimeService);
 
-        _serviceScopeFactory = serviceScopeFactory;
+        _lockStore = lockStore;
         _logger = logger;
         _dateTimeService = dateTimeService;
     }
@@ -149,34 +148,12 @@ public sealed class DistributedLockService : IDistributedLockService
 
     private async Task<bool> TryClaimLeaseAsync(string lockId, CancellationToken cancellationToken)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
         var now = _dateTimeService.Now();
         var expiresAt = now.Add(_leaseDuration);
-        var owner = _owner;
-
-        var updated = await context.Set<DistributedLock>()
-            .Where(_ => _.LockId == lockId && (_.ExpiresAt < now || _.Owner == owner))
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(_ => _.Owner, owner)
-                .SetProperty(_ => _.ExpiresAt, expiresAt),
-                cancellationToken);
-
-        if (updated > 0)
-            return true;
 
         try
         {
-            context.Add(new DistributedLock
-            {
-                LockId = lockId,
-                Owner = owner,
-                ExpiresAt = expiresAt
-            });
-
-            await context.SaveChangesAsync(cancellationToken);
-            return true;
+            return await _lockStore.TryClaimLeaseAsync(lockId, _owner, now, expiresAt, cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -215,17 +192,10 @@ public sealed class DistributedLockService : IDistributedLockService
 
     private async Task RenewLeaseAsync(string lockId, CancellationToken cancellationToken)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
         var expiresAt = _dateTimeService.Now().Add(_leaseDuration);
-        var owner = _owner;
+        var renewed = await _lockStore.TryRenewLeaseAsync(lockId, _owner, expiresAt, cancellationToken);
 
-        var updated = await context.Set<DistributedLock>()
-            .Where(_ => _.LockId == lockId && _.Owner == owner)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(_ => _.ExpiresAt, expiresAt), cancellationToken);
-
-        if (updated == 0)
+        if (!renewed)
         {
             _logger.LogWarning("Lost ownership of distributed lock {@LockId} while renewing its lease.", lockId);
             _lockLostCts.Cancel();
@@ -300,14 +270,7 @@ public sealed class DistributedLockService : IDistributedLockService
 
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<IDbContext>();
-
-            var owner = _owner;
-
-            await context.Set<DistributedLock>()
-                .Where(_ => _.LockId == lockId && _.Owner == owner)
-                .ExecuteDeleteAsync(CancellationToken.None);
+            await _lockStore.ReleaseAsync(lockId, _owner, CancellationToken.None);
         }
         catch (Exception ex)
         {

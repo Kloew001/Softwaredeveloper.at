@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-
 namespace SampleApp.Application.Migrations;
 
 /// <inheritdoc />

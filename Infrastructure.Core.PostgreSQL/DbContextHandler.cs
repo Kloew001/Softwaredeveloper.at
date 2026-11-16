@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using SoftwaredeveloperDotAt.Infrastructure.Core.EntityFramework;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.ChangeTracked;
 using SoftwaredeveloperDotAt.Infrastructure.Core.Sections.Identity;
+using SoftwaredeveloperDotAt.Infrastructure.Core.Utility;
+using SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL.Utility;
 
 namespace SoftwaredeveloperDotAt.Infrastructure.Core.PostgreSQL;
 
@@ -15,6 +17,7 @@ public static class PostgreSQLDbContextHandlerExtensions
     public static void UsePostgreSQLDbContextHandler(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IDbContextHandler, PostgreSQLDbContextHandler>();
+        services.AddTransient<IDistributedLockStore, PostgreSqlDistributedLockStore>();
         services.UseDistributedCache(configuration);
     }
 }
