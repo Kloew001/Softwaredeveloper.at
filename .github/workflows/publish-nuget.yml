@@ -12,6 +12,7 @@ on:
   
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -93,9 +94,7 @@ jobs:
     #     NUGET_SIGN_CERT_PASSWORD: ${{ secrets.NUGET_SIGN_CERT_PASSWORD }}
 
     - name: Push packages
-      run: dotnet nuget push "./artifacts/*.nupkg" --api-key ${NUGET_TOKEN} --source https://api.nuget.org/v3/index.json --skip-duplicate
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      run: dotnet nuget push "./artifacts/*.nupkg" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2.6.1
