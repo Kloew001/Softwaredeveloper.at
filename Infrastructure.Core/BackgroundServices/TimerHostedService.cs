@@ -7,6 +7,7 @@ namespace SoftwaredeveloperDotAt.Infrastructure.Core.BackgroundServices;
 public abstract class TimerHostedService : BaseHostedService, IBackgroundTriggerable
 {
     private IBackgroundTrigger _trigger = null;
+    private int _fatalErrorCount = 0;
 
     protected TimerHostedService(
         IServiceScopeFactory serviceScopeFactory,
@@ -100,17 +101,34 @@ public abstract class TimerHostedService : BaseHostedService, IBackgroundTrigger
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (_configuration.ExecuteMode == HostedServicesExecuteModeType.Trigger)
+                try
                 {
-                    await _trigger.WaitAsync(_configuration.TriggerExecuteWaitTimeout.Value, cancellationToken);
+                    if (_configuration.ExecuteMode == HostedServicesExecuteModeType.Trigger)
+                    {
+                        await _trigger.WaitAsync(_configuration.TriggerExecuteWaitTimeout.Value, cancellationToken);
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await base.ExecuteAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var delay = await GetWaitIntervalAsync();
+                    await Task.Delay(delay, cancellationToken);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _fatalErrorCount++;
 
-                cancellationToken.ThrowIfCancellationRequested();
-                await base.ExecuteAsync(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
+                    var retryDelay = GetFailureRetryDelay(_fatalErrorCount);
 
-                var delay = await GetWaitIntervalAsync();
-                await Task.Delay(delay, cancellationToken);
+                    _logger.LogError(ex, "Error in timer cycle for HostedService '{Name}'. FatalErrorCount={FatalErrorCount}. Service will retry in {RetryDelay}.", Name, _fatalErrorCount, retryDelay);
+
+                    await Task.Delay(retryDelay, cancellationToken);
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -121,6 +139,19 @@ public abstract class TimerHostedService : BaseHostedService, IBackgroundTrigger
         {
             _logger.LogError(ex, $"Fatal Error: '{Name}'");
         }
+    }
+
+    protected virtual TimeSpan GetFailureRetryDelay(int fatalErrorCount)
+    {
+        if (fatalErrorCount < 1)
+            fatalErrorCount = 1;
+
+        var retryMinutes = fatalErrorCount * 5;
+
+        if (retryMinutes > 60)
+            retryMinutes = 60;
+
+        return TimeSpan.FromMinutes(retryMinutes);
     }
 
     private async Task<TimeSpan> GetWaitIntervalAsync()
