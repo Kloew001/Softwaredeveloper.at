@@ -519,6 +519,9 @@ public class WebStartupCore<TDomainStartup>
                     path.StartsWithSegments("/swagger"))
                     return LogEventLevel.Verbose;
 
+                if (ex is SoftwaredeveloperDotAt.Infrastructure.Core.Validation.ValidationException or FluentValidation.ValidationException)
+                    return LogEventLevel.Information;
+
                 if (ex != null)
                     return LogEventLevel.Error;
 

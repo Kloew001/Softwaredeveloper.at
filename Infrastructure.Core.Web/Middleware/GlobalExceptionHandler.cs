@@ -62,7 +62,7 @@ public class ValidationExceptionHandler : IExceptionHandler
 
     private async ValueTask<bool> HandleProblemDetails(HttpContext httpContext, Exception exception, ValidationProblemDetails problemDetails, CancellationToken cancellationToken)
     {
-        _logger.LogWarning(exception, "Validation failed: {Message}", exception.Message);
+        _logger.LogInformation(exception, "Validation failed: {Message}", exception.Message);
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
 
